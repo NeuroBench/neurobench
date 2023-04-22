@@ -17,8 +17,8 @@ class SPEECHCOMMANDS_35C(SPEECHCOMMANDS):
 
         self.transform = transform
 
-        all_meta_data = [self.get_metadata(n) for n in range(len(self))]
-        self.labels = sorted(list(set([m[2] for m in all_meta_data])))
+        all_metadata = [self.get_metadata(n) for n in range(len(self))]
+        self.labels = sorted(list(set([m[2] for m in all_metadata])))
 
     def label_to_index(self, word: str) -> int:
         return torch.tensor(self.labels.index(word))

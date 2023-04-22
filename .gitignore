@@ -9,3 +9,7 @@ venv
 # macOS
 
 .DS_Store
+
+# Datasets
+
+neurobench/data/datasets/data

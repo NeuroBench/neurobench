@@ -25,6 +25,11 @@ def data_processing(file_path, summation, device, advance = 0.1, bin_width = 0.3
         'chan_names', 'cursor_pos', 'finger_pos', 'spikes', 't', 'target_pos', 'wf'
     For Motor Prediction, we are using the data from 'spikes', 't' and 'cursor_pos'.
 
+    For the .mat file, please make sure it is stored as version v4 (Level 1.0), v6 and v7 to 7.2, as
+    Scipy's loadmat() function only support these format.
+    It is recommended for the users to use Matlab to convert the .mat files downloaded from Zenodo and
+    save the files in a compatible version.
+
     :param file_path: File path of dataset
     :param summation: Combine every sorted units of every recoding channels or spilt sorted units as different channels
     :param device: Device of data

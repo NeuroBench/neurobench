@@ -1,4 +1,5 @@
 import torch
+import pickle
 import numpy as np
 from scipy.io import loadmat
 from tqdm import tqdm
@@ -18,7 +19,7 @@ def find_all_data_file(data_path):
             total_data.append(item)
     return total_data
 
-def data_processing(file_path, summation, device, advance = 0.1, bin_width = 0.3):
+def data_processing(file_path, summation, device, advance = 0.1, bin_width = 0.3, postpr_data_path = None, filename = None):
     """
     Processing data from dataset obtained from: https://zenodo.org/record/3854034#.ZEufx-xBwfj.
     Each file in the Dataset contains the following data:
@@ -112,7 +113,6 @@ def data_processing(file_path, summation, device, advance = 0.1, bin_width = 0.3
 
     data = testfr.t()
 
-
     # Extract X
     skip_num = round(cursor_pos.shape[0] / data.shape[1])
 
@@ -121,5 +121,17 @@ def data_processing(file_path, summation, device, advance = 0.1, bin_width = 0.3
 
     X_start = torch.Tensor(([0], [0]), device=device)
     label = torch.cat((X_start, X_tmp), dim=1)
+
+    # save results
+    if filename and postpr_data_path:
+        os.makedirs(os.path.join(postpr_data_path, 'input'), exist_ok=True)
+        print("Save postprocessed data:", os.path.join(f'{postpr_data_path}', 'input', f'{filename}.pkl'))
+        with open(os.path.join(f'{postpr_data_path}', 'input', f'{filename}.pkl'), 'wb') as f:
+            pickle.dump(data, f)
+
+        os.makedirs(os.path.join(postpr_data_path, 'label'), exist_ok=True)
+        print("Save postprocessed data:", os.path.join(f'{postpr_data_path}', 'label', f'{filename}.pkl'))
+        with open(os.path.join(f'{postpr_data_path}', 'label', f'{filename}.pkl'), 'wb') as f:
+            pickle.dump(label, f)
 
     return data, label

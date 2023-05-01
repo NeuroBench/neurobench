@@ -1,18 +1,22 @@
-import numpy as np
-from scipy.io import loadmat
 import os
 import torch
-from tqdm import tqdm
-import torch
+import pickle
+import numpy as np
+from scipy.io import loadmat
 import torch.nn as nn
 from sklearn.metrics import r2_score
+from tqdm import tqdm
 
+import sys
+sys.path.append('..')
 from utils import data_processing, early_stop
 from model import ANN_model
 from data import dataset, dataloader
 
 
-data_path = "/path/to/dataset/"  # Update data_path to the folder that contains the dataset
+data_path = "../dataset"
+assert os.path.isdir(data_path), 'Update data_path to the folder that contains the dataset'
+postpr_data_path = f"{data_path}/postpr_data/"
 
 device = "cuda" if torch.cuda.is_available() else "cpu"
 print(device)
@@ -24,6 +28,7 @@ hidden_neuron1 = 32
 hidden_neuron2 = 48
 
 summation = 1
+regenerate = True
 
 
 if __name__ == "__main__":
@@ -34,7 +39,28 @@ if __name__ == "__main__":
     for file_no in range(len(total_data)):
         file_path = os.path.join(data_path, total_data[file_no])
         print("File_name : {}".format(total_data[file_no]))
-        Yenc, Xenc = dataset.data_processing(file_path, device=device, summation=summation, advance=0.016, bin_width=0.016*3)
+        fname = total_data[file_no].split('.')[0]
+
+        try:
+            if regenerate:
+                raise Exception("regenerate postprocessed data...")
+        
+            with open(os.path.join(f'{postpr_data_path}', 'input', f'{fname}.pkl'), 'rb') as f:
+                Yenc = pickle.load(f)
+                print("Successfully loaded train samples from:", f'{postpr_data_path}', 'input', f'{fname}.pkl')
+
+            with open(os.path.join(f'{postpr_data_path}', 'label', f'{fname}.pkl'), 'rb') as f:
+                Xenc = pickle.load(f)
+                print("Successfully loaded train samples from:", f'{postpr_data_path}', 'label', f'{fname}.pkl')
+
+        except:
+            Yenc, Xenc = dataset.data_processing(file_path, 
+                                                 device=device, 
+                                                 summation=summation, 
+                                                 advance=0.016, 
+                                                 bin_width=0.016*3, 
+                                                 postpr_data_path=postpr_data_path, 
+                                                 filename=fname)
 
         for time_shift in range(2):
             print("Summation = {}, Time_shift = {}".format(summation, time_shift))
@@ -70,12 +96,12 @@ if __name__ == "__main__":
                     train_count = 0
 
                     for i, (data, target) in enumerate(train_batch):
-                        print(data.shape, target.shape)
+                        #print(data.shape, target.shape)
                         data = data.to(device)
                         target = target.to(device)
 
                         pre = net(data.view(batch_size, -1))
-                        print(pre.shape, target.shape)
+                        #print(pre.shape, target.shape)
                         loss_val = criterion(pre, target)
 
                         optimizer.zero_grad()
@@ -141,8 +167,7 @@ if __name__ == "__main__":
                     Learning_scheduler.step()
                     net.train()
 
-
-            print(final_results)
+            #print(final_results)
             final_mean = torch.mean(final_results, dim=0)
             print("Training_Loss = {}, Training_R2 = {}, Test_Loss = {}, Test_R2 = {}, Validation_Loss = {}, Validation_R2 = {}".format(
                 final_mean[0], final_mean[1], final_mean[2], final_mean[3], final_mean[4], final_mean[5]))

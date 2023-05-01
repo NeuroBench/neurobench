@@ -28,7 +28,7 @@ hidden_neuron1 = 32
 hidden_neuron2 = 48
 
 summation = 1
-regenerate = True
+regenerate = False
 
 
 if __name__ == "__main__":

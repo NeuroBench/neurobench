@@ -1,0 +1,8 @@
+"""
+"""
+
+class Benchmark():
+    ...
+
+class Result():
+    ...

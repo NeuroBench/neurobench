@@ -52,12 +52,12 @@ The pre-process function is multi_channel_timesurface.
 
 ### RED network training and testing
 
-'algorithms_benchmarks/Neuronbench/train_RED/run.py' is to train the original RED model.
+`algorithms_benchmarks/Neuronbench/train_RED/run.py` is to train the original RED model.
 
 The training needs about 25 epochs. The final mAP on the test set is about 0.42.
 
 ### Hybrid Spiking RED training and testing
 
-'algorithms_benchmarks/Neuronbench/train_hybrid_spikingRED/run.py' is to train the hybrid spikingRED model.
+`algorithms_benchmarks/Neuronbench/train_hybrid_spikingRED/run.py` is to train the hybrid spikingRED model.
 
 The training needs about 25 epochs. The final mAP on the test set is about 0.2.

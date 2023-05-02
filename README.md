@@ -18,7 +18,7 @@ Benchmark harness and baseline results for the NeuroBench algorithms track.
 
 ## Dependencies
 
-#### Prophesee 1 Megapixel Event Dataset
+### Prophesee 1 Megapixel Event Dataset
 
 Download dataset from [HERE](https://www.prophesee.ai/2020/11/24/automotive-megapixel-event-based-dataset/).
 
@@ -26,27 +26,27 @@ The dowloaded zip DAT-format dataset will be 1.2TB and will cost 3.5TB disk spac
 
 **If the disk space is not big enough, one option is to iteratively dowload each file, perform preprocessing and delete the raw DAT data. This approach can reduce the disk requirement to 1T**
 
-#### Prophesee Metavision SDK
+### Prophesee Metavision SDK
 
 We are using Metavision [3.1.2](https://docs.prophesee.ai/3.1.2/index.html).
 
 Install Prophesee Metavision SDK using this [LINK](https://docs.prophesee.ai/3.1.2/installation/linux.html)
 
-#### SpikingJelly
+### SpikingJelly
 
 We are using SpikingJelly [0.0.0.0.14](https://spikingjelly.readthedocs.io/zh_CN/0.0.0.0.14/#index-en) for Spiking LIF implementation.
 
-#### Other Dependencies
+### Other Dependencies
 
 * Ubuntu 20.04
 * Nvidia RTX A6000
 
 ## Example Usages
 
-#### Data Proprocessing
+### Data Proprocessing
 
 
 
-#### RED network training and testing
+### RED network training and testing
 
-#### Hybrid Spiking RED training and testing
+### Hybrid Spiking RED training and testing

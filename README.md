@@ -10,15 +10,43 @@ Benchmark harness and baseline results for the NeuroBench algorithms track.
 
 ## Task list
 
-- [ ] Source code for raw dataset preprocessing.
-- [ ] Training and validation source code for reproducing Prophesee's RED network results.
-- [ ] Training and validation source code for Spiking RED.
-- [ ] Integrate [snnmetrics](https://github.com/open-neuromorphic/snnmetrics) for SNN benchmark.
+- [x] Source code for raw dataset preprocessing.
+- [x] Training and validation source code for reproducing Prophesee's RED network results.
+- [x] Hybrid Spiking RED with LIF replacing LSTM.
+- [ ] Full Spiking RED with full LIF activation. (Ongoing)
+- [ ] Integrate [snnmetrics](https://github.com/open-neuromorphic/snnmetrics) for SNN benchmark. (Ongoing)
 
 ## Dependencies
 
-TBD
+#### Prophesee 1 Megapixel Event Dataset
+
+Download dataset from [HERE](https://www.prophesee.ai/2020/11/24/automotive-megapixel-event-based-dataset/).
+
+The dowloaded zip DAT-format dataset will be 1.2TB and will cost 3.5TB disk space after unzip.
+
+**If the disk space is not big enough, one option is to iteratively dowload each file, perform preprocessing and delete the raw DAT data. This approach can reduce the disk requirement to 1T**
+
+#### Prophesee Metavision SDK
+
+We are using Metavision [3.1.2](https://docs.prophesee.ai/3.1.2/index.html).
+
+Install Prophesee Metavision SDK using this [LINK](https://docs.prophesee.ai/3.1.2/installation/linux.html)
+
+#### SpikingJelly
+
+We are using SpikingJelly [0.0.0.0.14](https://spikingjelly.readthedocs.io/zh_CN/0.0.0.0.14/#index-en) for Spiking LIF implementation.
+
+#### Other Dependencies
+
+* Ubuntu 20.04
+* Nvidia RTX A6000
 
 ## Example Usages
 
-TBD
+#### Data Proprocessing
+
+
+
+#### RED network training and testing
+
+#### Hybrid Spiking RED training and testing

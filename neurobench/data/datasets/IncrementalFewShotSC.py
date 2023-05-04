@@ -1,6 +1,7 @@
-from torchaudio.datasets import SPEECHCOMMANDS
+from .SPEECHCOMMANDS_35C import SPEECHCOMMANDS_35C
 
+INITIAL_SPEAKERS = []
 
-class IncrementalFewShotSC(SPEECHCOMMANDS):
-    def __init__(self, split: str):
+class IncrementalFewShotSC:
+    def __new__(self, phase: str):
         pass

@@ -13,6 +13,15 @@ class SPEECHCOMMANDS_35C(SPEECHCOMMANDS):
                 download: bool = False,
                 subset: Optional[str] = None,
                 transform: Union[Callable, None] = None) -> None:
+        """Google Speech Commands V2 dataset.
+
+        Args:
+            root (Union[str, Path]): Root directory where datasets exist or will be saved.
+            download (bool, optional): Whether to download the dataset to disk. Defaults to False.
+            subset (Optional[str], optional): Which subset of the dataset to use. Can be either "training"/None, "validation" or "testing". Defaults to None.
+            transform (Union[Callable, None], optional): Transform to apply to data. Defaults to None.
+        """
+
         super().__init__(root=root, url="speech_commands_v0.02", download=download, subset=subset)
 
         self.transform = transform

@@ -1,22 +1,22 @@
-from typing import List, Union
+from typing import Set, Tuple
 
 import torch
 
-from neurobench.data.utils import NeuroBenchDataset
+from neurobench.data.utils.NeuroBenchDataset import NeuroBenchDataset
 from torch_mate.data.utils import FewShot
 
-def get_indices_for_phase(dataset: NeuroBenchDataset, phase: str, init_labels: List[int]):
+def get_indices_for_init_phase(dataset: NeuroBenchDataset, init_labels: Set[int]):
     indices = []
 
     for i, (_, label) in enumerate(dataset):
-        if (label in init_labels and phase == "init") or (label not in init_labels and phase == "cont"):
+        if label in init_labels:
             indices.append(i)
 
     return indices
 
 
 class IncrementalFewShotDataset:
-    def __new__(self, dataset: NeuroBenchDataset, init_labels: List[int], phase: str, way: int = 5, shot: int = 1) -> Union[NeuroBenchDataset, FewShot]:
+    def __new__(self, dataset: NeuroBenchDataset, init_labels: Set[int], way: int = 5, shot: int = 1) -> Tuple[NeuroBenchDataset, FewShot]:
         """This benchmark evaluates the ability of a model to perform
         class-incremental learning over its lifetime, where the model
         is required to learn new keywords or gestures as they are
@@ -33,25 +33,18 @@ class IncrementalFewShotDataset:
 
         Args:
             dataset (NeuroBenchDataset): Dataset to be used for incremental few-shot learning.
-            init_labels (List): List of labels for initial phase.
-            phase (str): Phase of the dataset. Can be either "init" (initial) or "cont" (continual).
+            init_labels (Set[int]): Set of labels for initial phase.
             way (int, optional): Ways for few-shot continual phase. Defaults to 5.
             shot (int, optional): Shots for few-shot continual phase. Defaults to 1.
 
-        Raises:
-            ValueError: If phase is not "init" or "cont".
-
         Returns:
-            Union[NeuroBenchDataset, FewShot]: Dataset for the given phase.
+            Tuple[NeuroBenchDataset, FewShot]: Datasets for both init and cont phases.
         """
 
-        indices = get_indices_for_phase(dataset, phase, init_labels)
-        subset = torch.utils.data.Subset(dataset, indices)
+        init_indices = get_indices_for_init_phase(dataset, init_labels)
+        init_subset = torch.utils.data.Subset(dataset, init_indices)
 
-        if phase == "init":
-            return subset
-        elif phase == "cont":
-            # TODO: add support for the fact that every batch, we want to get N new keywords
-            return FewShot(subset, way, shot, shot)
-        else:
-            raise ValueError(f"Unknown phase: {phase}. Valid phases are: 'init' and 'cont'.")
+        cont_indices = [i for i in range(len(dataset)) if i not in init_indices]
+        cont_subset = torch.utils.data.Subset(dataset, cont_indices)
+
+        return init_subset, FewShot(cont_subset, way, shot, shot)

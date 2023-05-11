@@ -1,11 +1,11 @@
-from typing import Set, Tuple
+from typing import List, Tuple
 
 import torch
 
 from neurobench.data.utils.NeuroBenchDataset import NeuroBenchDataset
 from torch_mate.data.utils import FewShot
 
-def get_indices_for_init_phase(dataset: NeuroBenchDataset, init_labels: Set[int]):
+def get_indices_for_init_phase(dataset: NeuroBenchDataset, init_labels: List[int]):
     indices = []
 
     for i, (_, label) in enumerate(dataset):
@@ -16,7 +16,7 @@ def get_indices_for_init_phase(dataset: NeuroBenchDataset, init_labels: Set[int]
 
 
 class IncrementalFewShotDataset:
-    def __new__(self, dataset: NeuroBenchDataset, init_labels: Set[int], way: int = 5, shot: int = 1) -> Tuple[NeuroBenchDataset, FewShot]:
+    def __new__(self, dataset: NeuroBenchDataset, init_labels: List[int], way: int = 5, shot: int = 1) -> Tuple[NeuroBenchDataset, FewShot]:
         """This benchmark evaluates the ability of a model to perform
         class-incremental learning over its lifetime, where the model
         is required to learn new keywords or gestures as they are
@@ -33,7 +33,7 @@ class IncrementalFewShotDataset:
 
         Args:
             dataset (NeuroBenchDataset): Dataset to be used for incremental few-shot learning.
-            init_labels (Set[int]): Set of labels for initial phase.
+            init_labels (List[int]): v of labels for initial phase.
             way (int, optional): Ways for few-shot continual phase. Defaults to 5.
             shot (int, optional): Shots for few-shot continual phase. Defaults to 1.
 

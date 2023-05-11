@@ -8,7 +8,7 @@ class NeuroBenchClassificationDataset(NeuroBenchDataset):
     """Base class for the datasets to be used for incremental few-shot classification and
     continual domain adaptation.
     """
-    def __getitem__(self, n: int) -> Tuple[Tensor, int]:
+    def __getitem__(self, n: int) -> Tuple[Tensor, Tensor]:
         raise NotImplementedError
     
     def get_subject(self, n: int) -> str:

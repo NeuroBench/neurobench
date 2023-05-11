@@ -2,12 +2,14 @@ from torch import Tensor
 import torch
 from torchaudio.datasets import SPEECHCOMMANDS
 
-from typing import Union, Optional, Callable, Tuple
+from typing import Union, Optional, Callable
 from pathlib import Path
 
+from neurobench.data.utils import NeuroBenchClassificationDataset
 
 
-class SPEECHCOMMANDS_35C(SPEECHCOMMANDS):
+
+class SPEECHCOMMANDS_35C(NeuroBenchClassificationDataset):
     def __init__(self,
                 root: Union[str, Path],
                 download: bool = False,
@@ -22,20 +24,23 @@ class SPEECHCOMMANDS_35C(SPEECHCOMMANDS):
             transform (Union[Callable, None], optional): Transform to apply to data. Defaults to None.
         """
 
-        super().__init__(root=root, url="speech_commands_v0.02", download=download, subset=subset)
+        self.dataset = SPEECHCOMMANDS(root=root, url="speech_commands_v0.02", download=download, subset=subset)
 
         self.transform = transform
 
-        all_metadata = [self.get_metadata(n) for n in range(len(self))]
+        all_metadata = [self.dataset.get_metadata(n) for n in range(len(self))]
         self.labels = sorted(list(set([m[2] for m in all_metadata])))
 
     def label_to_index(self, word: str) -> int:
         return torch.tensor(self.labels.index(word))
 
-    def __getitem__(self, n: int) -> Tuple[Tensor, int]:
-        waveform, _, label, _, _ = super().__getitem__(n)
+    def __getitem__(self, n: int):
+        waveform, _, label, _, _ = self.dataset[n]
 
         if self.transform:
             waveform = self.transform(waveform)
 
         return waveform, self.label_to_index(label)
+    
+    def __len__(self):
+        return len(self.dataset)

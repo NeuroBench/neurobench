@@ -1,3 +1,1 @@
-from .ContinualDomainAdaptationSC import ContinualDomainAdaptationSC
-from .IncrementalFewShotSC import IncrementalFewShotSC
 from .SPEECHCOMMANDS_35C import SPEECHCOMMANDS_35C

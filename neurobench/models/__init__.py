@@ -1,1 +1,1 @@
-from .model import *
+from .TCN import TCN

@@ -1,0 +1,96 @@
+#=====================================================================
+#   Project:      An Energy-Efficient Spiking Neural Network for Finger Velocity Decoding for Implantable Brain-Machine Interface
+#   File:         hyperparams.py
+#   Description:  Yaml file for setting the hyperparams
+#
+#   Date:        10. April 2022
+#
+#=====================================================================
+#
+#   Copyright (C) 2022 ETH Zurich.
+#
+#   Author: Lars Widmer
+#
+#   SPDX-License-Identifier: Apache-2.0
+#
+#   Licensed under the Apache License, Version 2.0 (the License); you may
+#   not use this file except in compliance with the License.
+#   You may obtain a copy of the License at
+#   www.apache.org/licenses/LICENSE-2.0
+#
+#   Unless required by applicable law or agreed to in writing, software
+#   distributed under the License is distributed on an AS IS BASIS, WITHOUT
+#   WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+#
+#   See the License for the specific language governing permissions and
+#   limitations under the License.
+#
+#   Please see the File "LICENCE.md" for the full licensing information.
+#
+#=====================================================================
+
+
+---
+#Training
+ batch_size: 16 #how many samples per batch
+ epochs: 2 #how many epochs to train for (maximum epochs)
+ early_stopping_patience: -1 #How many epochs to continue training with no improvement. -1 for infinite patience.
+ loss: L2 # "L1", "L2" or "corr" for training using the corresponding loss function
+ dropout: 0.5 #dropout probability
+ weight_decay: 0.01 #L2 weight decay strength
+ lr: 0.001 #L2 weight decay strength
+ steps: 2500 #how many steps to unfold the SNN for in training
+ warmup_steps: 2 #how many steps results to discard in the loss calculation
+ window: 'sliding'
+ stride: 200
+ splits: [10000, 5000, 5000] # splits data into chunks of sum(splits)ms with (train x validation x test)
+
+#Neuron
+ Vth: 1 #Threshold value for the LIF neurons
+ weight_init: .2 #std for normal initialization of weights
+
+ tau: 0.96 #Initial value of the decay parameter in the LIF neurons
+ tau_init_range: 0.1 #width of the distribution of the decay parameter initialization when it is trainable
+ tau_trainable: 'none' #Trainable or non-trainable decay
+ constrain_method: 'none' #When to constrain the decay parameters range.
+ #options are 'none' (no constraining), 'forward' (constraining only in the forward pass),
+ #'always' (always strictly constraining the value) and 'eval'(only constrain the value in the evaluation)
+
+ reset_by_subtraction: False #Reset mechanism of the LIF neuron. True -> reset by subtraction, False -> reset to zero
+ surrogate_gradient: 'square' #surrogate gradient function. Currently, only 'square' is implemented
+
+ init_u: 'zero' #What to initialize the membrane potential to when starting the network.
+ #options are 'zero' (all zero), 'random' (flat distribution between 0 and Vth) and 'Vth' (all just below Vth)
+
+ recurrence: 'single'
+ weights_rec_init: 0.4
+
+#Dataset
+ output_type: 'vel' #what to predict, options are 'pos', 'vel', 'acc'.
+
+#Network
+ batchnorm: 'none' #What Batch normalisation to use. Currently only 'tdBN' (threshold dependent batch normalisation) and 'none' implemented.
+ neuron_count: 50 #count of neurons per fully connected layer
+ use_bias: False #Are the Neurons are allowed to have a bias or not
+
+#Reporting
+ loss_steps: 50 #How often to report the loss during training in the report file (after every xth Batch)
+ output_report: Report.txt #Where to save the results and training info to
+ output_plots: plots/ #which folder to save the plots to
+
+#General
+ seed: 42 #Seed for initialisation. Use 'random' for a non-deterministic seed
+ device: cpu #Which cuda device to train on
+ name: 'eth' #How to store files
+ trials: 10 #How many initialisations to evaluate the network for
+ 5-fold: False #Use 5-fold validation or not:
+ #True -> Split the training dataset into 5 folds, then use 4 for training and 1 for (holdout) evaluation. Repeat 5 times such that evey fold is the evaluation set once.
+ #False -> Use the entire training dataset for training and test the network on the test set. DO NOT USE FOR HYPERPARRAMETER TUNING!
+ early_stopping: False #Use early stopping or not
+ dataset_file: //Users/paul/Downloads/indy_20160407_02.mat #File where the preprocessed dataset is found
+
+#save and load model
+ save_model: False #If the model should be saved
+ save_model_dir: model/ #which folder to save the model to
+ load_model: False  #If a model should be loaded and evaluated (without further training)
+ load_model_dir: model/model_trial_0_fold_0_epoch_42_id_993906.pt #Which file to load the model from

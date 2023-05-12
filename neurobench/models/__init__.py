@@ -1,1 +1,1 @@
-from .model import *
+from .SNN_baseline_ETH import *

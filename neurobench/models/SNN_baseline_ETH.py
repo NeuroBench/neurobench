@@ -162,3 +162,16 @@ class SNN(nn.Module):
             number of decaying variables per layer
         """
         return np.array([1, 1, 1, 1])
+
+    def get_bias(self):
+        """
+        Get number of decaying variables per neuron per layer
+
+        Returns
+        ----------
+        dim    : list of int
+            number of decaying variables per layer
+        """
+        if self.hyperparams['use_bias']:
+            return np.array([1, 1, 1, 1])
+        return np.array([0, 0, 0, 0])

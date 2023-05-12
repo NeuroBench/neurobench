@@ -48,9 +48,12 @@ def compute_effective_macs(net, spiking_activity):
     # how many decaying variables are used per neuron per layer
     decaying_variables = net.get_decaying_variables()
 
+    # how many bias accumulations are used per neuron per layer
+    bias = net.get_bias()
+
     macs = (spiking_activity * dim[1:] * dim[:-1]).sum() + \
            (spiking_activity * dim[1:] ** 2 * rec_dim).sum() + \
-           (decaying_variables * dim[1:]).sum()
+           ((decaying_variables + bias) * dim[1:]).sum()
 
     return macs
 

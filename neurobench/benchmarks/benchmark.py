@@ -100,10 +100,7 @@ class Benchmark:
             out = self.net(x)
 
             # Spikes are required to compute effective MACs
-            if isinstance(out, tuple):
-                prediction, spikes = out
-            else:
-                prediction, spikes = out, None
+            prediction, spikes = out
 
             loss = self.criterion(y, prediction)
             self.optimizer.zero_grad()
@@ -115,9 +112,7 @@ class Benchmark:
                 current_batch_size = x.shape[0]
                 results[0] += loss.item() * current_batch_size
                 results[1] += compute_r2_score(y, prediction)
-
-                if spikes is not None:
-                    macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
+                macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
 
             print("finished Batch {} in {}s".format(batch, time.time()-t0))
 

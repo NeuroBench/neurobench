@@ -153,7 +153,7 @@ class PrimateReaching(Dataloader):
         self.samples = torch.from_numpy(spike_train).float()
         # Dimensions: (nr_features x channels)
         # remove z axis and change to positive position. Data is stored as (z, -x, -y)
-        self.labels = -torch.from_numpy(labels)[1:, :].float()
+        self.labels = -torch.from_numpy(labels)[1:3, :].float()
 
         # convert position to velocity
         self.labels[:, 1:] -= self.labels[:, :-1]

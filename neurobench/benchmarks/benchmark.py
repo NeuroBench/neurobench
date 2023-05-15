@@ -134,7 +134,7 @@ class Benchmark:
         """
         indices = self.dataset.ind_test if type == TYPE.TESTING else self.dataset.ind_val
         dataloader = torch.utils.data.DataLoader(
-            dataset=torch.utils.data.Subset(self.dataset.ind_train, indices),
+            dataset=torch.utils.data.Subset(self.dataset, indices),
             batch_size=self.hyperparams['batch_size'],
             shuffle=False)
 
@@ -225,7 +225,7 @@ class Result:
         duration: float
             duration of current epoch
         """
-        self.mse[type, idx], self.r2[type, idx], self.macs[type, idx] = results
+        self.mse[type.value, idx], self.r2[type.value, idx], self.macs[type.value, idx] = results
         self.logger.info("{} Epoch: {} in {}s with Loss L2: {:3.4} R2: {:3.4} MAC {:3.4}".format(
             type.name, idx, duration, *results))
 

@@ -111,9 +111,9 @@ class PrimateReaching(Dataloader):
         try:
             # TODO Matlab not tested
             df = loadmat(self.path)
-            t = df["t"].item()
-            labels = df['finger_pos'].item()
-            spikes = df['spikes'].item()
+            t = df['a']['t'].item()
+            labels = df['a']['finger_pos'].item()
+            spikes = df['a']['spikes'].item()
 
         except NotImplementedError:
             # open Matlab v7.3 / HDF5 file

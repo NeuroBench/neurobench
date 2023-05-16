@@ -186,3 +186,12 @@ class PrimateReaching(Dataloader):
         self.ind_train = indices[:, :self.splits[0] - self.window + 1:self.stride].flatten()
         self.ind_val = indices[:, self.splits[0]:-self.splits[2] - self.window + 1:self.stride].flatten()
         self.ind_test = indices[:, -self.splits[2]:- self.window + 1:self.stride].flatten()
+
+
+if __name__ == '__main__':
+    path = "path_to_file"
+    window = 2500                   # length of window
+    stride = 10                     # stride of sliding window
+    splits = [10000, 5000, 5000]    # 10s training, 5s validation, 5s testing
+
+    ds = PrimateReaching(path, biological_delay=140, window=window, stride=stride, splits=splits)

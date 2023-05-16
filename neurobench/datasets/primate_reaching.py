@@ -111,9 +111,9 @@ class PrimateReaching(Dataloader):
         try:
             # TODO Matlab not tested
             df = loadmat(self.path)
-            t = df['a']['t'].item()
-            labels = df['a']['finger_pos'].item()
-            spikes = df['a']['spikes'].item()
+            t = df['a']['t'].item().transpose()
+            labels = df['a']['finger_pos'].item().transpose()
+            spikes = df['a']['spikes'].item().transpose()
 
         except NotImplementedError:
             # open Matlab v7.3 / HDF5 file
@@ -131,8 +131,12 @@ class PrimateReaching(Dataloader):
         # iterate over hdf5 dataframe and preprocess data
         for row_idx, row in enumerate(spikes):
             for col_idx, element in enumerate(row):
+
                 # round spike times to fit timesteps
-                rounded_spike = np.round(df[element][()] / timestep) * timestep
+                try:
+                    rounded_spike = np.round(df[element][()] / timestep) * timestep
+                except TypeError:
+                    rounded_spike = np.round(spikes[0, 0] / timestep) * timestep
 
                 # get indices of spikes and convert data to spike train
                 idx = np.nonzero(np.isin(t, rounded_spike))[1]

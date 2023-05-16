@@ -19,7 +19,7 @@ import os
 from torch import nn
 
 from neurobench.datasets import Dataset
-from neurobench.benchmarks.metrics import compute_r2_score, compute_effective_macs
+from neurobench.benchmarks.metrics import compute_r2_score, compute_effective_macs, compute_latency
 
 
 class TYPE(Enum):
@@ -89,7 +89,7 @@ class Benchmark:
             shuffle=True)
 
         # stores (MSE, R2, Effective MAC)
-        results = np.zeros(3)
+        results = np.zeros(4)
         macs = None
 
         t0 = time.time()
@@ -113,6 +113,7 @@ class Benchmark:
                 results[0] += loss.item() * current_batch_size
                 results[1] += compute_r2_score(y, prediction)
                 macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
+                results[3] += compute_latency(y, prediction) * current_batch_size
 
             print("finished Batch {} in {}s".format(batch, time.time()-t0))
 
@@ -120,7 +121,7 @@ class Benchmark:
         results /= len(train_loader.dataset.indices)
 
         # using the average spiking activity per layer, compute the effective macs
-        results[-1] = compute_effective_macs(self.net, macs)
+        results[2] = compute_effective_macs(self.net, macs)
 
         return results, time.time() - t0
 
@@ -162,14 +163,14 @@ class Benchmark:
                 current_batch_size = x.shape[0]
                 results[0] += loss.item() * current_batch_size
                 results[1] += compute_r2_score(y, prediction)
-                if spikes is not None:
-                    macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
+                macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
+                results[3] += compute_latency(y, prediction) * current_batch_size
 
         # compute average over number of samples
         results /= len(dataloader.dataset.indices)
 
         # using the average spiking activity per layer, compute the effective macs
-        results[-1] = compute_effective_macs(self.net, macs)
+        results[2] = compute_effective_macs(self.net, macs)
 
         return results, time.time() - t0
 
@@ -197,6 +198,7 @@ class Result:
         self.mse = np.zeros((3, hyperparams['epochs']))
         self.r2 = np.zeros((3, hyperparams['epochs']))
         self.macs = np.zeros((3, hyperparams['epochs']))
+        self.latency = np.zeros((3, hyperparams['epochs']))
 
         # store results in new folder consisting of name and path
         self.path = hyperparams['name'] + "/" + time.strftime("%m-%d-%Y %H:%M:%S", time.localtime())
@@ -221,12 +223,13 @@ class Result:
         type    :  TYPE
             enum of training, validation and testing runs
         results : ndarray
-            contains mse, r2 and effective macs of current epoch
+            contains mse, r2, latency and effective macs of current epoch
         duration: float
             duration of current epoch
         """
-        self.mse[type.value, idx], self.r2[type.value, idx], self.macs[type.value, idx] = results
-        self.logger.info("{} Epoch: {} in {}s with Loss L2: {:3.4} R2: {:3.4} MAC {:3.4}".format(
+        self.mse[type.value, idx], self.r2[type.value, idx], self.macs[type.value, idx], self.latency[type.value, idx] =\
+            results
+        self.logger.info("{} Epoch: {} in {}s with Loss L2: {:3.4} R2: {:3.4} MAC {:3.4} Latency: {:3.4}".format(
             type.name, idx, duration, *results))
 
     def visualize_learning_curve(self, save=True):
@@ -239,24 +242,29 @@ class Result:
             either store or visualize plot
         """
         # plot learning curve over epochs
-        plt.subplot(131)
+        plt.subplot(221)
         plt.title("MSE")
         plt.plot(self.mse)
 
         # plot R2 score over epochs
-        plt.subplot(132)
+        plt.subplot(222)
         plt.title("R2")
         plt.plot(self.r2)
 
         # plot effective MACs per timestep over epochs
-        plt.subplot(133)
+        plt.subplot(223)
         plt.title("MAC")
         plt.plot(self.macs)
+
+        # plot effective MACs per timestep over epochs
+        plt.subplot(224)
+        plt.title("Latency")
+        plt.plot(self.latency)
 
         plt.tight_layout()
         plt.legend(('train', "validation", "test"))
 
         if save:
-            plt.savefig(self.path + "/results.png")
+            plt.savefig("results/" + self.path + "/results.png")
         else:
             plt.show()

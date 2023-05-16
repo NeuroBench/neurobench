@@ -8,6 +8,7 @@ Date:         12. May 2023
 Copyright stuff
 =====================================================================
 """
+import torch
 
 
 # TODO add computation for ANN
@@ -86,3 +87,43 @@ def compute_r2_score(true, pred):
 
     # compute mean over dimensions and sum over batches
     return r.mean(1).sum()
+
+
+def compute_latency(true, pred, epsilon=1e-2):
+    """
+    Compute the latency of the prediction
+    Latency is defined as the first index when all predictions deviate from the true label by only epsilon
+
+    Parameters
+    ----------
+    true    : Tensor
+        true velocity
+    pred    : Tensor
+        predicted velocity
+    epsilon : float
+        allowed error
+
+    Returns
+    ----------
+    l    : float
+        latency of prediction
+    """
+
+    # boolean array of indices where the prediction deviates from the true value only by epsilon
+    array = ((true - pred).abs() < epsilon).all(0).all(0)
+
+    # base case
+    if len(array) == 1:
+        return 0
+
+    # exponential search for first nonzero element
+    n = 1
+    indices = None
+    while n < len(array):
+        indices = torch.where(array[n - 1:2 * n - 1] != 0)[0]
+        if len(indices) > 0:
+            return n - 1 + indices[0]
+        n = n << 1
+
+    # first nonzero element
+    return len(array)

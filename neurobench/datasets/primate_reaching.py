@@ -15,6 +15,7 @@ from scipy.io import loadmat
 import h5py
 import numpy as np
 import torch
+import matplotlib.pyplot as plt
 
 
 class PrimateReaching(Dataloader):
@@ -159,7 +160,7 @@ class PrimateReaching(Dataloader):
         self.labels = -torch.from_numpy(labels)[1:3, :].float()
 
         # convert position to velocity
-        self.labels[:, 1:] -= self.labels[:, :-1]
+        self.labels = self.labels[:, 1:] - self.labels[:, :-1]
 
     def apply_delay(self):
         """
@@ -188,9 +189,18 @@ class PrimateReaching(Dataloader):
 
 
 if __name__ == '__main__':
-    path = "path_to_file"
+    path = "/Users/paul/Downloads/indy_20160407_02.mat"
     window = 2500                   # length of window
     stride = 10                     # stride of sliding window
     splits = [10000, 5000, 5000]    # 10s training, 5s validation, 5s testing
 
     ds = PrimateReaching(path, biological_delay=140, window=window, stride=stride, splits=splits)
+
+    x, y = ds.__getitem__(0)
+
+    plt.figure()
+    plt.subplot(211)
+    plt.plot(y[0, :])
+    plt.subplot(212)
+    plt.plot(y[1, :])
+    plt.show()

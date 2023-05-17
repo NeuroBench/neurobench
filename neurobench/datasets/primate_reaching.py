@@ -109,7 +109,6 @@ class PrimateReaching(Dataloader):
 
         """
         try:
-            # TODO Matlab not tested
             df = loadmat(self.path)
             t = df['a']['t'].item().transpose()
             labels = df['a']['finger_pos'].item().transpose()

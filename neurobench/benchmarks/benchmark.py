@@ -121,7 +121,7 @@ class Benchmark:
         results /= len(train_loader.dataset.indices)
 
         # using the average spiking activity per layer, compute the effective macs
-        results[2] = compute_effective_macs(self.net, macs)
+        results[2] = compute_effective_macs(self.net, macs / len(train_loader.dataset.indices))
 
         return results, time.time() - t0
 
@@ -170,7 +170,7 @@ class Benchmark:
         results /= len(dataloader.dataset.indices)
 
         # using the average spiking activity per layer, compute the effective macs
-        results[2] = compute_effective_macs(self.net, macs)
+        results[2] = compute_effective_macs(self.net, macs / len(dataloader.dataset.indices))
 
         return results, time.time() - t0
 
@@ -195,10 +195,10 @@ class Result:
     def __init__(self, hyperparams):
         super().__init__()
         # results for training, validation and testing per epoch
-        self.mse = np.zeros((3, hyperparams['epochs']))
-        self.r2 = np.zeros((3, hyperparams['epochs']))
-        self.macs = np.zeros((3, hyperparams['epochs']))
-        self.latency = np.zeros((3, hyperparams['epochs']))
+        self.mse = np.zeros((hyperparams['epochs'], 3))
+        self.r2 = np.zeros((hyperparams['epochs'], 3))
+        self.macs = np.zeros((hyperparams['epochs'], 3))
+        self.latency = np.zeros((hyperparams['epochs'], 3))
 
         # store results in new folder consisting of name and path
         self.path = hyperparams['name'] + "/" + time.strftime("%m-%d-%Y %H:%M:%S", time.localtime())
@@ -227,7 +227,7 @@ class Result:
         duration: float
             duration of current epoch
         """
-        self.mse[type.value, idx], self.r2[type.value, idx], self.macs[type.value, idx], self.latency[type.value, idx] =\
+        self.mse[idx, type.value], self.r2[idx, type.value], self.macs[idx, type.value], self.latency[idx, type.value], =\
             results
         self.logger.info("{} Epoch: {} in {}s with Loss L2: {:3.4} R2: {:3.4} MAC {:3.4} Latency: {:3.4}".format(
             type.name, idx, duration, *results))

@@ -44,7 +44,7 @@ class IncrementalFewShotDataset:
         init_indices = get_indices_for_init_phase(dataset, init_labels)
         init_subset = torch.utils.data.Subset(dataset, init_indices)
 
-        cont_indices =  set(list(range(len(dataset)))) - set(init_subset)
+        cont_indices = list(set(list(range(len(dataset)))) - set(init_subset))
         cont_subset = torch.utils.data.Subset(dataset, cont_indices)
 
         return init_subset, FewShot(cont_subset, way, shot, shot)

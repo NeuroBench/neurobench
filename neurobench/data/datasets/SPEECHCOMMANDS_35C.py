@@ -42,5 +42,8 @@ class SPEECHCOMMANDS_35C(NeuroBenchClassificationDataset):
 
         return waveform, self.label_to_index(label)
     
+    def get_subject(self, n: int) -> str:
+        return self.dataset.get_metadata(n)[3]
+    
     def __len__(self):
         return len(self.dataset)

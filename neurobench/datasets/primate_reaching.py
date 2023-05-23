@@ -112,7 +112,7 @@ class PrimateReaching(Dataloader):
         try:
             df = loadmat(self.path)
             t = df['a']['t'].item().transpose()
-            labels = df['a']['finger_pos'].item().transpose()
+            labels = df['a']['cursor_pos'].item().transpose()
             spikes = df['a']['spikes'].item().transpose()
 
         except NotImplementedError:
@@ -121,7 +121,7 @@ class PrimateReaching(Dataloader):
 
             # extract data
             t = df['t'][()]
-            labels = df['finger_pos'][()]
+            labels = df['cursor_pos'][()]
             spikes = df['spikes'][()]
 
         # extract timestep and allocate memory for spike_train
@@ -156,11 +156,11 @@ class PrimateReaching(Dataloader):
         # Dimensions: (channels x timesteps)
         self.samples = torch.from_numpy(spike_train).float()
         # Dimensions: (nr_features x channels)
-        # remove z axis and change to positive position. Data is stored as (z, -x, -y)
-        self.labels = -torch.from_numpy(labels)[1:3, :].float()
+        self.labels = torch.from_numpy(labels).float()
 
         # convert position to velocity
-        self.labels = self.labels[:, 1:] - self.labels[:, :-1]
+        self.labels = torch.diff(self.labels, dim=1)
+
 
     def apply_delay(self):
         """
@@ -186,6 +186,14 @@ class PrimateReaching(Dataloader):
         self.ind_train = indices[:, :self.splits[0] - self.window + 1:self.stride].flatten()
         self.ind_val = indices[:, self.splits[0]:-self.splits[2] - self.window + 1:self.stride].flatten()
         self.ind_test = indices[:, -self.splits[2]:- self.window + 1:self.stride].flatten()
+
+    def get_norm(self):
+        m = self.labels.mean(dim=1, keepdim=True)
+        std = self.labels.std(dim=1, keepdim=True)
+        return m, std
+
+    def apply_norm(self, m, std):
+        self.labels = (self.labels - m) / std
 
 
 if __name__ == '__main__':

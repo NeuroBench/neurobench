@@ -1,7 +1,16 @@
 """
 """
 
-from .dataset import Dataset
+from .dataset import NeuroBenchDataset
 
-class MegapixelAutomotive(Dataset):
-    ...
+class MegapixelAutomotive(NeuroBenchDataset):
+    """
+    """
+    def __init__(self, path, split="testing"):
+        ...
+    
+    def __len__(self):
+        ...
+    
+    def __getitem__(self, idx):
+        ...

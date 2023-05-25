@@ -225,18 +225,51 @@ typing-extensions = "*"
 opt-einsum = ["opt-einsum (>=3.3)"]
 
 [[package]]
+name = "torchaudio"
+version = "2.0.2"
+description = "An audio package for PyTorch"
+category = "main"
+optional = false
+python-versions = "*"
+files = [
+    {file = "torchaudio-2.0.2-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:80c64dabb9d8c33bc6f2a8e0c7ebe17ea87f5028931c0d6a2f73b9e16b5272d0"},
+    {file = "torchaudio-2.0.2-cp310-cp310-macosx_11_0_arm64.whl", hash = "sha256:1619673500fe08ae96b71952f03ecfc74e7d0843cd9882193d0642a82724f537"},
+    {file = "torchaudio-2.0.2-cp310-cp310-manylinux1_x86_64.whl", hash = "sha256:4dbc7dd84be522f6d1159d33f5cf2fe08656ac5e8402ac2aa07cb626fed4b700"},
+    {file = "torchaudio-2.0.2-cp310-cp310-manylinux2014_aarch64.whl", hash = "sha256:dadf237b4fd155a3d213bdfeffeded47f5a553d383817500438b44f24fa53851"},
+    {file = "torchaudio-2.0.2-cp310-cp310-win_amd64.whl", hash = "sha256:2f975083ba66f0837ea4b55fb8d81f31a63a4a27f8628e54c1e16ebda1842931"},
+    {file = "torchaudio-2.0.2-cp311-cp311-macosx_10_9_x86_64.whl", hash = "sha256:a6cba80d9ab3a2ec1317cdc5cbc0654a189a26e3d8b28ef9f83336159fd5e5e9"},
+    {file = "torchaudio-2.0.2-cp311-cp311-macosx_11_0_arm64.whl", hash = "sha256:15327132b28f34963baa6fe1813030a634d2581aa9ca120f730c1e8fabdc1102"},
+    {file = "torchaudio-2.0.2-cp311-cp311-manylinux1_x86_64.whl", hash = "sha256:b44ec89d4274856f58d55bce4f90e4294ee26ec3020dc39b3081d541d7fd6184"},
+    {file = "torchaudio-2.0.2-cp311-cp311-manylinux2014_aarch64.whl", hash = "sha256:b22aceaa1ec5a3310cc15642d19dd00d53a7ce399b9096ad1dea0b24e5097af3"},
+    {file = "torchaudio-2.0.2-cp311-cp311-win_amd64.whl", hash = "sha256:2b37ed5ea4846ce334e7a4a93ca798683088b49e9a4943ed04f4fc4ba1ddc3c4"},
+    {file = "torchaudio-2.0.2-cp38-cp38-macosx_10_9_x86_64.whl", hash = "sha256:a8283dd61c579ea5b14d6773bbc0bf84573b12b37f05f02bb4b2425d77767284"},
+    {file = "torchaudio-2.0.2-cp38-cp38-macosx_11_0_arm64.whl", hash = "sha256:28c9be830608f93c906770eb7b4880962f8fef9bd5275ac5b48c850f3cc4bc32"},
+    {file = "torchaudio-2.0.2-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:286061f9999905a6b96107c7ac751a4016985a8e2087250ab8328845e4128952"},
+    {file = "torchaudio-2.0.2-cp38-cp38-manylinux2014_aarch64.whl", hash = "sha256:ee08ec303050405998e74a0a3649aee4d16408c2eb4bb1f8c7a726318b1ce1b7"},
+    {file = "torchaudio-2.0.2-cp38-cp38-win_amd64.whl", hash = "sha256:ad43c0ffaa6771bfa05669bb1d8c3c179c859e92efd985683a78d6d313ecefb6"},
+    {file = "torchaudio-2.0.2-cp39-cp39-macosx_10_9_x86_64.whl", hash = "sha256:1138a1c39da2445a1caca20ddce1e77c9657e92263eb34376024f517f5284d4b"},
+    {file = "torchaudio-2.0.2-cp39-cp39-macosx_11_0_arm64.whl", hash = "sha256:de5d94cb8305c00268dfbc576ca7e445f40891e024a9e5e28c63ad9f851e541a"},
+    {file = "torchaudio-2.0.2-cp39-cp39-manylinux1_x86_64.whl", hash = "sha256:6c617d5978a6b8a29d6675dcd18196e6dc541daac44b7b2b6eeb31aed82f3203"},
+    {file = "torchaudio-2.0.2-cp39-cp39-manylinux2014_aarch64.whl", hash = "sha256:a74f33da0b3c53b770f583a02cabd59196f089fb77a65eb39cd5d811b5a21d63"},
+    {file = "torchaudio-2.0.2-cp39-cp39-win_amd64.whl", hash = "sha256:66df470da29964d7c1e8106a42f5f5c9bc09e824083675ce3aba054d68b4af54"},
+]
+
+[package.dependencies]
+torch = "2.0.1"
+
+[[package]]
 name = "typing-extensions"
-version = "4.5.0"
+version = "4.6.2"
 description = "Backported and Experimental Type Hints for Python 3.7+"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "typing_extensions-4.5.0-py3-none-any.whl", hash = "sha256:fb33085c39dd998ac16d1431ebc293a8b3eedd00fd4a32de0ff79002c19511b4"},
-    {file = "typing_extensions-4.5.0.tar.gz", hash = "sha256:5cb5f4a79139d699607b3ef622a1dedafa84e115ab0024e0d9c044a9479ca7cb"},
+    {file = "typing_extensions-4.6.2-py3-none-any.whl", hash = "sha256:3a8b36f13dd5fdc5d1b16fe317f5668545de77fa0b8e02006381fd49d731ab98"},
+    {file = "typing_extensions-4.6.2.tar.gz", hash = "sha256:06006244c70ac8ee83fa8282cb188f697b8db25bc8b4df07be1873c43897060c"},
 ]
 
 [metadata]
 lock-version = "2.0"
-python-versions = "^3.9"
-content-hash = "7db6f7a928538cad42ba247ced24582f4f7d65061304163dea58dcc861e7be9d"
+python-versions = "^3.10"
+content-hash = "45350887b226d82e04c926360d91e2c16f7bf68f00a79227190c187cd1ecdc65"

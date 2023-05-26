@@ -23,7 +23,6 @@ class SpeechCommands(NeuroBenchDataset):
         self.path = path
         self.labels = sorted(glob("*/", root_dir=path))
         self.labels = {key[:-1]: idx for idx, key in enumerate(self.labels)}
-        print(self.labels)
 
     def __len__(self):
         return len(self.filenames)

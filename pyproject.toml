@@ -11,6 +11,10 @@ numpy = "^1.24.3"
 torch = "^2.0.1"
 torchaudio = "^2.0.2"
 
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-cov = "^4.1.0"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

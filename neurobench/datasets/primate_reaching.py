@@ -16,6 +16,9 @@ import h5py
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+from neurobench.models.SNN_baseline_ETH import SNN
+import yaml
+from sklearn.metrics import r2_score
 
 
 class PrimateReaching(Dataloader):
@@ -159,8 +162,7 @@ class PrimateReaching(Dataloader):
         self.labels = torch.from_numpy(labels).float()
 
         # convert position to velocity
-        self.labels = torch.diff(self.labels, dim=1)
-
+        #self.labels = torch.gradient(self.labels, dim=1, spacing=.004)[0]
 
     def apply_delay(self):
         """
@@ -197,18 +199,40 @@ class PrimateReaching(Dataloader):
 
 
 if __name__ == '__main__':
+    with open('../benchmarks/hyperparams.yaml') as f:
+        hyperparams = yaml.load(f, Loader=yaml.loader.SafeLoader)
     path = "/Users/paul/Downloads/indy_20160407_02.mat"
     window = 2500                   # length of window
     stride = 10                     # stride of sliding window
     splits = [10000, 5000, 5000]    # 10s training, 5s validation, 5s testing
 
-    ds = PrimateReaching(path, biological_delay=140, window=window, stride=stride, splits=splits)
+    ds = PrimateReaching(hyperparams['dataset_file'], biological_delay=140, window=hyperparams['steps'],
+                         stride=hyperparams['stride'],
+                         splits=hyperparams['splits'])
 
     x, y = ds.__getitem__(0)
 
+    net = SNN(192, 2, hyperparams=hyperparams)
+
+    pred, _ = net(x.unsqueeze(0))
+
+    pred = pred.squeeze().detach().numpy()
+
+    print(r2_score(pred, y))
+    y = torch.diff(y)
+    y1 = torch.gradient(y, dim=1)[0]
+    y2 = torch.gradient(y, dim=1,spacing=0.004)[0]
+    y3 = torch.gradient(y, dim=1, spacing=4)[0]
+
     plt.figure()
-    plt.subplot(211)
-    plt.plot(y[0, :])
-    plt.subplot(212)
-    plt.plot(y[1, :])
+    plt.subplot(221)
+    plt.plot(y1[0, :])
+    plt.plot(y2[0, :])
+    plt.subplot(222)
+    plt.plot(y1[1, :])
+    plt.plot(y2[1, :])
+    plt.subplot(223)
+    plt.scatter(y[0, :], pred[0, :], s=1)
+    plt.subplot(224)
+    plt.scatter(y[1, :], pred[1, :], s=1)
     plt.show()

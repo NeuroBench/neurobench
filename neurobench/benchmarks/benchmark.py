@@ -140,7 +140,7 @@ class Benchmark:
             shuffle=False)
 
         # stores (MSE, R2, Effective MAC)
-        results = np.zeros(3)
+        results = np.zeros(4)
         macs = None
 
         t0 = time.time()

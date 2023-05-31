@@ -9,6 +9,7 @@ Copyright stuff
 =====================================================================
 """
 import torch
+from sklearn.metrics import r2_score
 
 
 # TODO add computation for ANN
@@ -80,7 +81,7 @@ def compute_r2_score(true, pred):
     ssres = (true - pred).square().sum(axis=2)
 
     # compute the total sum over time of squares
-    sstot = (true - true.mean()).square().sum(axis=2)
+    sstot = (true - true.mean(dim=2, keepdim=True)).square().sum(axis=2)
 
     # compute the coefficient of determination
     r = (1 - ssres / sstot)

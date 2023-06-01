@@ -8,7 +8,6 @@ from pathlib import Path
 from neurobench.data.utils import NeuroBenchClassificationDataset
 
 
-
 class SPEECHCOMMANDS_35C(NeuroBenchClassificationDataset):
     def __init__(self,
                 root: Union[str, Path],

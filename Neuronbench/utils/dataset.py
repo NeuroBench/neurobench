@@ -26,26 +26,28 @@ files_test = glob.glob(os.path.join(test_path, "*.h5"))
 preprocess_function_name = "multi_channel_timesurface" 
 delta_t = 50000
 channels = 6  # histograms have two channels
-num_tbins = 12
+# num_tbins = 12
 height, width = 360, 640
 batch_size = 4
 max_incr_per_pixel = 5
-array_dim = [num_tbins, channels, height, width]
-array_dim_val = [3, channels, height, width]
+# array_dim = [num_tbins, channels, height, width]
 
-load_boxes_fn = partial(box_api.load_boxes, num_tbins=num_tbins, class_lookup=class_lookup, min_box_diag_network=60)
 
 class seq_dataloader:
-    def __init__(self,) :
+    def __init__(self, num_tbins = 12, batch_size = 4) :
         
         self.in_channels = channels
+        self.path = dataset_path
         self.wanted_keys = wanted_keys
         self.height = height
         self.width = width
-        self.seq_dataloader_train = SequentialDataLoader(files_train, delta_t, preprocess_function_name, array_dim, load_labels=load_boxes_fn,
+        self.num_tbins = num_tbins
+        self.array_dim = [self.num_tbins, channels, height, width]
+        self.load_boxes_fn = partial(box_api.load_boxes, num_tbins=num_tbins, class_lookup=class_lookup, min_box_diag_network=60)
+        self.seq_dataloader_train = SequentialDataLoader(files_train, delta_t, preprocess_function_name, self.array_dim, load_labels=self.load_boxes_fn,
                                       batch_size=batch_size, num_workers=4, padding=True, preprocess_kwargs={"max_incr_per_pixel": max_incr_per_pixel})
-        self.seq_dataloader_val = SequentialDataLoader(files_val, delta_t, preprocess_function_name, array_dim, load_labels=load_boxes_fn,
+        self.seq_dataloader_val = SequentialDataLoader(files_val, delta_t, preprocess_function_name, self.array_dim, load_labels=self.load_boxes_fn,
                                       batch_size=batch_size, num_workers=4, padding=True,preprocess_kwargs={"max_incr_per_pixel": max_incr_per_pixel})
-        self.seq_dataloader_test = SequentialDataLoader(files_test, delta_t, preprocess_function_name, array_dim, load_labels=load_boxes_fn,
+        self.seq_dataloader_test = SequentialDataLoader(files_test, delta_t, preprocess_function_name, self.array_dim, load_labels=self.load_boxes_fn,
                                       batch_size=batch_size, num_workers=4, padding=True,preprocess_kwargs={"max_incr_per_pixel": max_incr_per_pixel})
 

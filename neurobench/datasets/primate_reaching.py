@@ -11,7 +11,7 @@ import pickle
 
 class PrimateReaching(Dataset):
     def __init__(self, path=None, filename=None, postpr_data_path=None, regenerate=False, d_type=torch.float, biological_delay=0,
-                 spike_sorting=False, mode="2D", advance=0.016, bin_width=0.208, Np=None):
+                 spike_sorting=False, mode="2D", advance=0.016, bin_width=0.208, Np=None, num_steps=None):
         super().__init__()
 
         self.samples = None
@@ -28,7 +28,6 @@ class PrimateReaching(Dataset):
         self.regenerate = regenerate
         self.Np = Np
 
-
         # if path is None:
         #     path = select_file()
         #
@@ -40,6 +39,10 @@ class PrimateReaching(Dataset):
         self.apply_delay()
 
         self.split_data()
+
+        if num_steps: # if temporal is not None, the created samples are of shape: [num_steps, D], 
+                     # where num_steps is the number of time steps and D the number of channels 
+            self.seq_splits(num_steps)
 
     def __getitem__(self, idx):
         if self.mode == "2D":
@@ -82,6 +85,21 @@ class PrimateReaching(Dataset):
             self.samples = self.samples[:, :-self.delay]
             self.labels = self.labels[:, self.delay:]
 
+
+    def seq_splits(self, N=10):
+
+        print(self.samples.shape)
+
+        Nx = self.samples.shape[1] % N 
+        Ny = self.labels.shape[1] % N 
+
+        print(N, Nx)
+
+        X = self.samples[:, :-Nx]
+        y = self.labels[:, :-Ny]
+
+        self.samples = X.reshape(-1, N, X.shape[0])
+        self.labels = y.reshape(-1, N, y.shape[0])
 
 
     def split_data(self):

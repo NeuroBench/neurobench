@@ -44,12 +44,22 @@ class Benchmark():
 
     def train(self):
         self.net.train()
-        trainloader = DataLoader(
-            dataset=Subset(self.dataset, self.dataset.ind_train),
-            batch_size=self.hyperparams['batch_size'],
-            drop_last=True,
-            shuffle=True)
-        train_batch = iter(trainloader)
+       
+        if self.model_type=="LSTM":
+            ds_train =  torch.utils.data.TensorDataset(self.dataset.samples, self.dataset.labels)
+            trainloader = DataLoader(
+                dataset=ds_train,
+                batch_size=self.hyperparams['batch_size'],
+                drop_last=True,
+                shuffle=True)
+            train_batch = iter(trainloader)
+        else:
+            trainloader = DataLoader(
+                dataset=Subset(self.dataset, self.dataset.ind_train),
+                batch_size=self.hyperparams['batch_size'],
+                drop_last=True,
+                shuffle=True)
+            train_batch = iter(trainloader)
 
         results = torch.zeros(2)
         loss_train = 0
@@ -72,7 +82,6 @@ class Benchmark():
                     train_pre_total = torch.cat((train_pre_total, pre), dim=0)
                     train_label = torch.cat((train_label, target), dim=0)
 
-
             elif self.model_type == "SNN":
                 spk_train, mem_train = self.net(data.view(self.hyperparams['batch_size'], -1))
 
@@ -89,6 +98,24 @@ class Benchmark():
                     train_pre_total = torch.cat((train_pre_total, mem_train), dim=1)
                     train_label = torch.cat((train_label, target), dim=0)
 
+
+            elif self.model_type == "LSTM":
+                pre = self.net(data)
+
+                loss_val = self.criterion(pre, target)
+                loss_train += loss_val.item()
+
+                if i==0:
+                    train_pre_total = pre
+                    train_label = target
+                else:
+                    train_pre_total = torch.cat((train_pre_total, pre), dim=0)
+                    train_label = torch.cat((train_label, target), dim=0)
+
+            else:
+                print(f"Code doesn't support Model: {self.model_type} yet")
+                exit(-1)
+
             self.optimizer.zero_grad()
             loss_val.backward()
             self.optimizer.step()
@@ -101,6 +128,11 @@ class Benchmark():
         elif self.model_type == "SNN":
             results[1] = self.result.r2_results(train_pre_total, train_label, model_type=self.model_type,
                                                 num_step=self.hyperparams['num_steps'])
+        if self.model_type == "LSTM":
+            results[1] = self.result.r2_results(train_pre_total, train_label, model_type=self.model_type)
+        else:
+            print(f"Code doesn't support Model: {self.model_type} yet")
+            exit(-1)
 
 
         results[0] = loss_train / train_count
@@ -111,8 +143,12 @@ class Benchmark():
     def evaluate(self, type):
         self.net.eval()
         indices = self.dataset.ind_test if type == TYPE.TESTING else self.dataset.ind_val
+
+        ds_train =  torch.utils.data.TensorDataset(self.dataset.samples, self.dataset.labels)
+
         testloader = DataLoader(
-            dataset=Subset(self.dataset, indices),
+            #dataset=Subset(self.dataset, indices),
+            dataset=ds_train,
             batch_size=self.hyperparams['batch_size'],
             drop_last=True,
             shuffle=True)
@@ -139,7 +175,6 @@ class Benchmark():
                         test_pre_total = torch.cat((test_pre_total, pre), dim=0)
                         test_label = torch.cat((test_label, target), dim=0)
 
-
                 elif self.model_type == "SNN":
                     spk_test, mem_test = self.net(data.view(self.hyperparams['batch_size'], -1))
 
@@ -156,6 +191,24 @@ class Benchmark():
                         test_pre_total = torch.cat((test_pre_total, mem_test), dim=1)
                         test_label = torch.cat((test_label, target), dim=0)
 
+
+                elif self.model_type == "LSTM":
+                    pre = self.net(data)
+
+                    loss_val = self.criterion(pre, target)
+                    loss_test += loss_val.item()
+
+                    if i==0:
+                        test_pre_total = pre
+                        test_label = target
+                    else:
+                        test_pre_total = torch.cat((test_pre_total, pre), dim=0)
+                        test_label = torch.cat((test_label, target), dim=0)
+
+                else:
+                    print(f"Code doesn't support Model: {self.model_type} yet")
+                    exit(-1)
+
                 test_count += 1
 
         # R2 calculation
@@ -164,6 +217,11 @@ class Benchmark():
         elif self.model_type == "SNN":
             results[1] = self.result.r2_results(test_pre_total, test_label, model_type=self.model_type,
                                                 num_step=self.hyperparams['num_steps'])
+        elif self.model_type == "LSTM":
+            results[1] = self.result.r2_results(test_pre_total, test_label, model_type=self.model_type)
+        else:
+            print(f"Code doesn't support Model: {self.model_type} yet")
+            exit(-1)
 
         results[0] = loss_test / test_count
         print(' Validation loss: {}, R2_score: {}'.format(results[0], results[1]))
@@ -194,6 +252,15 @@ class Result():
                 r2_step += (1 - (numerator / denominator))
 
             r2 = r2_step / num_step
+
+        elif model_type == "LSTM":
+            numerator = torch.sum((target_data - pre_data)**2)
+            original_label_mean = torch.mean(target_data)
+            denominator = torch.sum((target_data - original_label_mean)**2)
+            r2 = 1- (numerator/ denominator)
+        else:
+            print(f"Code doesn't support Model: {self.model_type} yet")
+            exit(-1)
 
 
         return r2

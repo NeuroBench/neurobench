@@ -13,9 +13,15 @@ class SpeechCommands(NeuroBenchDataset):
     """
     def __init__(self, path, split="testing"):
         if split == "training":
-            raise NotImplementedError("Only testing splits are currently implemented")
+            self.filenames = set(glob("*/*.wav", root_dir=path))
+            with open(path+"validation_list.txt") as f:
+                self.filenames -= set([n.strip() for n in f.readlines()])
+            with open(path+"testing_list.txt") as f:
+                self.filenames -= set([n.strip() for n in f.readlines()])
+            self.filenames = sorted(list(self.filenames))
         elif split == "validation":
-            raise NotImplementedError("Only testing splits are currently implemented")
+            with open(path+"validation_list.txt") as f:
+                self.filenames = sorted([n.strip() for n in f.readlines()])
         else: 
             with open(path+"testing_list.txt") as f:
                 self.filenames = sorted([n.strip() for n in f.readlines()])

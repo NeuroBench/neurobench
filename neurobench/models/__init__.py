@@ -1,1 +1,1 @@
-from .TCN import TCN
+from neurobench.models.OmniglotCNN import OmniglotCNN

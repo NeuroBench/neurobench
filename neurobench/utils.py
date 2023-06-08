@@ -1,5 +1,0 @@
-"""
-"""
-
-def utility_function():
-    ...

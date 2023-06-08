@@ -40,7 +40,6 @@ cfg = Dict2Class(cfg)
 
 model = OmniglotCNN(cfg.model.cfg.input_channels,
                     cfg.model.cfg.hidden_channels,
-                    cfg.model.cfg.hidden_channels,
                     cfg.meta_learning.ways)
 
 train_dataset = torchvision.datasets.Omniglot('../../data/datasets/data', background=True, download=True)

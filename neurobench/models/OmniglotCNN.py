@@ -9,11 +9,11 @@ def conv_block(in_channels: int, out_channels: int):
     )
 
 class OmniglotCNN(nn.Sequential):
-    def __init__(self, x_dim=1, hid_dim=64, z_dim=64, num_ways = 5):
+    def __init__(self, input_channels=1, hidden_channels=64, num_ways = 5):
         super(OmniglotCNN, self).__init__(*[
-            conv_block(x_dim, hid_dim),
-            conv_block(hid_dim, hid_dim),
-            conv_block(hid_dim, hid_dim),
-            conv_block(hid_dim, z_dim),
-            nn.Linear(z_dim, num_ways)
+            conv_block(input_channels, hidden_channels),
+            conv_block(hidden_channels, hidden_channels),
+            conv_block(hidden_channels, hidden_channels),
+            conv_block(hidden_channels, hidden_channels),
+            nn.Linear(hidden_channels, num_ways)
         ])

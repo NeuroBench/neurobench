@@ -31,7 +31,7 @@ def gradient_based_fast_adapt(learner: nn.Module, loss: nn.Module, sample: Tuple
 
     return valid_error, valid_accuracy
 
-def train_using_maml(
+def train_using_MAML(
     model: nn.Module,
     train_data_loader: torch.utils.data.DataLoader,
     test_data_loader: torch.utils.data.DataLoader,

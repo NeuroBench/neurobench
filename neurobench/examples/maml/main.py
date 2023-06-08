@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch_mate.data.utils import FewShot
 from torch_mate.utils import get_device
 
-from neurobench.examples.maml.utils import train_using_maml
+from neurobench.examples.MAML.utils import train_using_MAML
 from neurobench.models import OmniglotCNN
 from neurobench.utils import Dict2Class
 

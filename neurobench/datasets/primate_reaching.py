@@ -11,7 +11,7 @@ import pickle
 
 class PrimateReaching(Dataset):
     def __init__(self, path=None, filename=None, postpr_data_path=None, regenerate=False, d_type=torch.float, biological_delay=0,
-                 spike_sorting=False, mode="2D", advance=0.016, bin_width=0.208, Np=None, num_steps=None):
+                 spike_sorting=False, mode="2D", advance=0.016, bin_width=0.208, Np=None, num_steps=None, batch_size=None):
         super().__init__()
 
         self.samples = None
@@ -38,11 +38,11 @@ class PrimateReaching(Dataset):
 
         self.apply_delay()
 
-        self.split_data()
-
-        if num_steps: # if temporal is not None, the created samples are of shape: [num_steps, D], 
-                     # where num_steps is the number of time steps and D the number of channels 
+        if mode=="3D" and num_steps: #the created samples are of shape: [num_steps, D], 
+                                     # where num_steps is the number of time steps and D the number of channels 
             self.seq_splits(num_steps)
+
+        self.split_data(batch_size)
 
     def __getitem__(self, idx):
         if self.mode == "2D":
@@ -86,23 +86,29 @@ class PrimateReaching(Dataset):
             self.labels = self.labels[:, self.delay:]
 
 
-    def seq_splits(self, N=10):
+    def seq_splits(self, N):
+        """
+        Reshape samples as [N,num_samples,D],
+        where N is the number of time steps and D is the input dimension
+        """
 
-        print(self.samples.shape)
+        #TODO only temporary solution, the code below removes:  
+        # Nx data points from inputs    
+        # Ny data points from targes
 
         Nx = self.samples.shape[1] % N 
         Ny = self.labels.shape[1] % N 
 
-        print(N, Nx)
+        if Nx != 0:
+            X = self.samples[:, :-Nx]
+        if Ny != 0:
+            y = self.labels[:, :-Ny]
 
-        X = self.samples[:, :-Nx]
-        y = self.labels[:, :-Ny]
-
-        self.samples = X.reshape(-1, N, X.shape[0])
-        self.labels = y.reshape(-1, N, y.shape[0])
+        self.samples = X.reshape(N, -1, X.shape[0])
+        self.labels = y.reshape(N, -1, y.shape[0])
 
 
-    def split_data(self):
+    def split_data(self, batch_size):
         split_num = 5
         total_len = self.samples.shape[1]
         del_row = round(self.bin_width / self.advance)
@@ -113,10 +119,14 @@ class PrimateReaching(Dataset):
         test_len = sub_length - train_len - val_len
 
         for num in range(split_num):
+
             self.ind_train += [x for x in range(num * sub_length + del_row, num * sub_length + train_len)]
             self.ind_val += [x for x in range(num * sub_length + train_len + del_row,
                                               (num * sub_length + train_len) + val_len)]
             self.ind_test += [x for x in range(num * sub_length + train_len + val_len + del_row,
                                             (num * sub_length + train_len + val_len) + test_len)]
 
-
+        if batch_size:
+            assert len(self.ind_train) > batch_size, "train data set size needs to be at least larger than the batch size: reduce the number of timesteps"
+            assert len(self.ind_val) > batch_size, "val data set size needs to be at least larger than the batch size: reduce the number of timesteps"
+            assert len(self.ind_test) > batch_size, "test data set size needs to be at least larger than the batch size: reduce the number of timesteps"

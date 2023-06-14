@@ -101,11 +101,16 @@ class PrimateReaching(Dataset):
 
         if Nx != 0:
             X = self.samples[:, :-Nx]
+        else:
+            X = self.samples
+
         if Ny != 0:
             y = self.labels[:, :-Ny]
+        else:
+            X = self.samples
 
-        self.samples = X.reshape(N, -1, X.shape[0])
-        self.labels = y.reshape(N, -1, y.shape[0])
+        self.samples = X.reshape(X.shape[0], N, -1).permute(1,2,0)
+        self.labels = y.reshape(y.shape[0], N, -1).permute(1,2,0)
 
 
     def split_data(self, batch_size):

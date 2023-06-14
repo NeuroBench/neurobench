@@ -35,7 +35,7 @@ if __name__ == "__main__":
                             biological_delay=0, spike_sorting=False, Np=25,
                             mode="2D", advance=0.016, bin_width=0.08)
     if args.model_name == 'LSTM':
-        net = LSTMModel()
+        net = LSTMModel(input_dim=96, hidden_size=32, num_layers=2, output_dim=2, dropout_rate=0.5)
     elif args.model_name == 'ANN':
         net = ANNModel(input_dim=96, layer1=32, layer2=48, output_dim=2, dropout_rate=0.5)
     elif args.model_name == 'SNN':

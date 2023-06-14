@@ -92,22 +92,30 @@ class PrimateReaching(Dataset):
         where N is the number of time steps and D is the input dimension
         """
 
-        #TODO only temporary solution, the code below removes:  
+        #TODO only temporary solution, to construct new sample the code below removes:  
         # Nx data points from inputs    
         # Ny data points from targes
+        #
+        # possible solutions:
+        # during training, remove different samples every epoch (act also as some sort of data augmentation)
+        # during test/validation, perhaps use padding and mask the relevant portion of the output when measuring the accuracy
+        #
+        # alternativaly, pick a number of time steps where (total_number_samples % N) = 0
 
         Nx = self.samples.shape[1] % N 
         Ny = self.labels.shape[1] % N 
 
         if Nx != 0:
             X = self.samples[:, :-Nx]
+            print(f"Warning: mumber of sample points (input) removed: {Nx}")
         else:
             X = self.samples
 
         if Ny != 0:
             y = self.labels[:, :-Ny]
+            print(f"Warning: mumber of sample points (label) removed: {Ny}")
         else:
-            X = self.samples
+            X = self.labels
 
         self.samples = X.reshape(X.shape[0], N, -1).permute(1,2,0)
         self.labels = y.reshape(y.shape[0], N, -1).permute(1,2,0)

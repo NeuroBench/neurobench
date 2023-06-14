@@ -135,6 +135,7 @@ class Benchmark():
 
     def evaluate(self, type):
         self.net.eval()
+
         indices = self.dataset.ind_test if type == TYPE.TESTING else self.dataset.ind_val
 
         testloader = DataLoader(
@@ -213,7 +214,10 @@ class Benchmark():
             raise ValueError(f"Code doesn't support {self.model_type} model yet")
 
         results[0] = loss_test / test_count
-        print(' Validation loss: {}, R2_score: {}'.format(results[0], results[1]))
+        if type == TYPE.TESTING:
+            print(' Test loss: {}, R2_score: {}'.format(results[0], results[1]))
+        else:
+            print(' Validation loss: {}, R2_score: {}'.format(results[0], results[1]))
 
         return results
 

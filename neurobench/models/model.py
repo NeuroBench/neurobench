@@ -93,16 +93,15 @@ class LSTMModel(nn.Module):
         super().__init__()
 
         self.lstm = nn.LSTM(input_dim, hidden_size, num_layers, batch_first=True)
-        self.activation = nn.ReLU()
         self.drop = nn.Dropout(dropout_rate)
-        self.fc1 = nn.Linear(hidden_size, output_dim)
-        self.batchnorm = nn.BatchNorm1d(hidden_size)
+        self.activation = nn.ReLU()
+        self.fc = nn.Linear(hidden_size, output_dim)
 
     def forward(self, x):
 
-        x, _ = self.lstm(x)
-        x = self.activation(self.drop(x))
+        xs, _ = self.lstm(x)
+        xd = self.drop(xs)
 
-        out = self.fc1(x)
+        out = self.fc(self.activation(xd))
 
         return out

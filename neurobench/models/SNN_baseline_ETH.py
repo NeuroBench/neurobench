@@ -175,3 +175,20 @@ class SNN(nn.Module):
         if self.hyperparams['use_bias']:
             return np.array([1, 1, 1, 1])
         return np.array([0, 0, 0, 0])
+
+    def get_bn(self):
+        """
+        Get number of how many Multiplies a batchnorm requires per layer
+
+        Returns
+        ----------
+        dim    : list of int
+            number of decaying variables per layer
+        """
+        return np.array([3, 3, 3, 3])
+
+    def get_algorithmic_timestep(self):
+        return .004
+
+    def get_binning_window(self):
+        return .004

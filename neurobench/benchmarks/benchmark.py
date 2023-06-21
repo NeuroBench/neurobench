@@ -17,6 +17,7 @@ from enum import Enum
 import matplotlib.pyplot as plt
 import os
 from torch import nn
+from tqdm import tqdm
 
 from neurobench.datasets import Dataset
 from neurobench.benchmarks.metrics import compute_r2_score, compute_effective_macs, compute_latency
@@ -50,6 +51,7 @@ class Benchmark:
     evaluate
         runs testing / validation pipeline
     """
+
     def __init__(self, dataset: Dataset, net: nn.Module, hyperparams):
         super().__init__()
         self.dataset = dataset
@@ -68,7 +70,7 @@ class Benchmark:
 
         """
         # iterate over number of epochs
-        for epoch in range(self.hyperparams['epochs']):
+        for epoch in tqdm(range(self.hyperparams['epochs'])):
             # run training loop and update results
             self.result.add_results(epoch, TYPE.TRAINING, *self.train())
 
@@ -90,6 +92,7 @@ class Benchmark:
 
         # stores (MSE, R2, Effective MAC)
         results = np.zeros(4)
+        y_concat, pred_concat = None, None
         macs = None
 
         t0 = time.time()
@@ -111,17 +114,32 @@ class Benchmark:
             with torch.no_grad():
                 current_batch_size = x.shape[0]
                 results[0] += loss.item() * current_batch_size
-                results[1] += compute_r2_score(y, prediction)
-                macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
-                results[3] += compute_latency(y, prediction) * current_batch_size
 
-            print("finished Batch {} in {}s".format(batch, time.time()-t0))
+                # concatenate outputs for r2 computation
+                if len(y.shape) == 2:
+                    y_concat = y if y_concat is None else torch.cat((y_concat, y), 0)
+                    pred_concat = prediction if pred_concat is None else torch.cat((pred_concat, prediction), 0)
+                else:
+                    #results[1] += compute_r2_score(y_concat, pred_concat, dim=2) * current_batch_size
+                    y_concat = y[:, :, -1] if y_concat is None else torch.cat((y_concat, y[:, :, -1]), 0)
+                    pred_concat = prediction[:, :, -1] if pred_concat is None \
+                        else torch.cat((pred_concat, prediction[:, :, -1]), 0)
+
+                macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
 
         # compute average over number of samples
         results /= len(train_loader.dataset.indices)
 
+        # compute r2 over output
+        results[1] = compute_r2_score(y_concat, pred_concat, dim=0)
+
         # using the average spiking activity per layer, compute the effective macs
         results[2] = compute_effective_macs(self.net, macs / len(train_loader.dataset.indices))
+
+        # compute the latency of the network using the max_cross correlation of the last two layers
+        results[3] = compute_latency(y, prediction, macs=results[2],
+                                     algorithmic_timestep=self.net.get_algorithmic_timestep(),
+                                     binning_window=self.net.get_binning_window())
 
         return results, time.time() - t0
 
@@ -139,8 +157,9 @@ class Benchmark:
             batch_size=self.hyperparams['batch_size'],
             shuffle=False)
 
-        # stores (MSE, R2, Effective MAC)
+        # stores (MSE, R2, Effective MAC, latency)
         results = np.zeros(4)
+        y_concat, pred_concat = None, None
         macs = None
 
         t0 = time.time()
@@ -162,15 +181,31 @@ class Benchmark:
             with torch.no_grad():
                 current_batch_size = x.shape[0]
                 results[0] += loss.item() * current_batch_size
-                results[1] += compute_r2_score(y, prediction)
+
+                # concatenate outputs for r2 computation
+                if len(y.shape) == 2:
+                    y_concat = y if y_concat is None else torch.cat((y_concat, y), 0)
+                    pred_concat = prediction if pred_concat is None else torch.cat((pred_concat, prediction), 0)
+                else:
+                    y_concat = y[:, :, -1] if y_concat is None else torch.cat((y_concat, y[:, :, -1]), 0)
+                    pred_concat = prediction[:, :, -1] if pred_concat is None \
+                        else torch.cat((pred_concat, prediction[:, :, -1]), 0)
+
                 macs = spikes * current_batch_size if macs is None else macs + spikes * current_batch_size
-                results[3] += compute_latency(y, prediction) * current_batch_size
 
         # compute average over number of samples
         results /= len(dataloader.dataset.indices)
 
+        # compute r2 over output
+        results[1] = compute_r2_score(y_concat, pred_concat, dim=0)
+
         # using the average spiking activity per layer, compute the effective macs
         results[2] = compute_effective_macs(self.net, macs / len(dataloader.dataset.indices))
+
+        # compute the latency of the network using the max_cross correlation of the last two layers
+        results[3] = compute_latency(y, prediction, macs=results[2],
+                                     algorithmic_timestep=self.net.get_algorithmic_timestep(),
+                                     binning_window=self.net.get_binning_window())
 
         return results, time.time() - t0
 
@@ -192,6 +227,7 @@ class Result:
         visualize the mse, r2 and effective macs over epochs
 
     """
+
     def __init__(self, hyperparams):
         super().__init__()
         # results for training, validation and testing per epoch
@@ -227,7 +263,8 @@ class Result:
         duration: float
             duration of current epoch
         """
-        self.mse[idx, type.value], self.r2[idx, type.value], self.macs[idx, type.value], self.latency[idx, type.value], =\
+        self.mse[idx, type.value], self.r2[idx, type.value], self.macs[idx, type.value], self.latency[
+            idx, type.value], = \
             results
         self.logger.info("{} Epoch: {} in {}s with Loss L2: {:3.4} R2: {:3.4} MAC {:3.4} Latency: {:3.4}".format(
             type.name, idx, duration, *results))
@@ -249,6 +286,7 @@ class Result:
         # plot R2 score over epochs
         plt.subplot(222)
         plt.title("R2")
+        plt.ylim([0, 1])
         plt.plot(self.r2)
 
         # plot effective MACs per timestep over epochs

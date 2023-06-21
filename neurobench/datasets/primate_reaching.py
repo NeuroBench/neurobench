@@ -27,10 +27,11 @@ class PrimateReaching(Dataloader):
         path to MATLAB datafile
     biological_delay     :  int
         biological delay between spike train and movement onset. Labels are shifted by this amount
+        (ATTENTION: in timesteps, not ms)
     window  : int
-        window that is extracted from the data
+        window that is extracted from the data (ATTENTION: in timesteps, not ms)
     stride  : int
-        stride of the sliding window
+        stride of the sliding window (ATTENTION: in timesteps, not ms)
     use_spike_sorting   : bool
         if true, use spike sorted data, otherwise combine units into channels (summation vs non-summation)
     splits  : list
@@ -47,8 +48,8 @@ class PrimateReaching(Dataloader):
     split_data
         split data into training, testing and validation data
     """
-    def __init__(self, path=None, biological_delay=140, window=2500, stride=10, use_spike_sorting=False,
-                 splits=(10000, 5000, 5000)):
+    def __init__(self, path=None, biological_delay=0, window=2500, stride=10, use_spike_sorting=False,
+                 splits=(10000, 5000, 5000), binned=False):
 
         super().__init__()
 
@@ -63,6 +64,7 @@ class PrimateReaching(Dataloader):
         self.use_spike_sorting = use_spike_sorting
         self.delay = biological_delay
         self.splits = splits
+        self.binned = binned
 
         # if no file selected, open dialog window to select data file
         if path is None:
@@ -97,8 +99,13 @@ class PrimateReaching(Dataloader):
         labels  : ndarray
             corresponding finger position  (2 x self.window)
         """
-        sample = self.samples[:, idx:idx + self.window]
-        labels = self.labels[:, idx:idx + self.window]
+        # if binning window is True, sum window and return velocity at last timestep
+        if self.binned:
+            sample = self.samples[:, idx:idx + self.window].sum(dim=1)
+            labels = self.labels[:, idx + self.window]
+        else:
+            sample = self.samples[:, idx:idx + self.window]
+            labels = self.labels[:, idx:idx + self.window]
 
         return sample, labels
 
@@ -129,8 +136,15 @@ class PrimateReaching(Dataloader):
         # iterate over hdf5 dataframe and preprocess data
         for row_idx, row in enumerate(spikes):
             for col_idx, element in enumerate(row):
+
                 # get indices of spikes and convert data to spike train
-                bins, _ = np.histogram(df[element][()], bins=t.squeeze())
+                if isinstance(element, np.ndarray):
+                    bins, _ = np.histogram(element, bins=t.squeeze())
+                else:
+                    bins, _ = np.histogram(df[element][()], bins=t.squeeze())
+
+                # histogram is assigns spikes to lower bound of binning window, therefor increment by one to shift to
+                # upper bound
                 idx = np.nonzero(bins)[0] + 1
                 spike_train[row_idx, col_idx, idx] = 1
 

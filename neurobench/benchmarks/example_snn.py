@@ -1,7 +1,7 @@
 """
 =====================================================================
 Project:      NeuroBench
-File:         main.py
+File:         example_snn.py
 Description:  Example Code for how to run Benchmark
 Date:         12. May 2023
 =====================================================================
@@ -17,7 +17,7 @@ import torch
 
 
 if __name__ == '__main__':
-    with open('hyperparams.yaml') as f:
+    with open('hyperparams_snn.yaml') as f:
         hyperparams = yaml.load(f, Loader=yaml.loader.SafeLoader)
 
     if torch.cuda.is_available():
@@ -27,7 +27,7 @@ if __name__ == '__main__':
         print("using CPU")
         hyperparams["device"] = torch.device("cpu")
 
-    ds = PrimateReaching(hyperparams['dataset_file'], biological_delay=140, window=hyperparams['steps'],
+    ds = PrimateReaching(hyperparams['dataset_file'], biological_delay=35, window=hyperparams['window'],
                          stride=hyperparams['stride'],
                          splits=hyperparams['splits'])
 

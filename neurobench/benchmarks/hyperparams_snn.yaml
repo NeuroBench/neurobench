@@ -33,16 +33,15 @@
 ---
 #Training
  batch_size: 16 #how many samples per batch
- epochs: 2 #how many epochs to train for (maximum epochs)
+ epochs: 100 #how many epochs to train for (maximum epochs)
  early_stopping_patience: -1 #How many epochs to continue training with no improvement. -1 for infinite patience.
  loss: L2 # "L1", "L2" or "corr" for training using the corresponding loss function
  dropout: 0.5 #dropout probability
  weight_decay: 0.01 #L2 weight decay strength
  lr: 0.001 #L2 weight decay strength
- steps: 2500 #how many steps to unfold the SNN for in training
+ window: 250 #how many steps to unfold the SNN for in training
  warmup_steps: 2 #how many steps results to discard in the loss calculation
- window: 'sliding'
- stride: 200
+ stride: 50
  splits: [10000, 5000, 5000] # splits data into chunks of sum(splits)ms with (train x validation x test)
 
 #Neuron

@@ -161,7 +161,7 @@ class PrimateReaching(Dataloader):
 
         # Dimensions: (channels x timesteps)
         self.samples = torch.from_numpy(spike_train).float()
-        # Dimensions: (nr_features x channels)
+        # Dimensions: (nr_features x timesteps)
         self.labels = torch.from_numpy(labels).float()
 
         # convert position to velocity

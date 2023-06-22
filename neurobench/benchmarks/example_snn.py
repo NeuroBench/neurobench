@@ -27,6 +27,8 @@ if __name__ == '__main__':
         print("using CPU")
         hyperparams["device"] = torch.device("cpu")
 
+    torch.manual_seed(hyperparams['seed'])
+
     ds = PrimateReaching(hyperparams['dataset_file'], biological_delay=35, window=hyperparams['window'],
                          stride=hyperparams['stride'],
                          splits=hyperparams['splits'])
@@ -38,3 +40,5 @@ if __name__ == '__main__':
     snn_benchmark.run()
 
     snn_benchmark.result.visualize_learning_curve()
+
+    snn_benchmark.result.plot_trace(net=net, data=ds, index=ds.ind_train[0], device=hyperparams['device'])

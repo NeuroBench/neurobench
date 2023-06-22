@@ -33,7 +33,7 @@
 ---
 #Training
  batch_size: 16 #how many samples per batch
- epochs: 100 #how many epochs to train for (maximum epochs)
+ epochs: 30 #how many epochs to train for (maximum epochs)
  early_stopping_patience: -1 #How many epochs to continue training with no improvement. -1 for infinite patience.
  loss: L2 # "L1", "L2" or "corr" for training using the corresponding loss function
  dropout: 0.5 #dropout probability
@@ -70,7 +70,7 @@
 #Network
  batchnorm: 'none' #What Batch normalisation to use. Currently only 'tdBN' (threshold dependent batch normalisation) and 'none' implemented.
  neuron_count: 50 #count of neurons per fully connected layer
- use_bias: False #Are the Neurons are allowed to have a bias or not
+ use_bias: True #Are the Neurons are allowed to have a bias or not
 
 #Reporting
  loss_steps: 50 #How often to report the loss during training in the report file (after every xth Batch)

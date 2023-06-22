@@ -306,3 +306,32 @@ class Result:
             plt.savefig("results/" + self.path + "/results.png")
         else:
             plt.show()
+
+    def plot_trace(self, net, data, index, device, save=True):
+        x, y = data.__getitem__(index)
+        x = x.to(device)
+
+        pred = net(x.unsqueeze(0))[0].squeeze(0)
+
+        r = compute_r2_score(true=y.to(device), pred=pred, dim=0)
+        y = y.cpu().detach().numpy()
+        pred = pred.cpu().detach().numpy()
+
+        plt.figure()
+        plt.subplot(221)
+        plt.title("R: " + str(r))
+        plt.plot(y[0, :])
+        plt.plot(pred[0, :])
+        plt.subplot(222)
+        plt.plot(y[1, :])
+        plt.plot(pred[1, :])
+        plt.subplot(223)
+        plt.scatter(y[0, :], pred[0, :])
+        plt.subplot(224)
+        plt.scatter(y[1, :], pred[1, :])
+        plt.legend(('True', "Prediction"))
+
+        if save:
+            plt.savefig("results/" + self.path + "/trace.png")
+        else:
+            plt.show()

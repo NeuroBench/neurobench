@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch_mate.data.utils import FewShot
 from torch_mate.utils import get_device
 
-from neurobench.examples.MAML.utils import train_using_MAML
+from neurobench.examples.few_shot_learning.utils import train_using_MAML
 from neurobench.models import OmniglotCNN
 from neurobench.utils import Dict2Class
 
@@ -45,7 +45,7 @@ model = OmniglotCNN(cfg.model.cfg.input_channels,
 train_dataset = torchvision.datasets.Omniglot('../../data/datasets/data', background=True, download=True)
 test_dataset = torchvision.datasets.Omniglot('../../data/datasets/data', background=False, download=True)
 
-few_shot_args = (cfg.meta_learning.shots, cfg.meta_learning.query_shots, None, None, None)
+few_shot_args = (cfg.meta_learning.shots, cfg.meta_learning.query_shots, False, None, None, None)
 
 train_data_loader = DataLoader(FewShot(
     train_dataset,
@@ -63,7 +63,7 @@ num_workers=8)
 
 device = get_device()
 
-train_using_maml(
+train_using_MAML(
     model,
     train_data_loader,
     test_data_loader,

@@ -1,1 +1,2 @@
-from .benchmark import *
+from .benchmark_ann import *
+from .benchmark_lstm import *

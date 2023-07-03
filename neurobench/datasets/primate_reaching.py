@@ -35,12 +35,6 @@ class PrimateReaching(Dataset):
         self.time_segments = None
         self.max_segment_length = 0
 
-        # if path is None:
-        #     path = select_file()
-        #
-        # if valid_path(path):
-        #     self.path = path
-
         self.load_data()
 
         if self.delay:
@@ -51,18 +45,12 @@ class PrimateReaching(Dataset):
 
         if self.mode == "3D":
             self.transform_to_3d()
-
-        # if self.bin_process:
-        #     self.bin_processing()
         
 
     def __getitem__(self, idx):
         if self.mode == "2D":
             sample = self.samples[:, idx]
             label = self.labels[:, idx]
-        # elif self.mode == "3D":
-        #     sample = self.samples[:, idx, :]
-        #     label = self.labels[:, idx]
         elif self.mode == "3D":
             sample = self.samples[idx, :, :]
             label = self.labels[idx, :]
@@ -88,7 +76,6 @@ class PrimateReaching(Dataset):
 
             with open(os.path.join(f'{self.postpr_data_path}', 'input', f'{self.filename}.pkl'), 'rb') as f:
                 self.samples = pickle.load(f)
-                # self.samples = self.samples[:96, :]
                 print("Successfully loaded train samples from:", f'{self.postpr_data_path}', 'input', f'{self.filename}.pkl')
 
             with open(os.path.join(f'{self.postpr_data_path}', 'label', f'{self.filename}.pkl'), 'rb') as f:
@@ -117,6 +104,12 @@ class PrimateReaching(Dataset):
 
             
     def get_flag_index(self, target_pos):
+        """
+            Find the beginning and end of a segment based on the
+            change in value of the target_pos array in the dataset,
+            as change in value means that the monkey has reached the target
+            and a new target is set.
+        """
         target_diff = np.zeros_like(target_pos)
 
         target_diff[:-1, 0] = np.diff(target_pos[:, 0], n=1)
@@ -130,10 +123,12 @@ class PrimateReaching(Dataset):
         return index_union
 
     def split_into_segments(self, indices):
+        """
+            Each segments start & end is defined as:
+            [index[i], index[i+1]), [index[i+1], index[i+2]), ...
+        """
         start_end = []
         for i in range(len(indices)-1):
-            # if i == 0:
-            #     start_end.append([0, indices[i]])
             start_end.append([indices[i], indices[i+1]])
 
         return start_end
@@ -146,13 +141,12 @@ class PrimateReaching(Dataset):
             elif self.labels.shape[1] - self.samples.shape[1] > 0:
                 self.labels = self.labels[:, :-diff]
 
-        advance_num = int(self.advance//0.004) # è·³è¿‡çš„é‡‡æ ·æ•°é‡
-        bin_width_num = int(self.bin_width//0.004) # çª—å£é‡‡æ ·æ•°é‡
+        advance_num = int(self.advance//0.004)
+        bin_width_num = int(self.bin_width//0.004)
 
         if self.mode == "3D":
             new_sample = torch.zeros((self.samples.shape[0], int(self.samples.shape[1] // advance_num), bin_width_num), dtype=self.d_type)
             new_label = torch.zeros((self.labels.shape[0], int(self.samples.shape[1] // advance_num)), dtype=self.d_type)
-            # print(new_sample.shape)
             for col in range(new_sample.shape[1]):
                 if col <  bin_width_num/advance_num:
                     bin_start = 0
@@ -184,21 +178,15 @@ class PrimateReaching(Dataset):
         elif self.mode == "2D":
             new_sample = torch.zeros((self.samples.shape[0], int(self.samples.shape[1]// advance_num)), dtype=self.d_type)
             new_label = torch.zeros((self.labels.shape[0], int(self.samples.shape[1]// advance_num)), dtype=self.d_type)
-            # print(new_label.shape)
             for col in range(min(new_sample.shape[1], new_label.shape[1])):
-                # print(col)
                 if col <  bin_width_num/advance_num:
                     bin_start = 0
                     bin_end = int(col * advance_num)
-                    # print(bin_start, bin_end)
-                    # print(torch.sum(self.samples[:, bin_start: bin_end],dim=1))
                     new_sample[:, col] = torch.sum(self.samples[:, bin_start: bin_end], dim=1)
                 else:
                     bin_start = int(col * advance_num - bin_width_num)
                     bin_end = int(col * advance_num)
-                    # print(bin_start, bin_end)
                     new_sample[:, col] = torch.sum(self.samples[:,  bin_start: bin_end], dim=1)
-                # print(col)
                 new_label[:, col] = self.labels[:, col * advance_num]
 
             self.samples = new_sample
@@ -211,15 +199,11 @@ class PrimateReaching(Dataset):
         if self.delay:
             self.samples = self.samples[:, :-self.delay]
             self.labels = self.labels[:, self.delay:]
-            # self.start_end_indices -= self.delay
-            # self.time_segments -= self.delay
 
     def split_data(self):
         # This is No. of chunks
-        split_num = 4   # originaly 5, test 4 based on Arindam's suggestion
-        # total_len = self.samples.shape[1]
+        split_num = 4
         total_segments = len(self.time_segments)
-        # del_row = int(self.bin_width / self.advance)
         sub_length = int(total_segments / split_num) # This is no of segments in each chunk
         print(total_segments, sub_length)
 
@@ -249,8 +233,6 @@ class PrimateReaching(Dataset):
         print("The final dimension is: ", len(samples), len(labels))
 
     def transform_to_3d(self):
-        # self.samples is a list containing all of the segments.
-        # each segment is a torch.tensor of dimension 96*8753
         advance_num = int(self.advance//0.004)
         bin_width_num = int(self.bin_width//0.004)
         new_samples, new_labels = [], []

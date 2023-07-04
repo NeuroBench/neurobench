@@ -1,14 +1,22 @@
 """
 """
-import torch
 
-def model_size(model, data, preds):
-    param_size = 0
-    for param in model.parameters():
-        param_size += param.nelement() * param.element_size()
+def check_data(metric, key_list, run_data):
+    missing_keys = []
 
-    buffer_size = 0
-    for buffer in model.buffers():
-        buffer_size += buffer.nelement() * buffer.element_size()
-    return param_size + buffer_size
-    
+    for key in key_list:
+        if key not in run_data:
+            missing_keys.append(key)
+
+    if len(missing_keys) > 0:
+        raise ValueError("{} missing required tracked keys in run_data: {}".format(metric, missing_keys))
+
+    return
+
+
+# example
+def model_size(run_data):
+    check_data("model_size", ["model"], run_data)
+
+    model = run_data["model"]
+    return model.size()

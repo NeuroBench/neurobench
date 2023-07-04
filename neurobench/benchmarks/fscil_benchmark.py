@@ -3,14 +3,19 @@
 from tqdm import tqdm
 from . import metrics
 
-class Benchmark():
-    def __init__(self, model, data, processors, metric_list):
+class FSCILBenchmark():
+    def __init__(self, model, dataloader, processors, metric_list):
         self.model = model
-        self.data = data
+        self.dataloader = iter(dataloader)
         self.processors = processors
         self.metrics = {m: getattr(metrics, m) for m in metric_list}
 
     def run(self):
+        try:
+            data = next(self.dataloader)
+        except StopIteration:
+            raise ValueError("Test dataloader is empty")
+
         run_data = {}
         run_data["model"] = self.model
         run_data["data"] = self.data

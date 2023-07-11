@@ -3,8 +3,8 @@ import torch
 from speech2spikes import S2S
 
 from neurobench.datasets import MSWC_FSCIL
-from neurobench.models import FSCILModel
-from neurobench.benchmarks import FSCILBenchmark
+from neurobench.models import NeuroBenchModel
+from neurobench.benchmarks import Benchmark
 
 # seed run
 torch.manual_seed(0)
@@ -16,18 +16,12 @@ test_loader = MSWC_FSCIL("data/mswc", split="testing")
 s2s = S2S()
 
 ## Define model ##
-class MAML(FSCILModel):
+class MAML(NeuroBenchModel):
     def __init__(self, net):
         self.net = net
 
     def __call__(self, data):
         ...
-
-    def train(self, session, data):
-        if session == 0:
-            ...
-        else:
-            ...
 
     def track_run():
         ...
@@ -38,10 +32,15 @@ class MAML(FSCILModel):
 net = ...
 model = MAML(net)
 
-benchmark = FSCILBenchmark(model, test_loader, [s2s], ["accuracy", "model_size", "latency", "MACs"])
-
-for session, train_data in enumerate(train_loader):
+for session, (train_data, test_data) in enumerate(zip(train_loader, test_loader)):
     print("Session: {}".format(session))
-    model.train(session, train_data)
+    
+    ## train model using train_data ##
+    net = train(net, train_data)
+
+    ## run benchmark ##
+    model = NeuroBenchModel(net)
+    benchmark = Benchmark(model, test_data, [s2s], ["accuracy", "model_size", "latency", "MACs"])
+
     session_results = benchmark.run()
     print(session_results)

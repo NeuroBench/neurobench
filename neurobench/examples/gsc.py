@@ -28,17 +28,8 @@ net = nn.Sequential(
 net.load_state_dict(torch.load("neurobench/examples/model_data/s2s_gsc_snntorch", map_location=torch.device('cpu')))
 
 ## Define model ##
-class SNN(SNNTorchModel):
-    def __init__(self, net):
-        super().__init__(net)
+model = SNNTorchModel(net)
 
-    def track_run():
-        ...
-
-    def track_batch():
-        ...
-
-model = SNN(net)
 benchmark = Benchmark(model, test_set, [s2s], ["accuracy", "model_size", "latency", "MACs"])
 results = benchmark.run()
 print(results)

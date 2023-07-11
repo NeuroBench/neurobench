@@ -1,4 +1,4 @@
-import numpy as np
+import torch
 
 from neurobench.datasets import MackeyGlass
 from neurobench.models import NumPyModel
@@ -11,12 +11,16 @@ np.random.seed(seed=0)
 train_set = MackeyGlass(..., split="training")
 test_set = MackeyGlass(..., split="testing")
 
-# ???? How to generalize NumPyModel
-class ESNNumPyModel(NumPyModel):
-    ...
+## Define model ##
+net = nn.Module(...)
 
-model = ESNNumPyModel()
+## train / load ##
+#   net = train(train_set, net)
+#   net = torch.load(...)
+
+model = TorchModel(net)
+
 benchmark = Benchmark(model, test_set, [], ["NRMSE", "model_size", "latency", "MACs"]) 
-# TODO: latency calculation different than the reaching task?
+# TODO: metrics?
 results = benchmark.run()
 print(results)

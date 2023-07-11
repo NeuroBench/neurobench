@@ -9,26 +9,22 @@ test_set = PrimateReaching(..., split="testing")
 preprocessors = [Preprocessor(), ...]
 
 ## Define model ##
-# Vincent has ANN, SNN (snntorch), LSTM
-# Paul has custom defined SNN
-class ReachingModel(NeuroBenchModel): 
-    def __init__(self, net):
-        ...
-
-    def __call__(self, x):
-    	...
-
-    def track_run():
-        ...
-
-    def track_batch():
-        ...
-
-# load model
 net = ...
-model = ReachingModel(net)
 
-# TODO: for latency do we need cross-correlation or is it always just one timestep to prediction?
+# Vincent has ANN, SNN (snntorch), LSTM 
+
+#   model = TorchModel(net)
+#   model = SNNTorchModel(net)
+
+# Paul has custom defined SNN
+
+#   class ReachingSNN(TorchModel): 
+#       def __init__(self, net):
+#           ...
+#       def __call__(self, x):
+#           ...
+#   model = ReachingSNN(net)
+
 metrics = ["R2", "model_size", "latency", "MACs"]
 
 benchmark = Benchmark(model, test_set, preprocessors, metrics)

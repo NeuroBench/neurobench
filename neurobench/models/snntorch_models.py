@@ -23,9 +23,4 @@ class SNNTorchModel(NeuroBenchModel):
             spikes.append(spk_out)
         spikes = torch.stack(spikes)
         return spikes.permute(1, 2, 0)
-    
-    def parameters(self):
-        return self.net.parameters()
-    
-    def buffers(self):
-        return self.net.buffers()
+

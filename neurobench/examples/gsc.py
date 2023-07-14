@@ -25,9 +25,11 @@ net = nn.Sequential(
     nn.Linear(256, 35),
     snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
 )
-net.load_state_dict(torch.load("neurobench/examples/s2s_gsc_snntorch", map_location=torch.device('cpu')))
+net.load_state_dict(torch.load("neurobench/examples/model_data/s2s_gsc_snntorch", map_location=torch.device('cpu')))
 
+## Define model ##
 model = SNNTorchModel(net)
-benchmark = Benchmark(model, test_set, [s2s], ["model_size"])
+
+benchmark = Benchmark(model, test_set, [s2s], ["accuracy", "model_size", "latency", "MACs"])
 results = benchmark.run()
 print(results)

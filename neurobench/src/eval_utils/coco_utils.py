@@ -1,3 +1,4 @@
+import gc
 import torch
 import torchvision.ops.boxes as box_ops
 
@@ -5,10 +6,11 @@ import numpy as np
 
 from pycocotools.coco import COCO
 from pycocotools.cocoeval import COCOeval
+##from metavision_ml.metrics.coco_eval import CocoEvaluator
 
 # modified from https://github.com/prophesee-ai/prophesee-automotive-dataset-toolbox/blob/master/src/metrics/coco_eval.py
 
-def coco_eval(gts, detections, height, width, labelmap=("car", "pedestrian")):
+def coco_eval(gts, detections, height, width, labelmap=None):
     """simple helper function wrapping around COCO's Python API
     :params:  gts iterable of numpy boxes for the ground truth
     :params:  detections iterable of numpy boxes for the detections
@@ -16,7 +18,7 @@ def coco_eval(gts, detections, height, width, labelmap=("car", "pedestrian")):
     :params:  width int
     :params:  labelmap iterable of class labels
     """
-    categories = [{"id": id + 1, "name": class_name, "supercategory": "none"}
+    categories = [{"id": id, "name": class_name, "supercategory": "none"}
                   for id, class_name in enumerate(labelmap)]
 
     dataset, results = _to_coco_format(gts, detections, categories, height=height, width=width)
@@ -26,15 +28,22 @@ def coco_eval(gts, detections, height, width, labelmap=("car", "pedestrian")):
     coco_gt.createIndex()
     coco_pred = coco_gt.loadRes(results)
 
+    # evaluator = CocoEvaluator(classes=labelmap, height=height, width=width)
+    # for key in gts:
+    #     evaluator.partial_eval([np.concatenate(gts[key])], [np.concatenate(detections[key])])
+    # coco_kpi = evaluator.accumulate()
     coco_eval = COCOeval(coco_gt, coco_pred, 'bbox')
     coco_eval.params.imgIds = np.arange(1, len(gts) + 1, dtype=int)
     coco_eval.evaluate()
     coco_eval.accumulate()
     coco_eval.summarize()
-    return coco_eval.stats
+    stats_dict = coco_eval.stats
+    del coco_gt, coco_pred, coco_eval, dataset, results
+    gc.collect()
+    return stats_dict
 
 
-def _to_coco_format(gts, detections, categories, height=240, width=304):
+def _to_coco_format(gts, detections, categories, height, width):
     """
     utilitary function producing our data in a COCO usable format
     """
@@ -69,7 +78,7 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
                 "iscrowd": False,
                 "image_id": image_id,
                 "bbox": [x, y, w, h],
-                "category_id": int(class_id + 1),
+                "category_id": int(class_id),
                 "id": ann_id
             }
             annotations.append(annotation)
@@ -81,12 +90,13 @@ def _to_coco_format(gts, detections, categories, height=240, width=304):
             bbox = pred['boxes'][i,:]
             class_id = pred['labels'][i]
             score = pred['scores'][i]
+            
             converted_bbox = box_ops.box_convert(bbox, "xyxy", "xywh")
             x, y, w, h = converted_bbox
             
             image_result = {
                 'image_id': image_id,
-                'category_id': int(class_id + 1),
+                'category_id': int(class_id),
                 'score': float(score),
                 'bbox': [x, y, w, h],
             }

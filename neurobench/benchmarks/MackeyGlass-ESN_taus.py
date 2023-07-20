@@ -107,7 +107,6 @@ MG_parameters = [(25, 0.3303),(26, 0.8540),(20, 0.8781),(18, 0.4360),(30, 0.5388
 # Number of simulations to run for each time-series
 repeat = 5
 
-
 ##
 ## Parameters for generating and visualizing data
 ##
@@ -174,7 +173,7 @@ for i_cns in range(len(MG_parameters)):
         print('testing NRMSE ESN: ' + str(nrmse_test.item()))
         
         # Visualize data and predictions
-        plot_results(mackeyglass, esn.prediction_train, prediction, nrmse_train, nrmse_test, 2000, 2000,)
+        plot_results(mackeyglass, esn.prediction_train.detach().numpy(), prediction.detach().numpy(), nrmse_train, nrmse_test, 2000, 2000,)
     
     
     print('Median results:')

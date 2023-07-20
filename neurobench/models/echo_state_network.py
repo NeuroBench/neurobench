@@ -3,16 +3,17 @@
 Project:      NeuroBench
 File:         echo_state_network.py
 Description:  Python code providing an implementation of Echo State Networks 
-Date:         14. July 2023
+Date:         20. July 2023
 =====================================================================
 Copyright stuff
 =====================================================================
 """
 
 import torch
+import torch.nn as nn
+import torch.nn.functional as F
 
-
-class EchoStateNetwork():
+class EchoStateNetwork(nn.Module):
     """Class for Echo State Networks that creates a network and includes methods for training the network and for performing the inference with the trained model. For details of the architecture please refer to `A Practical Guide to Applying Echo State Networks <https://link.springer.com/chapter/10.1007/978-3-642-35289-8_36>`_.
 
     Args:
@@ -42,6 +43,7 @@ class EchoStateNetwork():
         include_input: bool = True,
         seed_id: int = 0,      
     ):
+        super(EchoStateNetwork, self).__init__()
         self.in_channels = in_channels
         self.reservoir_size = reservoir_size
         self.input_scale = input_scale
@@ -71,22 +73,28 @@ class EchoStateNetwork():
         torch.manual_seed(seed_id)
         
         #Uniform random projection matrix for feeding input into the reservoir   
-        self.Win = (torch.rand((self.reservoir_size,self.in_channels_bias),dtype=torch.float64)-0.5) 
+        Win = (torch.rand((self.reservoir_size,self.in_channels_bias),dtype=torch.float64)-0.5) 
         #Scaling Win by input_scale
-        self.Win = self.input_scale*self.Win
+        Win = self.input_scale*Win
 
         #Recurrent connectivity matrix W for the reservoir
         #Choose nonzero connections 
-        self.W = (torch.rand((self.reservoir_size,self.reservoir_size),dtype=torch.float64) <= self.connect_prob).type(torch.float64) 
+        W = (torch.rand((self.reservoir_size,self.reservoir_size),dtype=torch.float64) <= self.connect_prob).type(torch.float64) 
         #Assign random values to these connections
-        self.W[self.W == True] = torch.normal(0.,1., size=(torch.sum(self.W).type(torch.int).item(),),dtype=torch.float64)
+        W[W == True] = torch.normal(0.,1., size=(torch.sum(W).type(torch.int).item(),),dtype=torch.float64)
         # Scale the resuling recurrent connectivity matrix 
-        w, _ = torch.linalg.eig(self.W)
-        self.W = self.spectral_radius*self.W/torch.abs(w[0])
+        w, _ = torch.linalg.eig(W)
+        W = self.spectral_radius*W/torch.abs(w[0])
         # Alternative way to form the orthonormal recurrent connectivity matrix
         #self.W, _ = np.linalg.qr(np.random.normal(size=(self.reservoir_size,self.reservoir_size)))
         #self.W = self.spectral_radius*self.W            
         
+        self.Win = nn.Linear(self.in_channels_bias, self.reservoir_size, bias = False, dtype = torch.float64)
+        self.W = nn.Linear(self.reservoir_size, self.reservoir_size, bias = False, dtype = torch.float64)
+        with torch.no_grad():
+            self.Win.weight.copy_(Win)
+            self.W.weight.copy_(W)
+            
     # Performs the training phase of the Echo State Network.
     def fit(
         self, 
@@ -102,52 +110,65 @@ class EchoStateNetwork():
         if self.include_bias:
             training_data = torch.concatenate((1*torch.ones((warmtrain_pts,1)), training_data, ), axis=1)
             
+
             
         # Initialize reservoir's state
-        self.reservoir = torch.zeros((self.reservoir_size+self.reservoir_extension, 1),dtype=torch.float64)
+        self.reservoir = torch.zeros((self.reservoir_size, 1),dtype=torch.float64)
 
         # Obtain the reservoir states for the training phase
         self.reservoir_tr = torch.zeros((self.reservoir_size+self.reservoir_extension, warmtrain_pts),dtype=torch.float64)
         for i in range(0,warmtrain_pts):    
+            
+            # Project input to the reservoir & Update the reservoir            
+            x = torch.tanh(self.W(self.reservoir.T) + self.Win(training_data[i:i+1,:])) 
+            self.reservoir = (1-self.leakage)*self.reservoir + self.leakage*x.T            
+
             # Bias & the current input if applicable
             if self.include_input:
-                self.reservoir[0:self.reservoir_extension,0] = training_data[i,:]
-            # Update the reservoir
-            self.reservoir[self.reservoir_extension:,0:1] = (1-self.leakage)*self.reservoir[self.reservoir_extension:,0:1] + self.leakage*torch.tanh(self.Win@training_data[i:i+1,:].T + self.W @ self.reservoir[self.reservoir_extension:,0:1])
-            
-            self.reservoir_tr[:,i:i+1] = self.reservoir
+                self.reservoir_tr[:,i:i+1] = torch.cat((training_data[i:i+1,:].T ,self.reservoir), dim=0)                
+            else:
+                self.reservoir_tr[:,i:i+1] = self.reservoir
         
         # Done on purpose for the sake of testing
-        self.reservoir[:,0] = self.reservoir_tr[:,-2]
-            
+        self.reservoir[:,0] = self.reservoir_tr[self.reservoir_extension:,-2]
+
+    
         # Ridge regression: train the readout matrix Wout to map reservoir_tr to targets. The warmup period defined by warmup_pts is ignored
         #self.Wout = targets @ self.reservoir_tr[:,warmup_pts:].T @ np.linalg.pinv(self.reservoir_tr[:,warmup_pts:] @ self.reservoir_tr[:,warmup_pts:].T + self.ridge_param*np.identity(self.reservoir_size+self.reservoir_extension))
-        self.Wout = torch.linalg.lstsq((self.reservoir_tr[:,warmup_pts:] @ self.reservoir_tr[:,warmup_pts:].T + self.ridge_param*torch.eye(self.reservoir_size+self.reservoir_extension)), (self.reservoir_tr[:,warmup_pts:] @ targets), rcond=None, driver='gelsd')[0].T
-
-        #self.Wout = np.linalg.lstsq((self.reservoir_tr[:,warmup_pts:] @ self.reservoir_tr[:,warmup_pts:].T + self.ridge_param*np.identity(self.reservoir_size+self.reservoir_extension)), (self.reservoir_tr[:,warmup_pts:] @ targets), rcond=None)[0].T
+        Wout = torch.linalg.lstsq((self.reservoir_tr[:,warmup_pts:] @ self.reservoir_tr[:,warmup_pts:].T + self.ridge_param*torch.eye(self.reservoir_size+self.reservoir_extension)), (self.reservoir_tr[:,warmup_pts:] @ targets), rcond=None, driver='gelsd')[0].T
         
-        self.prediction_train =  (self.Wout @ self.reservoir_tr[:,warmup_pts:]).T
+        self.Wout = nn.Linear(Wout.size(1), Wout.size(0), bias = False, dtype = torch.float64)
+        with torch.no_grad():
+            self.Wout.weight.copy_(Wout)        
+        
+        #Predictions on the traiing data
+        self.prediction_train =  self.Wout(self.reservoir_tr[:,warmup_pts:].T)
 
     ##
-    ## Forecast with ESN for a single step in the autonomous mode
-    ##        
-    def __call__(self, sample):
+    ## Forecast with ESN for a single step
+    ##     
+  
+    def forward(self, sample):
         
         # Update the reservoir state for the next predicition 
         if self.include_bias:
             sample_b = torch.concatenate((1*torch.ones((1, 1)), sample,), axis=0)
         else:
-            sample_b = sample        
+            sample_b = sample       
 
-        if self.include_input:
-            self.reservoir[0:self.reservoir_extension,0:1] = sample_b[:]   
-
-        # Update the reservoir
-        self.reservoir[self.reservoir_extension:,0:1] = (1-self.leakage)*self.reservoir[self.reservoir_extension:,0:1] + self.leakage*torch.tanh(self.Win@sample_b[:,0:1] + self.W @ self.reservoir[self.reservoir_extension:,0:1])
+        # Project input to the reservoir & Update the reservoir
+        x = torch.tanh(self.W(self.reservoir.T) + self.Win(sample_b.T)) 
+        self.reservoir = (1-self.leakage)*self.reservoir + self.leakage*x.T
         
+        # Include input if applicable
+        if self.include_input:
+            x = torch.cat((sample_b,self.reservoir), dim=0)
+        else:
+            x = self.reservoir
+                
         # Make predictions based on the current reservoir state
-        prediction = self.Wout @ self.reservoir        
-    
-        return prediction.T
+        prediction = self.Wout(x.T)
+
+        return prediction    
    
         

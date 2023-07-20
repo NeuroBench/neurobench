@@ -3,7 +3,7 @@
 Project:      NeuroBench
 File:         mackey_glass.py
 Description:  Python code describing dataloader for the Mackey-Glass task
-Date:         14. July 2023
+Date:         20. July 2023
 =====================================================================
 Copyright stuff
 =====================================================================
@@ -86,7 +86,7 @@ class MackeyGlass(Dataloader):
         # Total time to run for in a single simulation
         self.singleruntime = self.warmup+self.traintime+self.testtime
         # Total time to simulate the system
-        self.maxtime = (self.repeat-1)*self.runspantime + self.singleruntime
+        self.maxtime = (self.repeat-1)*self.runspantime + self.singleruntime + dt
         # Discrete-time versions of the continuous times specified above
         self.warmup_pts=round(self.warmup/self.dt)
         self.traintime_pts=round(self.traintime/self.dt)
@@ -153,5 +153,36 @@ class MackeyGlass(Dataloader):
         self.training_data = self.mackeyglass_soln[self.offset:self.offset+self.warmtrain_pts,:]   
         self.training_targets = self.mackeyglass_soln[self.offset+self.warmup_pts+1:self.offset+self.warmtrain_pts+1,:]
         self.test_data = self.mackeyglass_soln[self.offset+self.warmtrain_pts:self.offset+self.singleruntime_pts,:]  
+        self.test_data_targets = self.mackeyglass_soln[self.offset+self.warmtrain_pts+1:self.offset+self.singleruntime_pts+1,:]  
              
-        
+    def __len__(self):
+        """
+        returns number of samples in dataset
+
+        Returns
+        ----------
+        length:  int
+            number of samples in dataset
+        """
+        return len(self.test_data)      
+    
+    def __getitem__(self, idx):
+        """
+        Getter method for test data in the Dataloader
+
+        Parameters
+        ----------
+        idx : int
+            index of test sample. 
+
+        Returns
+        ----------
+        sample:  tensor
+            individual data sample (samples x channels)
+        targets:  tensor
+            corresponding next state of the system (samples x features x window)
+        """
+        sample = self.test_data[idx, :]
+        targets = self.test_data_targets[idx, :,]
+
+        return sample, targets    

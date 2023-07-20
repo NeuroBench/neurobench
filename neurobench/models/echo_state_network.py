@@ -109,10 +109,8 @@ class EchoStateNetwork(nn.Module):
         # Add constant bias if applicable
         if self.include_bias:
             training_data = torch.concatenate((1*torch.ones((warmtrain_pts,1)), training_data, ), axis=1)
-            
-
-            
-        # Initialize reservoir's state
+   
+        # Initialize reservoir's state to an empty state
         self.reservoir = torch.zeros((self.reservoir_size, 1),dtype=torch.float64)
 
         # Obtain the reservoir states for the training phase
@@ -128,10 +126,6 @@ class EchoStateNetwork(nn.Module):
                 self.reservoir_tr[:,i:i+1] = torch.cat((training_data[i:i+1,:].T ,self.reservoir), dim=0)                
             else:
                 self.reservoir_tr[:,i:i+1] = self.reservoir
-        
-        # Done on purpose for the sake of testing
-        self.reservoir[:,0] = self.reservoir_tr[self.reservoir_extension:,-2]
-
     
         # Ridge regression: train the readout matrix Wout to map reservoir_tr to targets. The warmup period defined by warmup_pts is ignored
         #self.Wout = targets @ self.reservoir_tr[:,warmup_pts:].T @ np.linalg.pinv(self.reservoir_tr[:,warmup_pts:] @ self.reservoir_tr[:,warmup_pts:].T + self.ridge_param*np.identity(self.reservoir_size+self.reservoir_extension))

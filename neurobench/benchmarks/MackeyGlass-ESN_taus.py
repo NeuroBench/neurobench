@@ -3,7 +3,7 @@
 Project:      NeuroBench
 File:         MackeyGlass-ESN_taus.py
 Description:  Python code benchmarking on the Mackey-Glass task
-Date:         14. July 2023
+Date:         20. July 2023
 =====================================================================
 Copyright stuff
 =====================================================================
@@ -16,8 +16,6 @@ import matplotlib.pyplot as plt
 
 from neurobench.models.echo_state_network import EchoStateNetwork
 from neurobench.datasets.mackey_glass import MackeyGlass
-
-
 
 ##
 ## Visualize data and predictions
@@ -107,6 +105,9 @@ MG_parameters = [(25, 0.3303),(26, 0.8540),(20, 0.8781),(18, 0.4360),(30, 0.5388
 # Number of simulations to run for each time-series
 repeat = 5
 
+MG_parameters = [(17, 0.9)]
+repeat = 2
+
 ##
 ## Parameters for generating and visualizing data
 ##
@@ -154,15 +155,14 @@ for i_cns in range(len(MG_parameters)):
         prediction = torch.zeros((mackeyglass.testtime_pts,esn.in_channels), dtype=torch.float64)
         
         #  Forecast with ESN in the autonomous mode
-        sample = mackeyglass.training_data[-1:,:]
+        sample = mackeyglass.test_data[0:1,:]
         for j in range(0,mackeyglass.testtime_pts):
             sample = esn(sample)
             prediction[j,:] = sample
-            #sample = mackeyglass.test_data[j:j+1,:]
         
         # calculate NRMSE between true Mackey-Glass and train/test prediction for the predefined number of Lyapunov times
         nrmse_train = torch.sqrt(torch.mean((mackeyglass.training_targets-esn.prediction_train)**2)/mackeyglass.total_var)
-        nrmse_test = torch.sqrt(torch.mean((mackeyglass.test_data[0:lyaptime_pts,:]-prediction[0:lyaptime_pts,:])**2)/mackeyglass.total_var)
+        nrmse_test = torch.sqrt(torch.mean((mackeyglass.test_data_targets[0:lyaptime_pts,:]-prediction[0:lyaptime_pts,:])**2)/mackeyglass.total_var)
         
         # Update the statistics
         nrmse_train_statistics[i,i_cns] = nrmse_train

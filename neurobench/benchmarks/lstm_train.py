@@ -29,19 +29,27 @@ repeat = 1
 ## Parameters for generating and visualizing data
 ##
 
-
 # Time step for sampling data 
 dt = 1.0
-n_epochs = 200
+n_epochs = 2#00
 # Lyapunov time of Mackey-Glass system. IMPORTANT: NOT FINALIZED
-lyaptime=185 # From numerical estimates 
+lyaptime = 185 # From numerical estimates 
 num_lyaptime = 3.
 # discrete-time versions of the times defined above
-lyaptime_pts=round(num_lyaptime*lyaptime/dt)
+lyaptime_pts = round(num_lyaptime*lyaptime/dt)
+plot_fit = False
+
+# LSTM parameters
+params = {}
+params['input_dim'] = 1
+params['hidden_size'] = 50
+params['n_layers'] = 2
+params['output_dim'] = 1
+params['dtype'] = torch.float64
 
 # Collect the obtained statistics of models performance
-nrmse_train_statistics = torch.zeros((repeat,len(MG_parameters)), dtype=torch.float64)
-nrmse_test_statistics =  torch.zeros((repeat,len(MG_parameters)), dtype=torch.float64)
+nrmse_train_statistics = torch.zeros((repeat, len(MG_parameters)), dtype=torch.float64)
+nrmse_test_statistics =  torch.zeros((repeat, len(MG_parameters)), dtype=torch.float64)
 
 # Loop over all time-series in MG_parameters
 for i_cns in range(len(MG_parameters)):
@@ -61,7 +69,7 @@ for i_cns in range(len(MG_parameters)):
         seed_id = i
         
         # Initialize an LSTM model
-        lstm = LSTMModel()
+        lstm = LSTMModel(**params)
         
         # LSTM training phase
         lstm.train()
@@ -95,24 +103,22 @@ for i_cns in range(len(MG_parameters)):
         torch.save(lstm, 'lstm.pth')
 
         # plot fit
-        plt.figure()
-        
-        plt.rcParams['font.size'] = 8 
-        plt.rcParams['legend.fontsize'] = 6 
+        if plot_fit:
+            print("Plotting training fit")
+            plt.figure()
+            
+            plt.rcParams['font.size'] = 8 
+            plt.rcParams['legend.fontsize'] = 6 
 
-        #x = np.arange(mackeyglass.training_data.size()[0])
+            x = np.arange(mackeyglass.training_data.size()[0])
 
-        #plt.plot(x, mackeyglass.training_data.cpu().detach().numpy()[:,0], lw=2, label='input')
-        #plt.plot(x[mackeyglass.warmup_pts:], prediction_train.cpu().detach().numpy()[:,0], lw=2, label='prediction')
-        #plt.plot(x[mackeyglass.warmup_pts:], mackeyglass.training_targets.cpu().detach().numpy()[:,0], lw=2, label='target')
-        x = np.arange(600, 1400)
+            plt.plot(x, mackeyglass.training_data.cpu().detach().numpy()[:,0], lw=2, label='input')
+            plt.plot(x[mackeyglass.warmup_pts:], prediction_train.cpu().detach().numpy()[:,0], lw=2, label='prediction')
+            plt.plot(x[mackeyglass.warmup_pts:], mackeyglass.training_targets.cpu().detach().numpy()[:,0], lw=2, label='target')
 
-        plt.plot(x, mackeyglass.training_data.cpu().detach().numpy()[600:1400,0], lw=1, zorder=3, label='input')
-        plt.plot(x[400:], prediction_train.cpu().detach().numpy()[:400,0], lw=1, zorder=2, label='prediction')
-        plt.plot(x[400:], mackeyglass.training_targets.cpu().detach().numpy()[:400,0], lw=1.5, zorder=1, label='target')
+            plt.xlabel("time steps")
+            plt.ylabel("signal amplitude")
 
-        plt.xlabel("time steps")
-        plt.ylabel("signal amplitude")
-
-        plt.legend()
-        plt.savefig(f"lstm_fit_{n_epochs}.png", dpi=600) 
+            plt.legend()
+            print(f" save figure: lstm_fit_{n_epochs}.png") 
+            plt.savefig(f"lstm_fit_{n_epochs}.png", dpi=600) 

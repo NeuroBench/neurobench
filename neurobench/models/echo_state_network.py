@@ -89,12 +89,16 @@ class EchoStateNetwork(nn.Module):
         #self.W, _ = np.linalg.qr(np.random.normal(size=(self.reservoir_size,self.reservoir_size)))
         #self.W = self.spectral_radius*self.W            
         
+        self.tanh = nn.Tanh()
+        # Initialize reservoir's state to an empty state
+        self.reservoir = nn.Parameter(torch.zeros((self.reservoir_size, 1),dtype=torch.float64, requires_grad=False))
+
         self.Win = nn.Linear(self.in_channels_bias, self.reservoir_size, bias = False, dtype = torch.float64)
         self.W = nn.Linear(self.reservoir_size, self.reservoir_size, bias = False, dtype = torch.float64)
         with torch.no_grad():
             self.Win.weight.copy_(Win)
             self.W.weight.copy_(W)
-            
+
     # Performs the training phase of the Echo State Network.
     def fit(
         self, 
@@ -109,17 +113,14 @@ class EchoStateNetwork(nn.Module):
         # Add constant bias if applicable
         if self.include_bias:
             training_data = torch.concatenate((1*torch.ones((warmtrain_pts,1)), training_data, ), axis=1)
-   
-        # Initialize reservoir's state to an empty state
-        self.reservoir = torch.zeros((self.reservoir_size, 1),dtype=torch.float64)
 
         # Obtain the reservoir states for the training phase
         self.reservoir_tr = torch.zeros((self.reservoir_size+self.reservoir_extension, warmtrain_pts),dtype=torch.float64)
         for i in range(0,warmtrain_pts):    
             
             # Project input to the reservoir & Update the reservoir            
-            x = torch.tanh(self.W(self.reservoir.T) + self.Win(training_data[i:i+1,:])) 
-            self.reservoir = (1-self.leakage)*self.reservoir + self.leakage*x.T            
+            x = self.tanh(self.W(self.reservoir.T) + self.Win(training_data[i:i+1,:])) 
+            self.reservoir.data = (1-self.leakage)*self.reservoir + self.leakage*x.T   # TODO         
 
             # Bias & the current input if applicable
             if self.include_input:
@@ -151,8 +152,13 @@ class EchoStateNetwork(nn.Module):
             sample_b = sample       
 
         # Project input to the reservoir & Update the reservoir
-        x = torch.tanh(self.W(self.reservoir.T) + self.Win(sample_b.T)) 
-        self.reservoir = (1-self.leakage)*self.reservoir + self.leakage*x.T
+
+
+
+        x = self.tanh(self.W(self.reservoir.T) + self.Win(sample_b.T)) 
+        self.reservoir.data = (1-self.leakage)*self.reservoir + self.leakage*x.T
+
+        # JY, TODO: self.W and self.Win are not being tracked by the op counter
         
         # Include input if applicable
         if self.include_input:

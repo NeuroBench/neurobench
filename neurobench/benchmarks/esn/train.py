@@ -61,7 +61,7 @@ for i_cns in range(len(MG_parameters)):
         
         # Initialize an ESN
         esn = EchoStateNetwork(in_channels=1, reservoir_size = 200, input_scale = torch.tensor([0.2,1],dtype = torch.float64), connect_prob = 0.15, spectral_radius = 1.25, leakage = 0.3, ridge_param = 1.e-8, seed_id = seed_id )
-        
+        breakpoint()
         # ESN training phase
         esn.train()
 

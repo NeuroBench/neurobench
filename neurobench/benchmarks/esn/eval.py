@@ -65,7 +65,7 @@ for i_cns in range(len(MG_parameters)):
         
         esn.eval()
 
-        mode = "single_step"
+        mode = "autonomous"
 
         # Forecast autonomous: model is fed with its own output
         if mode == "autonomous":
@@ -81,7 +81,7 @@ for i_cns in range(len(MG_parameters)):
                 sample = esn(sample)
                 prediction[j,:] = sample
         
-        breakpoint()
+        # breakpoint()
 
         # calculate NRMSE between true Mackey-Glass and train/test prediction for the predefined number of Lyapunov times
         nrmse_test = torch.sqrt(torch.mean((mackeyglass.test_data_targets[0:lyaptime_pts,:]-prediction[0:lyaptime_pts,:])**2)/mackeyglass.total_var)

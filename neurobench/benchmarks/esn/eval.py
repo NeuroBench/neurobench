@@ -10,6 +10,9 @@ Copyright stuff
 """
 
 
+import sys
+sys.path.append("../../..")
+
 import math
 import torch
 import matplotlib.pyplot as plt

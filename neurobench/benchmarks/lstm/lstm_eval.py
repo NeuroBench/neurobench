@@ -16,6 +16,8 @@ import math
 import torch
 import matplotlib.pyplot as plt
 
+from fvcore.nn import FlopCountAnalysis, flop_count_table
+
 from neurobench.models.echo_state_network import EchoStateNetwork
 from neurobench.datasets.mackey_glass import MackeyGlass
 
@@ -62,13 +64,19 @@ for i_cns in range(len(MG_parameters)):
         
         lstm.eval()
 
-        mode = "single_step"
+        mode = "autonomous"
 
         # Forecast autonomous: model is fed with its own output
         if mode == "autonomous":
             sample = mackeyglass.test_data[0:1,:]
             for j in range(0,mackeyglass.testtime_pts):
                 sample = lstm(sample)
+
+                # # Note: calculating flops doesn't seem to impact the network state (the model forward is not actually run)
+                # rand = torch.randn_like(sample)
+                # flops = FlopCountAnalysis(lstm, (rand,))
+                # out = flops.total()
+
                 prediction[j,:] = sample
 
         # Forecast single_step: model is fed with the true data
@@ -77,8 +85,32 @@ for i_cns in range(len(MG_parameters)):
                 sample = mackeyglass.test_data[j:j+1,:]
                 sample = lstm(sample)
                 prediction[j,:] = sample
-        
-        #breakpoint()
+
+        rand = torch.randn_like(sample)
+        flops = FlopCountAnalysis(lstm, (rand,))
+        # out = flops.total()
+        print(flop_count_table(flops))
+
+        '''
+        | module             | #parameters or shape   | #flops   |
+        |:-------------------|:-----------------------|:---------|
+        | model              | 31.051K                | 50       |
+        |  rnn               |  31K                   |  0       |
+        |   rnn.weight_ih_l0 |   (200, 1)             |          |
+        |   rnn.weight_hh_l0 |   (200, 50)            |          |
+        |   rnn.bias_ih_l0   |   (200,)               |          |
+        |   rnn.bias_hh_l0   |   (200,)               |          |
+        |   rnn.weight_ih_l1 |   (200, 50)            |          |
+        |   rnn.weight_hh_l1 |   (200, 50)            |          |
+        |   rnn.bias_ih_l1   |   (200,)               |          |
+        |   rnn.bias_hh_l1   |   (200,)               |          |
+        |  fc1               |  51                    |  50      |
+        |   fc1.weight       |   (1, 50)              |          |
+        |   fc1.bias         |   (1,)                 |          |
+
+        --> Using the official LSTM torch implementation, the rnn portion is still not counted by the fvcore flopcounter. 
+
+        '''
 
         # calculate NRMSE between true Mackey-Glass and train/test prediction for the predefined number of Lyapunov times
         nrmse_test = torch.sqrt(torch.mean((mackeyglass.test_data_targets[0:lyaptime_pts,:]-prediction[0:lyaptime_pts,:])**2)/mackeyglass.total_var)

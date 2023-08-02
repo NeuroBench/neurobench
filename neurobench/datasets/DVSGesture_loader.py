@@ -2,6 +2,8 @@
 """
 
 import torch
+from torch.utils.data import DataLoader
+
 from tonic.datasets import DVSGesture as tonic_DVSGesture
 
 from glob import glob
@@ -55,9 +57,17 @@ class DVSGesture(NeuroBenchDataset):
     def __getitem__(self, idx):
         return self.dataset[idx][0], self.dataset[idx][1]
 
+    
 
 if __name__ == '__main__':
     dataset = DVSGesture('C:\\Harvard University\\Neurobench\\DVS Gesture\\code\\neurobench\\datasets')
-    print(dataset.filenames)
-    print(len(dataset))
-    print(dataset[0])
+    # print(dataset.filenames)
+    # print(len(dataset))
+    import sys
+    np.set_printoptions(threshold=sys.maxsize)
+    print(dataset[0][0].dtype)
+    gen_test = DataLoader(dataset,batch_size=4,shuffle=True)
+    for local_batch, local_labels in gen_test:
+        print(local_batch, local_labels)
+    # print(iter(gen_test))
+    # print(next(iter(gen_test)))

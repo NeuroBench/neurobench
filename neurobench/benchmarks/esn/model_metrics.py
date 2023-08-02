@@ -39,7 +39,7 @@ def model_size(model, data, preds):
     return param_size + buffer_size
 
 # calculate model connection sparsity based off the Linear layers in the network
-# TODO: should this be called something other than connection sparsity? since it is reporting the ratio of actual to possible synapses
+# 0 is completely dense, 1 is completely sparse
 def model_connection_sparsity(model):
     possible_synapses = 0
     actual_synapses = 0
@@ -49,7 +49,7 @@ def model_connection_sparsity(model):
             possible_synapses += torch.numel(module.weight.data)
             actual_synapses += torch.count_nonzero(module.weight.data)
 
-    return actual_synapses / possible_synapses
+    return (possible_synapses - actual_synapses) / possible_synapses
         
 # Load ESN
 esn = torch.load('esn.pth')

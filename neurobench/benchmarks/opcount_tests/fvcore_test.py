@@ -3,6 +3,10 @@ import torch
 
 from fvcore.nn import FlopCountAnalysis, flop_count_table
 
+import sys
+sys.path.append("../../..")
+
+
 class TestModel(nn.Module):
     '''
     standard ANN, this works fine
@@ -80,13 +84,18 @@ class TestSJModel(nn.Module):
         return self.net(x)
 
 def test(model, inputs):
+    model.eval()
     y = model(inputs)
     flops = FlopCountAnalysis(model, (inputs,))
-
+    out = flops.total()
     print(flop_count_table(flops))
 
-test(TestModel(), torch.randn((1,3,10,10)))
+# test(TestModel(), torch.randn((1,3,10,10)))
 
 # test(TestSNNModel(), torch.randn((1,20)))
 
 # test(TestSJModel(), torch.randn((1,28,28)))
+
+test(torch.load("../esn/esn.pth"), torch.randn((1,1), dtype=torch.float64))
+
+test(torch.load("../lstm/lstm.pth"), torch.randn((1,1), dtype=torch.float64))

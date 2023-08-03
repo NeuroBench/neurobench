@@ -9,7 +9,6 @@ Copyright stuff
 =====================================================================
 """
 
-
 import sys
 sys.path.append("../../..")
 
@@ -38,15 +37,13 @@ num_lyaptime = 3.
 # discrete-time versions of the times defined above
 lyaptime_pts=round(num_lyaptime*lyaptime/dt)
 
-
 # Collect the obtained statistics of models performance
 nrmse_train_statistics = torch.zeros((repeat,len(MG_parameters)), dtype=torch.float64)
 nrmse_test_statistics =  torch.zeros((repeat,len(MG_parameters)), dtype=torch.float64)
 
-
 # Loop over all time-series in MG_parameters
 for i_cns in range(len(MG_parameters)):
-    print(i_cns)
+    print("Parameters set:", MG_parameters[i_cns])
     
     # Generate the data
     tau = MG_parameters[i_cns][0]
@@ -59,16 +56,13 @@ for i_cns in range(len(MG_parameters)):
         mackeyglass.split_data(i)
         
         # Load ESN
-        esn = torch.load('esn.pth')
+        lstm = torch.load('../lstm/lstm.pth')
 
         # Forecasting phase
         # Create a placeholder to store predictions
-        prediction = torch.zeros((mackeyglass.testtime_pts,esn.in_channels), dtype=torch.float64)
+        prediction = torch.zeros((mackeyglass.testtime_pts, lstm.input_dim), dtype=torch.float64)
         
-        esn.eval()
-
-        for param in esn.parameters():
-            param.requires_grad = False
+        lstm.eval()
 
         mode = "autonomous"
 
@@ -76,14 +70,12 @@ for i_cns in range(len(MG_parameters)):
         if mode == "autonomous":
             sample = mackeyglass.test_data[0:1,:]
             for j in range(0,mackeyglass.testtime_pts):
-                sample = esn(sample)
+                sample = lstm(sample)
 
-                # TODO: for stateful network does the flopcounter forward call impact the network state?
-                rand = torch.randn_like(sample)
-                flops = FlopCountAnalysis(esn, (rand,))
-
-                breakpoint()
-                out = flops.total()
+                # # Note: calculating flops doesn't seem to impact the network state (the model forward is not actually run)
+                # rand = torch.randn_like(sample)
+                # flops = FlopCountAnalysis(lstm, (rand,))
+                # out = flops.total()
 
                 prediction[j,:] = sample
 
@@ -91,10 +83,34 @@ for i_cns in range(len(MG_parameters)):
         elif mode == "single_step":
             for j in range(0,mackeyglass.testtime_pts):
                 sample = mackeyglass.test_data[j:j+1,:]
-                sample = esn(sample)
+                sample = lstm(sample)
                 prediction[j,:] = sample
-        
-        # breakpoint()
+
+        rand = torch.randn_like(sample)
+        flops = FlopCountAnalysis(lstm, (rand,))
+        # out = flops.total()
+        print(flop_count_table(flops))
+
+        '''
+        | module             | #parameters or shape   | #flops   |
+        |:-------------------|:-----------------------|:---------|
+        | model              | 31.051K                | 50       |
+        |  rnn               |  31K                   |  0       |
+        |   rnn.weight_ih_l0 |   (200, 1)             |          |
+        |   rnn.weight_hh_l0 |   (200, 50)            |          |
+        |   rnn.bias_ih_l0   |   (200,)               |          |
+        |   rnn.bias_hh_l0   |   (200,)               |          |
+        |   rnn.weight_ih_l1 |   (200, 50)            |          |
+        |   rnn.weight_hh_l1 |   (200, 50)            |          |
+        |   rnn.bias_ih_l1   |   (200,)               |          |
+        |   rnn.bias_hh_l1   |   (200,)               |          |
+        |  fc1               |  51                    |  50      |
+        |   fc1.weight       |   (1, 50)              |          |
+        |   fc1.bias         |   (1,)                 |          |
+
+        --> Using the official LSTM torch implementation, the rnn portion is still not counted by the fvcore flopcounter. 
+
+        '''
 
         # calculate NRMSE between true Mackey-Glass and train/test prediction for the predefined number of Lyapunov times
         nrmse_test = torch.sqrt(torch.mean((mackeyglass.test_data_targets[0:lyaptime_pts,:]-prediction[0:lyaptime_pts,:])**2)/mackeyglass.total_var)

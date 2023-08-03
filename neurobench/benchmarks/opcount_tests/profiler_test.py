@@ -5,6 +5,9 @@ from torch.profiler import profile, record_function, ProfilerActivity
 
 from fvcore.nn import FlopCountAnalysis, flop_count_table
 
+import sys
+sys.path.append("../../..")
+
 class TestModel(nn.Module):
     '''
     standard ANN, this works fine
@@ -87,8 +90,6 @@ def test(model, inputs):
         with record_function("model_inference"):
             y = model(inputs)
 
-    breakpoint()
-
     print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=-1))
 
 # TODO: models seem to work fine with the profiler but do we want to simply report the flop count generated here?
@@ -98,4 +99,8 @@ def test(model, inputs):
 
 # test(TestSNNModel(), torch.randn((1,20)))
 
-test(TestSJModel(), torch.randn((1,28,28)))
+# test(TestSJModel(), torch.randn((1,28,28)))
+
+test(torch.load("../esn/esn.pth"), torch.randn((1,1), dtype=torch.float64))
+
+test(torch.load("../lstm/lstm.pth"), torch.randn((1,1), dtype=torch.float64))

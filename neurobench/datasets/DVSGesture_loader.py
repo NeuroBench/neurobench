@@ -2,7 +2,7 @@
 """
 
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 from tonic.datasets import DVSGesture as tonic_DVSGesture
 
@@ -13,6 +13,7 @@ from dataset import NeuroBenchDataset
 import os
 import stat
 import numpy as np
+import struct
 
 class DVSGesture(NeuroBenchDataset):
     '''
@@ -55,9 +56,79 @@ class DVSGesture(NeuroBenchDataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
-        return self.dataset[idx][0], self.dataset[idx][1]
+        structured_array = self.dataset[idx][0]
 
-    
+        x_data = np.array(structured_array['x'], dtype = np.int16)
+        y_data = np.array(structured_array['y'], dtype = np.int16)
+        p_data = np.array(structured_array['p'], dtype = bool)
+        t_data = np.array(structured_array['t'], dtype = np.int64)
+
+        return torch.hstack((torch.tensor(x_data), torch.tensor(y_data), torch.tensor(p_data), torch.tensor(t_data))), self.dataset[idx][1]
+
+
+# from the spiking jelly github:
+def load_aedat_v3(file_name: str):
+    '''
+    :param file_name: path of the aedat v3 file
+    :type file_name: str
+    :return: a dict whose keys are ``['t', 'x', 'y', 'p']`` and values are ``numpy.ndarray``
+    :rtype: Dict
+    This function is written by referring to https://gitlab.com/inivation/dv/dv-python . It can be used for DVS128 Gesture.
+    '''
+    with open(file_name, 'rb') as bin_f:
+        # skip ascii header
+        line = bin_f.readline()
+        while line.startswith(b'#'):
+            if line == b'#!END-HEADER\r\n':
+                break
+            else:
+                line = bin_f.readline()
+
+        txyp = {
+            't': [],
+            'x': [],
+            'y': [],
+            'p': []
+        }
+        while True:
+            header = bin_f.read(28)
+            if not header or len(header) == 0:
+                break
+
+            # read header
+            e_type = struct.unpack('H', header[0:2])[0]
+            e_source = struct.unpack('H', header[2:4])[0]
+            e_size = struct.unpack('I', header[4:8])[0]
+            e_offset = struct.unpack('I', header[8:12])[0]
+            e_tsoverflow = struct.unpack('I', header[12:16])[0]
+            e_capacity = struct.unpack('I', header[16:20])[0]
+            e_number = struct.unpack('I', header[20:24])[0]
+            e_valid = struct.unpack('I', header[24:28])[0]
+
+            data_length = e_capacity * e_size
+            data = bin_f.read(data_length)
+            counter = 0
+
+            if e_type == 1:
+                while data[counter:counter + e_size]:
+                    aer_data = struct.unpack('I', data[counter:counter + 4])[0]
+                    timestamp = struct.unpack('I', data[counter + 4:counter + 8])[0] | e_tsoverflow << 31
+                    x = (aer_data >> 17) & 0x00007FFF
+                    y = (aer_data >> 2) & 0x00007FFF
+                    pol = (aer_data >> 1) & 0x00000001
+                    counter = counter + e_size
+                    txyp['x'].append(x)
+                    txyp['y'].append(y)
+                    txyp['t'].append(timestamp)
+                    txyp['p'].append(pol)
+            else:
+                # non-polarity event packet, not implemented
+                pass
+        txyp['x'] = np.asarray(txyp['x'])
+        txyp['y'] = np.asarray(txyp['y'])
+        txyp['t'] = np.asarray(txyp['t'])
+        txyp['p'] = np.asarray(txyp['p'])
+        return txyp
 
 if __name__ == '__main__':
     dataset = DVSGesture('C:\\Harvard University\\Neurobench\\DVS Gesture\\code\\neurobench\\datasets')
@@ -65,9 +136,9 @@ if __name__ == '__main__':
     # print(len(dataset))
     import sys
     np.set_printoptions(threshold=sys.maxsize)
-    print(dataset[0][0].dtype)
-    gen_test = DataLoader(dataset,batch_size=4,shuffle=True)
+    print(dataset[0])
+    gen_test = DataLoader(dataset,batch_size=2,shuffle=True)
     for local_batch, local_labels in gen_test:
-        print(local_batch, local_labels)
+        print(local_batch[0].shape, local_labels)
     # print(iter(gen_test))
     # print(next(iter(gen_test)))

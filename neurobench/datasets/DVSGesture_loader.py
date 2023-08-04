@@ -67,23 +67,59 @@ class DVSGesture(NeuroBenchDataset):
         x_data = np.array(structured_array['x'], dtype = np.int16)
         y_data = np.array(structured_array['y'], dtype = np.int16)
         p_data = np.array(structured_array['p'], dtype = bool)
-        t_data = np.array(structured_array['t'], dtype = np.int64)
+        t_data = np.array(structured_array['t'], dtype = np.int64) # time is in microseconds
         print(t_data[-5:-1])
         xypt = torch.stack((torch.tensor(x_data), torch.tensor(y_data), torch.tensor(p_data), torch.tensor(t_data)),dim = 1)
         if self.data_type == 'frames':
             if self.prepr == 'histo':
-                print(self.dataset[idx][1])
-                events = histogram_preprocessing(xypt,5000,128,128, display_frame=True)
-
-
+                # print(self.dataset[idx][1])
+                events = histogram_preprocessing(xypt,delta_t = 5000,h_og = 128, w_og = 128, display_frame=False)
+                return events, self.dataset[idx][1]
+            
+            elif self.prepr == 'stack':
+                # print(self.dataset[idx][1])
+                events = stack_preprocessing(xypt,delta_t = 5000,h_og = 128, w_og = 128, display_frame=False)
                 return events, self.dataset[idx][1]
      
         return xypt, self.dataset[idx][1]
         
         
+def stack_preprocessing(xypt, delta_t = 5000, h_og = 128, w_og = 128,channels = 3, display_frame = False):
+    tbins = xypt[-1,3]//delta_t
+    print(tbins)
+    histogram = np.zeros((tbins, channels, h_og, w_og))
+    for bin, frame in enumerate(histogram):
+        # delete prev neg times
+        xypt_new = xypt[xypt[:,3]>=0]
+        xypt = xypt_new
+        # print(frame.shape)
+        # change timestamps
+        xypt[:,3] = xypt[:,3] - delta_t
+        # print(xypt[0,3],  xypt[0,3] <=0)
+        for i in range(len(xypt)):
+            if xypt[i,3] <=0:
+                if xypt[i,2]==False:
+                    frame[0, xypt[i,0],xypt[i,1]] = 255
+
+                else:
+                    frame[1, xypt[i,0],xypt[i,1]] = 255
+            
+                # print(xypt[i,2])
+
+            else:
+                # i know this is bad habit, will change later
+                continue
+           
+    if display_frame:
+        frame = frame/np.max(frame)
+
+        animation = FuncAnimation(fig, update, frames=tbins,fargs=(histogram,), interval=5)  # Adjust the interval as needed (in milliseconds)
+        plt.show()
+        
+    return histogram
 
 def histogram_preprocessing(xypt, delta_t, h_og, w_og,channels = 3, display_frame = False):
-    tbins = xypt.shape[0]//delta_t
+    tbins = xypt[-1,3]//delta_t
     print(tbins)
     histogram = np.zeros((tbins, channels, h_og, w_og))
     for bin, frame in enumerate(histogram):

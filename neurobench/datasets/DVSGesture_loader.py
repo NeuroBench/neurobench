@@ -14,14 +14,18 @@ import os
 import stat
 import numpy as np
 import struct
+import matplotlib.pyplot as plt
+# make animation
+from matplotlib.animation import FuncAnimation
 
 class DVSGesture(NeuroBenchDataset):
     '''
     Requires python 3.10 (introduced root_dir for glob function)
     Installs DVSGesture Dataset with individual events in each file if not yet installed, else pass path of tonic DVSGesture install
-
+    https://docs.prophesee.ai/stable/tutorials/ml/data_processing/event_preprocessing.html?highlight=metavision_ml%20preprocessing
+    event rate: 100K -> dt 1e-5
     '''
-    def __init__(self, path, split='testing'):
+    def __init__(self, path, split='testing', data_type = 'frames', preprocessing = 'histo'):
         if split == 'training':
             self.dataset = tonic_DVSGesture(save_to=path)
         else:
@@ -29,6 +33,8 @@ class DVSGesture(NeuroBenchDataset):
 
         self.filenames = self.dataset.data
         self.path      = path
+        self.prepr     = preprocessing
+        self.data_type = data_type
         # if split == "testing":
         #     if not installed:
         #         self.dataset = tonic_DVSGesture(save_to=path, train=False)
@@ -62,10 +68,62 @@ class DVSGesture(NeuroBenchDataset):
         y_data = np.array(structured_array['y'], dtype = np.int16)
         p_data = np.array(structured_array['p'], dtype = bool)
         t_data = np.array(structured_array['t'], dtype = np.int64)
+        print(t_data[-5:-1])
+        xypt = torch.stack((torch.tensor(x_data), torch.tensor(y_data), torch.tensor(p_data), torch.tensor(t_data)),dim = 1)
+        if self.data_type == 'frames':
+            if self.prepr == 'histo':
+                print(self.dataset[idx][1])
+                events = histogram_preprocessing(xypt,5000,128,128, display_frame=True)
 
-        return torch.hstack((torch.tensor(x_data), torch.tensor(y_data), torch.tensor(p_data), torch.tensor(t_data))), self.dataset[idx][1]
 
+                return events, self.dataset[idx][1]
+     
+        return xypt, self.dataset[idx][1]
+        
+        
 
+def histogram_preprocessing(xypt, delta_t, h_og, w_og,channels = 3, display_frame = False):
+    tbins = xypt.shape[0]//delta_t
+    print(tbins)
+    histogram = np.zeros((tbins, channels, h_og, w_og))
+    for bin, frame in enumerate(histogram):
+        # delete prev neg times
+        xypt_new = xypt[xypt[:,3]>=0]
+        xypt = xypt_new
+        # print(frame.shape)
+        # change timestamps
+        xypt[:,3] = xypt[:,3] - delta_t
+        # print(xypt[0,3],  xypt[0,3] <=0)
+        for i in range(len(xypt)):
+            if xypt[i,3] <=0:
+                if xypt[i,2]==False:
+                    frame[0, xypt[i,0],xypt[i,1]] = xypt[i,2]+255
+
+                else:
+                    frame[1, xypt[i,0],xypt[i,1]] = xypt[i,2]+255
+            
+                # print(xypt[i,2])
+
+            else:
+                # i know this is bad habit, will change later
+                continue
+           
+    if display_frame:
+        frame = frame/np.max(frame)
+        # fig = plt.figure()
+        # fig, ax = plt.subplots()
+        # plt.imshow(frame.transpose(1,2,0))
+        animation = FuncAnimation(fig, update, frames=tbins,fargs=(histogram,), interval=5)  # Adjust the interval as needed (in milliseconds)
+        plt.show()
+        
+    return histogram
+fig, ax = plt.subplots()
+def update(frame, frames):
+    ax.clear()
+    image = frames[frame].transpose(1,2,0)
+    # image = image/np.max(image)
+    ax.imshow(image, cmap='brg')  # You can adjust the colormap as needed
+    ax.set_title(f'Frame {frame}')
 # from the spiking jelly github:
 def load_aedat_v3(file_name: str):
     '''
@@ -131,13 +189,14 @@ def load_aedat_v3(file_name: str):
         return txyp
 
 if __name__ == '__main__':
-    dataset = DVSGesture('C:\\Harvard University\\Neurobench\\DVS Gesture\\code\\neurobench\\datasets')
+    path = os.curdir
+    dataset = DVSGesture(os.path.join(path,'neurobench/datasets/DVSGesture'))
     # print(dataset.filenames)
     # print(len(dataset))
-    import sys
-    np.set_printoptions(threshold=sys.maxsize)
+    # import sys
+    # np.set_printoptions(threshold=sys.maxsize)
     print(dataset[0])
-    gen_test = DataLoader(dataset,batch_size=2,shuffle=True)
+    gen_test = DataLoader(dataset,batch_size=1,shuffle=True)
     for local_batch, local_labels in gen_test:
         print(local_batch[0].shape, local_labels)
     # print(iter(gen_test))

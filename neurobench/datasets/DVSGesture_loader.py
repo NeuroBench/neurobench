@@ -25,7 +25,7 @@ class DVSGesture(NeuroBenchDataset):
     https://docs.prophesee.ai/stable/tutorials/ml/data_processing/event_preprocessing.html?highlight=metavision_ml%20preprocessing
     event rate: 100K -> dt 1e-5
     '''
-    def __init__(self, path, split='testing', data_type = 'frames', preprocessing = 'histo'):
+    def __init__(self, path, split='testing', data_type = 'frames', preprocessing = 'stack'):
         if split == 'training':
             self.dataset = tonic_DVSGesture(save_to=path)
         else:
@@ -35,6 +35,11 @@ class DVSGesture(NeuroBenchDataset):
         self.path      = path
         self.prepr     = preprocessing
         self.data_type = data_type
+
+        # sample parameters:
+        self._deltat = 5000 # DVS is in microseconds -> deltat = 5ms
+        self._T      = 1000 # in ms
+        self.random_window = True
         # if split == "testing":
         #     if not installed:
         #         self.dataset = tonic_DVSGesture(save_to=path, train=False)
@@ -68,27 +73,40 @@ class DVSGesture(NeuroBenchDataset):
         y_data = np.array(structured_array['y'], dtype = np.int16)
         p_data = np.array(structured_array['p'], dtype = bool)
         t_data = np.array(structured_array['t'], dtype = np.int64) # time is in microseconds
-        print(t_data[-5:-1])
+
         xypt = torch.stack((torch.tensor(x_data), torch.tensor(y_data), torch.tensor(p_data), torch.tensor(t_data)),dim = 1)
+
+        # create sample
+        t_end = t_data[-1] - self._T*1000 * 1.5 # find latest time at which we can sample including buffer of factor 1.5 (*1000 to convert to microseconds)
+        start_time = np.random.randint(0,t_end) if self.random_window else 0
+        sample = xypt[(start_time<=xypt[:,3])&(xypt[:,3]<=(start_time+self._T*1000))]
+        sample[:,3] = sample[:,3]-sample[0,3] # normalize time again
+        tbins = self._T*1000//self._deltat
         if self.data_type == 'frames':
             if self.prepr == 'histo':
-                # print(self.dataset[idx][1])
-                events = histogram_preprocessing(xypt,delta_t = 5000,h_og = 128, w_og = 128, display_frame=False)
+                events = histogram_preprocessing(sample,delta_t = self._deltat,h_og = 128, w_og = 128, display_frame=False)
                 return events, self.dataset[idx][1]
             
             elif self.prepr == 'stack':
-                # print(self.dataset[idx][1])
-                events = stack_preprocessing(xypt,delta_t = 5000,h_og = 128, w_og = 128, display_frame=False)
+                events = stack_preprocessing(sample,delta_t = self._deltat, tbins = tbins, h_og = 128, w_og = 128, display_frame=False)
                 return events, self.dataset[idx][1]
      
-        return xypt, self.dataset[idx][1]
+        return sample, self.dataset[idx][1]
+    
+    def set_sample_params(self, delta_t = 5, length = 1000, random_window = True):
+        '''Enter delta t and sample length in ms
+        If random_window is True, sample will be random timewindow of length within the gesture'''
+        self._deltat       = delta_t*1000 # convert to microseconds
+        self._T            = length
+        self.random_window = random_window
         
-        
-def stack_preprocessing(xypt, delta_t = 5000, h_og = 128, w_og = 128,channels = 3, display_frame = False):
-    tbins = xypt[-1,3]//delta_t
-    print(tbins)
-    histogram = np.zeros((tbins, channels, h_og, w_og))
-    for bin, frame in enumerate(histogram):
+def stack_preprocessing(xypt, delta_t = 5000,tbins = 200, h_og = 128, w_og = 128,channels = 3, display_frame = False):
+    # tbins = xypt[-1,3]//delta_t
+    tbins = tbins
+    # print(tbins, xypt[-1,3])
+
+    frames = np.zeros((tbins, channels, h_og, w_og))
+    for bin, frame in enumerate(frames):
         # delete prev neg times
         xypt_new = xypt[xypt[:,3]>=0]
         xypt = xypt_new
@@ -96,27 +114,23 @@ def stack_preprocessing(xypt, delta_t = 5000, h_og = 128, w_og = 128,channels = 
         # change timestamps
         xypt[:,3] = xypt[:,3] - delta_t
         # print(xypt[0,3],  xypt[0,3] <=0)
-        for i in range(len(xypt)):
-            if xypt[i,3] <=0:
-                if xypt[i,2]==False:
-                    frame[0, xypt[i,0],xypt[i,1]] = 255
+        xypt_sub = xypt[xypt[:,3]<=0] # events for the current frame
+        pos_pol  = np.unique(xypt_sub[xypt_sub[:,2]==True][:,:2], axis = 0)
+        neg_pol  = np.unique(xypt_sub[xypt_sub[:,2]==False][:,:2], axis = 0)
 
-                else:
-                    frame[1, xypt[i,0],xypt[i,1]] = 255
+        frame[0,:,:][pos_pol[:, 0], pos_pol[:, 1]] = 1
+        frame[1,:,:][neg_pol[:, 0], neg_pol[:, 1]] = 1
+        
             
-                # print(xypt[i,2])
 
-            else:
-                # i know this is bad habit, will change later
-                continue
-           
     if display_frame:
-        frame = frame/np.max(frame)
+        # frame = frame/np.max(frame)
 
-        animation = FuncAnimation(fig, update, frames=tbins,fargs=(histogram,), interval=5)  # Adjust the interval as needed (in milliseconds)
+        animation = FuncAnimation(fig, update, frames=tbins,fargs=(frames,), interval=5)  # Adjust the interval as needed (in milliseconds)
+        animation.save('test.gif')
         plt.show()
         
-    return histogram
+    return frames
 
 def histogram_preprocessing(xypt, delta_t, h_og, w_og,channels = 3, display_frame = False):
     tbins = xypt[-1,3]//delta_t
@@ -161,6 +175,8 @@ def update(frame, frames):
     ax.imshow(image, cmap='brg')  # You can adjust the colormap as needed
     ax.set_title(f'Frame {frame}')
 # from the spiking jelly github:
+
+
 def load_aedat_v3(file_name: str):
     '''
     :param file_name: path of the aedat v3 file
@@ -231,8 +247,9 @@ if __name__ == '__main__':
     # print(len(dataset))
     # import sys
     # np.set_printoptions(threshold=sys.maxsize)
-    print(dataset[0])
-    gen_test = DataLoader(dataset,batch_size=1,shuffle=True)
+    print('Infromation of sample')
+    print(dataset.dataset[8][1])
+    gen_test = DataLoader(dataset,batch_size=16,shuffle=True)
     for local_batch, local_labels in gen_test:
         print(local_batch[0].shape, local_labels)
     # print(iter(gen_test))

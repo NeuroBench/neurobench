@@ -1,4 +1,3 @@
-import pytorch_lightning as pl
 from pathlib import Path
 from functools import partial
 from metavision_ml.data import box_processing as box_api

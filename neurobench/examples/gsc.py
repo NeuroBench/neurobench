@@ -30,6 +30,11 @@ net.load_state_dict(torch.load("neurobench/examples/model_data/s2s_gsc_snntorch"
 ## Define model ##
 model = SNNTorchModel(net)
 
-benchmark = Benchmark(model, test_set, [s2s], ["accuracy", "model_size", "latency", "MACs"])
+postprocessors = [] # TODO: spike aggregation
+
+static_metrics=["model_size, connection_sparsity, frequency"]
+data_metrics=["activation_sparsity, multiply_accumulates, classification_accuracy"]
+
+benchmark = Benchmark(model, test_set, [s2s], postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
 print(results)

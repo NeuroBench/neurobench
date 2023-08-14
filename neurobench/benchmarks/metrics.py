@@ -1,22 +1,69 @@
 """
 """
+import torch
 
-def check_data(metric, key_list, run_data):
-    missing_keys = []
+# static metrics, only require model
+# TODO: should these be defined by the NeuroBenchModel class or defined here?
+def model_size(model):
+    '''
+    Memory footprint of the model.
+    '''
+    # TODO: should be calculated for nn.Module via parameters/buffers
+    return model.size() 
 
-    for key in key_list:
-        if key not in run_data:
-            missing_keys.append(key)
+def frequency(model):
+    '''
+    Frequency of model forward based on data input window, in Hz.
+    '''
+    # TODO: can also be extracted from the dataset? but prob model to keep consistent
+    return model.frequency()
 
-    if len(missing_keys) > 0:
-        raise ValueError("{} missing required tracked keys in run_data: {}".format(metric, missing_keys))
+def connection_sparsity(model):
+    '''
+    Sparsity of model connections between layers.
+    '''
+    # TODO: should be calculated for nn.Module based on number of zeros in Linear and Conv layers.
+    return model.connection_sparsity()
 
-    return
+
+# dynamic metrics, require model, model predictions, and labels
+def activation_sparsity(model, preds, data):
+    '''
+    Sparsity of model activations.
+    '''
+    # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
+    #       Standard FF ANN should be zero (no activation sparsity)
+    return model.activation_sparsity()
+
+def multiply_accumulates(model, preds, data):
+    '''
+    Multiply-accumulates (MACs) of the model forward.
+    '''
+    # TODO: 
+    #   Spiking model: number of spike activations * fanout (see snnmetrics)
+    #   Recurrent layers: each connection is one MAC
+    #   ANN: use PyTorch profiler
+    macs = 0.0
+    return macs
+
+def classification_accuracy(model, preds, data):
+    equal = torch.eq(preds, data[1])
+    return torch.mean(equal.float())
 
 
-# example
-def model_size(run_data):
-    check_data("model_size", ["model"], run_data)
 
-    model = run_data["model"]
-    return model.size()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    

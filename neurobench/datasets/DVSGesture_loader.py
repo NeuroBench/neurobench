@@ -40,6 +40,8 @@ class DVSGesture(NeuroBenchDataset):
         self._deltat = 5000 # DVS is in microseconds -> deltat = 5ms
         self._T      = 1000 # in ms
         self.random_window = True
+        self.longest = 0
+        self.shortest = 1e9
         # if split == "testing":
         #     if not installed:
         #         self.dataset = tonic_DVSGesture(save_to=path, train=False)
@@ -74,6 +76,9 @@ class DVSGesture(NeuroBenchDataset):
         p_data = np.array(structured_array['p'], dtype = bool)
         t_data = np.array(structured_array['t'], dtype = np.int64) # time is in microseconds
 
+        t_final = t_data[-1]
+        self.longest = max(t_final, self.longest)
+        self.shortest = min(t_final, self.shortest)
         xypt = torch.stack((torch.tensor(x_data), torch.tensor(y_data), torch.tensor(p_data), torch.tensor(t_data)),dim = 1)
 
         # create sample
@@ -242,15 +247,11 @@ def load_aedat_v3(file_name: str):
 
 if __name__ == '__main__':
     path = os.curdir
-    dataset = DVSGesture(os.path.join(path,'neurobench/datasets/DVSGesture'))
-    # print(dataset.filenames)
-    # print(len(dataset))
-    # import sys
-    # np.set_printoptions(threshold=sys.maxsize)
+    dataset = DVSGesture(os.path.join(path,'neurobench/datasets/DVSGesture'), split = 'train',)
+
     print('Infromation of sample')
     print(dataset.dataset[8][1])
     gen_test = DataLoader(dataset,batch_size=16,shuffle=True)
     for local_batch, local_labels in gen_test:
         print(local_batch[0].shape, local_labels)
-    # print(iter(gen_test))
-    # print(next(iter(gen_test)))
+    print(dataset.shortest, dataset.longest)

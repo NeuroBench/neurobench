@@ -21,6 +21,7 @@ Jason Yik
 
 
 from neurobench.datasets.dataset import Dataset
+import numpy as np
 import torch
 import math
 from jitcdde import jitcdde, y, t, jitcdde_lyap
@@ -48,6 +49,8 @@ class MackeyGlass(Dataset):
         data split in time units for training and testing data, respectively
     start_offset  : float
         added offset of the starting point of the time-series, in case of repeating using same function values
+    seed_id  : int
+        seed for generating function solution
 
     Methods
     ----------
@@ -65,6 +68,7 @@ class MackeyGlass(Dataset):
                  dt=1.0, 
                  splits=(8000., 2000.),
                  start_offset=0.,
+                 seed_id=0,
     ):
 
         super().__init__()
@@ -83,6 +87,7 @@ class MackeyGlass(Dataset):
         self.testtime = splits[1]
         
         self.start_offset = start_offset
+        self.seed_id = seed_id
 
         # Total time to simulate the system
         self.maxtime = self.traintime + self.testtime + self.dt
@@ -107,6 +112,7 @@ class MackeyGlass(Dataset):
         Generate time-series using the provided parameters of the equation 
 
         """
+        np.random.seed(self.seed_id)
 
         # Create the equation object based on the settings
         self.DDE = jitcdde_lyap(self.mackeyglass_specification)
@@ -164,9 +170,9 @@ class MackeyGlass(Dataset):
 
         Returns
         ----------
-        sample:  tensor
+        sample:  tensor, shape=(timestamps, features)=(1,1)
             individual data sample
-        target:  tensor
+        target:  tensor, shape=(label,)=(1,)
             corresponding next state of the system
         """
         sample = torch.unsqueeze(self.mackeyglass_soln[idx, :], dim=0)

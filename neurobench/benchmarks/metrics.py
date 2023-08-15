@@ -47,13 +47,19 @@ def multiply_accumulates(model, preds, data):
     return macs
 
 def classification_accuracy(model, preds, data):
+    '''
+    Classification accuracy of the model predictions.
+    '''
     equal = torch.eq(preds, data[1])
     return torch.mean(equal.float())
 
-
-
-
-
+def NRMSE(model, preds, data):
+    '''
+    Normalized root mean squared error (NRMSE) of the model predictions.
+    '''
+    # TODO
+    
+    return 5.0
 
 
 

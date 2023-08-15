@@ -24,14 +24,15 @@ class Benchmark():
             results[m] = self.static_metrics[m](self.model)
 
         dataset_len = len(self.dataloader.dataset)
-        for data in tqdm(self.dataloader, total=len(dataloader)):
+        # for data in tqdm(self.dataloader, total=len(self.dataloader)):
+        for data in self.dataloader:
             batch_size = data[0].size(0)
 
-            print("Preprocessing data")
+            # Preprocessing data
             for alg in self.preprocessors:
                 data = zip(*alg(data))
 
-            print("Running model on test data")
+            # Run model on test data
             preds = self.model(data[0])
 
             # TODO: postprocessors are applied to model output only?

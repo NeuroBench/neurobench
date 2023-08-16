@@ -35,4 +35,3 @@ def test_dvs_gesture():
     assert int(ds[0][1]) >= 0
     assert int(ds[0][1]) <= 10
 
-test_dvs_gesture()

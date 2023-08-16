@@ -25,7 +25,7 @@ from tonic.datasets import DVSGesture as tonic_DVSGesture
 
 # from glob import glob
 
-from dataset import NeuroBenchDataset
+from .dataset import NeuroBenchDataset
 
 import os
 import numpy as np

@@ -1,15 +1,19 @@
 import torch
 
+from torch.utils.data import Subset
+
 from neurobench.datasets import MackeyGlass
-from neurobench.models import NumPyModel
+from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
 # set seed
 np.random.seed(seed=0)
 
-# TODO: need to determine which parameters are intrinsic and user-defined
-train_set = MackeyGlass(..., split="training")
-test_set = MackeyGlass(..., split="testing")
+# TODO: still figuring out which should be task (function) parameters
+mg = MackeyGlass(17, 0.9)
+
+train_set = Subset(mg, mg.ind_train)
+test_set = Subset(mg, mg.ind_test)
 
 ## Define model ##
 net = nn.Module(...)

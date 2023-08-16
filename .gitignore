@@ -161,3 +161,7 @@ cython_debug/
 
 .DS_Store
 data/
+
+# DVS Gesture dataset
+neurobench/datasets/DVSGesture
+.vscode/settings.json

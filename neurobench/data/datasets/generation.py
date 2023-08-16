@@ -1,5 +1,3 @@
-#%%
-
 from typing import Union, Optional, List, Tuple
 from pathlib import Path
 import os
@@ -10,9 +8,8 @@ from torch.utils.data import Dataset
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-from wordcloud import WordCloud
 
-#%%
+
 
 voice_commands = [
     "play", "pause", "stop", "next", "previous", "volume", "mute", "shuffle", "repeat",
@@ -73,23 +70,16 @@ voice_commands = [
     "forecast", "project", "schedule", "plan", "arrange", "design", "prepare", "set", "develop",
     "construct", "build", "assemble", "create", "organize", "implement", "execute", "perform", "find"]
 
-words_list = [
+google_commands_list = [
     "Backward", "Bed", "Bird", "Cat", "Dog", "Down", "Eight", "Five",
     "Follow", "Forward", "Four", "Go", "Happy", "House", "Learn", "Left",
     "Marvin", "Nine", "No", "Off", "On", "One", "Right", "Seven", "Sheila",
     "Six", "Stop", "Three", "Tree", "Two", "Up", "Visual", "Wow", "Yes", "Zero"
 ]
 
-words_list = [
-    "Backward", "Bed", "Bird", "Cat", "Dog", "Down", "Eight", "Five",
-    "Follow", "Forward", "Four", "Go", "Happy", "House", "Learn", "Left",
-    "Nine", "No", "Off", "On", "One", "Right", "Seven",
-    "Six", "Stop", "Three", "Tree", "Two", "Up", "Visual", "Wow", "Yes", "Zero"
-]
 
-voice_commands = voice_commands + words_list
+VOICE_COMMANDS = voice_commands + google_commands_list
 
-#%%
 
 SAMPLE_RATE = 48000
 ALL_LANGUAGES = ["en"] #, "es"]
@@ -98,63 +88,84 @@ FOLDER_AUDIO = "clips"
 PRE_TRAINING_TAGS = []
 EVALUATION_TAGS = []
 
-def generate_mswc_fscil_splits(root: Union[str, Path], languages: List[str], split: str) -> List[Tuple[str, str, bool, str, str]]:
 
-    base_keywords, evaluation_keywords = get_command_keywords(root)
+def generate_mswc_fscil_splits(root: Union[str, Path], 
+                               languages: List[str] = None, 
+                               visualize: Optional[bool] = False):
+    """
+    Generate new MSWC split for a few-shot class-incremental (FSCIL) learning scenario with the following split.
+    100 base classes with 500 train, 100 validation and 100 test samples each.
+    100 evaluation classes with 200 samples each (to use in a 10 sessions of 10 way set-up with N shots support to train on per class and the rest as a query to evaluate performance).
+    The 200 classes are arbitrarily chosen as common voice command words.
+    The base ones are then the 100 of these with the most clips (at least 700) per sample and the evaluation ones as the 100 following ones.
+
+    Returns: base_keywords, evaluation keywords (dictionarries)
+    They represent the number of available samples per respective keyword in the original MSWC dataset (although the number is then clipped as detailed above).
+    """
+
+    base_keywords, evaluation_keywords = get_command_keywords(root, visualize=visualize)
 
     if languages is None:
         languages = ['en']
 
-    if languages  is not ['en']:
+    print(languages)
+    if languages  != ['en']:
         print('Other languages than english are not supported yet.')
 
-    base_count = dict.fromkeys(base_keywords, {'train':0, 'val':0, 'test':0})
+    base_train_count = dict.fromkeys(base_keywords, 0) #{'train':0, 'val':0, 'test':0})
+    base_test_count = dict.fromkeys(base_keywords, 0)
+    base_val_count = dict.fromkeys(base_keywords, 0)
     evaluation_count = dict.fromkeys(evaluation_keywords, 0)
 
     for lang in languages:
-        base_train_f = open(os.path.join(root, lang, f'{lang}_{"base_train"}.csv'), 'w')
-        base_val_f = open(os.path.join(root, lang, f'{lang}_{"base_val"}.csv'), 'w')
-        base_test_f = open(os.path.join(root, lang, f'{lang}_{"base_test"}.csv'), 'w')
-        evaluation_f = open(os.path.join(root, lang, f'{lang}_{"evaluation"}.csv'), 'w')
+        base_train_f = open(os.path.join(root, lang,  f'{lang}_{"base_train"}.csv'), 'w')
+        base_val_f = open(os.path.join(root, lang,  f'{lang}_{"base_val"}.csv'), 'w')
+        base_test_f = open(os.path.join(root, lang,  f'{lang}_{"base_test"}.csv'), 'w')
+        evaluation_f = open(os.path.join(root, lang,  f'{lang}_{"evaluation"}.csv'), 'w')
         writer_base_train = csv.writer(base_train_f)
         writer_base_val = csv.writer(base_val_f)
         writer_base_test = csv.writer(base_test_f)
         writer_evaluation = csv.writer(evaluation_f)
-        with open(os.path.join(root, lang, f'{lang}_splits.csv'), 'r') as f:
-            for line in f:
-                procedure, path, word, valid, speaker, gender = line.strip().split(',')
-                
+        header = ['LINK', 'WORD', 'VALID', 'SPEAKER', 'GENDER']
+        writer_base_train.writerow(header)
+        writer_base_val.writerow(header)
+        writer_base_test.writerow(header)
+        writer_evaluation.writerow(header)
 
+        with open(os.path.join(root, lang,  f'{lang}_splits.csv'), 'r') as f:
+            for line in f:
+                set, path, word, valid, speaker, gender = line.strip().split(',')
+                
                 # Skip header
-                if word == "WORD":
+                if set == "SET":
                     continue  
 
+                ### Successively assign samples to train (500), validation (100) and test (100) set
                 if word in base_keywords:
-                    if procedure == 'TRAIN':
-                        if base_count[word]['train'] <500:
-                            writer_base_train.writerow([path, word, valid, speaker, gender])
-                        base_count[word]['train'] +=1
-                    elif procedure == 'VAL':
-                        if base_count[word]['val'] <100:
-                            writer_base_val.writerow([path, word, valid, speaker, gender])
-                        base_count[word]['val'] +=1
-                    elif procedure == 'TEST':
-                        if base_count[word]['test'] <100:
-                            writer_base_test.writerow([path, word, valid, speaker, gender])
-                        base_count[word]['test'] +=1
-                
+                    if base_train_count[word] <500:
+                        writer_base_train.writerow([path, word, valid, speaker, gender])
+                        base_train_count[word] +=1
+                    if base_val_count[word] <100:
+                        writer_base_val.writerow([path, word, valid, speaker, gender])
+                        base_val_count[word] +=1
+                    if base_test_count[word] <100:
+                        writer_base_test.writerow([path, word, valid, speaker, gender])
+                        base_test_count[word] +=1
+
                 elif word in evaluation_keywords:
-                        if evaluation_count[word] <200:
-                            writer_evaluation.writerow([path, word, valid, speaker, gender])
+                    if evaluation_count[word] <200:
+                        writer_evaluation.writerow([path, word, valid, speaker, gender])
                         evaluation_count[word] +=1
 
 
-        base_train_f.close()
-        base_val_f.close()
-        base_test_f.close()
-        evaluation_f.close()
+    base_train_f.close()
+    base_val_f.close()
+    base_test_f.close()
+    evaluation_f.close()
 
     return base_keywords, evaluation_keywords
+
+
 
 def get_command_keywords(root: Union[str, Path], visualize: bool = False):
 
@@ -164,7 +175,7 @@ def get_command_keywords(root: Union[str, Path], visualize: bool = False):
 
         mswc_commands = {}
 
-        for keyword in voice_commands:
+        for keyword in VOICE_COMMANDS:
             
             if keyword in clips_counts:
                 mswc_commands[keyword] = clips_counts[keyword]
@@ -177,73 +188,23 @@ def get_command_keywords(root: Union[str, Path], visualize: bool = False):
         evaluation_commands = dict(sorted_commands[100:200])
 
     if visualize:
+        from wordcloud import WordCloud
 
+        # Plot word clouds of the base and evaluation words based on their total number of clips in the original MSWC dataset
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(pre_train_commands)
-
-        # Plot the word cloud
+        
         plt.figure(figsize=(10, 6))
         plt.imshow(wordcloud, interpolation='bilinear')
         plt.axis('off')
         plt.title('Top 100 Command Keywords with the Most Clips')
 
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(evaluation_commands)
-
-        # Plot the word cloud
         plt.figure(figsize=(10, 6))
         plt.imshow(wordcloud, interpolation='bilinear')
         plt.axis('off')
         plt.title('Evaluation Command Keywords')
+
         plt.show()  
 
 
     return pre_train_commands, evaluation_commands
-
-
-#%%
-
-with open("data/metadata.json", 'r') as f:
-    data = json.load(f)
-    clips_counts = data['en']['wordcounts']
-
-    mswc_commands = {}
-
-    for keyword in voice_commands:
-        
-        if keyword in clips_counts:
-            mswc_commands[keyword] = clips_counts[keyword]
-
-    # Sort keywords based on available clips
-    sorted_commands = sorted(mswc_commands.items(), key=lambda x: x[1], reverse=True)
-
-    # Extract the top 200 keywords with the most clips
-    pre_train_commands = dict(sorted_commands[:100])
-    evaluation_commands = dict(sorted_commands[100:200])
-
-
-#%%
-
-wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(pre_train_commands)
-
-# Plot the word cloud
-plt.figure(figsize=(10, 6))
-plt.imshow(wordcloud, interpolation='bilinear')
-plt.axis('off')
-plt.title('Top 100 Command Keywords with the Most Clips')
-
-wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(evaluation_commands)
-
-# Plot the word cloud
-plt.figure(figsize=(10, 6))
-plt.imshow(wordcloud, interpolation='bilinear')
-plt.axis('off')
-plt.title('Evaluation Command Keywords')
-plt.show()  
-
-
-# if subset == 'pre_train':
-#     return pre_train_commands
-# elif subset == 'evaluation':
-#     return evaluation_commands
-# else:
-#     raise ValueError("subset must be one of \"pre_train\" or \"evaluation\"")
-# %%

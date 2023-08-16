@@ -7,8 +7,11 @@ from torchaudio.datasets.utils import _load_waveform
 from torch.utils.data import Dataset
 
 SAMPLE_RATE = 48000
-ALL_LANGUAGES = ["en", "es"]
+ALL_LANGUAGES = ["en"] #, "es"]
 FOLDER_AUDIO = "clips"
+
+PRE_TRAINING_TAGS = []
+EVALUATION_TAGS = []
 
 def _load_list(root: Union[str, Path], languages: List[str], split: str) -> List[Tuple[str, str, bool, str, str]]:
     walker = []
@@ -28,21 +31,35 @@ def _load_list(root: Union[str, Path], languages: List[str], split: str) -> List
 
 
 class MSWC(Dataset):
-    def __init__(self, root: Union[str, Path], subset: Optional[str] = None, languages: Optional[List[str]] = None):
+    def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, languages: Optional[List[str]] = None):
         self.root = root
         
-        subset = "training" # Can also be "validation" or "testing"
+        # procedure = "training" # Can also be "validation" or "testing"
 
-        if subset == "training":
-            split = "train"
-        elif subset == "validation":
-            split = "dev"
-        elif subset == "testing":
-            split = "test"
+        if subset == 'base':
+            self.subset = 'base'
+            if procedure == "training":
+                self.procedure = "train"
+            elif procedure == "validation":
+                self.procedure = "val"
+            elif procedure == "testing":
+                self.procedure = "test"
+            else:
+                raise ValueError("procedure must be one of \"training\", \"validation\", or \"testing\"")
+
+            split = self.subset +'_' + self.procedure
+        elif subset == 'evaluation':
+            self.subset = 'evaluation'
+            self.procedure = None
+            split = self.subset
+
         else:
-            raise ValueError("subset must be one of \"training\", \"validation\", or \"testing\"")
+            raise ValueError("subset must be one of \"base\" or \"evaluation\"")
 
-        self.languages = languages if languages is not None else ALL_LANGUAGES
+        if languages is not None and languages != ['en']:
+            print('Other languages than english are not supported yet.')
+        # self.languages = languages if languages is not None else ALL_LANGUAGES
+
 
         self._walker = _load_list(root, self.languages, split)
 
@@ -53,3 +70,4 @@ class MSWC(Dataset):
         waveform = _load_waveform(dirname, item[0], SAMPLE_RATE)
 
         return (waveform, *item[1:])
+    

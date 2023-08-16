@@ -24,8 +24,7 @@ class Benchmark():
             results[m] = self.static_metrics[m](self.model)
 
         dataset_len = len(self.dataloader.dataset)
-        # for data in tqdm(self.dataloader, total=len(self.dataloader)):
-        for data in self.dataloader:
+        for data in tqdm(self.dataloader, total=len(self.dataloader)):
             batch_size = data[0].size(0)
 
             # Preprocessing data
@@ -46,6 +45,7 @@ class Benchmark():
 
             # Accumulate data metrics via mean
             for m, v in batch_results.items():
+                assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
                 if m not in results:
                     results[m] = v * batch_size / dataset_len
                 else:

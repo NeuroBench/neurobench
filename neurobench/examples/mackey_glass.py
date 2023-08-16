@@ -10,8 +10,8 @@ from model_data.echo_state_network import EchoStateNetwork
 
 # TODO: still figuring out which should be task (function) parameters
 mg = MackeyGlass(tau=17, 
-				 constant_past=0.9, 
-				 nmg = 10, 
+                 constant_past=0.9, 
+                 nmg = 10, 
                  beta = 0.2, 
                  gamma = 0.1,
                  dt=1.0, 
@@ -26,13 +26,13 @@ test_set = Subset(mg, mg.ind_test)
 seed_id = 0
 # TODO: refactor the ESN so that it is correct with the static metrics like model_size
 esn = EchoStateNetwork(in_channels=1, 
-	reservoir_size = 200, 
-	input_scale = torch.tensor([0.2,1],dtype = torch.float64), 
-	connect_prob = 0.15, 
-	spectral_radius = 1.25, 
-	leakage = 0.3, 
-	ridge_param = 1.e-8, 
-	seed_id = seed_id)
+    reservoir_size = 200, 
+    input_scale = torch.tensor([0.2,1],dtype = torch.float64), 
+    connect_prob = 0.15, 
+    spectral_radius = 1.25, 
+    leakage = 0.3, 
+    ridge_param = 1.e-8, 
+    seed_id = seed_id)
 esn.train()
 train_data, train_labels = train_set[:]
 train_data = train_data.permute(1,0,2) # (batch, timesteps, features)

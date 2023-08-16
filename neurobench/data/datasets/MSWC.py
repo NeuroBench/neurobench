@@ -6,6 +6,8 @@ from torchaudio.datasets.utils import _load_waveform
 
 from torch.utils.data import Dataset
 
+from generation import generate_mswc_fscil_splits
+
 SAMPLE_RATE = 48000
 ALL_LANGUAGES = ["en"] #, "es"]
 FOLDER_AUDIO = "clips"
@@ -33,8 +35,6 @@ def _load_list(root: Union[str, Path], languages: List[str], split: str) -> List
 class MSWC(Dataset):
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, languages: Optional[List[str]] = None):
         self.root = root
-        
-        # procedure = "training" # Can also be "validation" or "testing"
 
         if subset == 'base':
             self.subset = 'base'
@@ -60,6 +60,9 @@ class MSWC(Dataset):
             print('Other languages than english are not supported yet.')
         # self.languages = languages if languages is not None else ALL_LANGUAGES
 
+        # If the fscil subset split files don't exist anymore, generate them
+        if not os.path.isfile(os.path.join(root, 'en', f'{"en"}_{split}.csv')):
+            generate_mswc_fscil_splits(root, languages)
 
         self._walker = _load_list(root, self.languages, split)
 

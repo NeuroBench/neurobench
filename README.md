@@ -1,23 +1,14 @@
 # algorithms_benchmarks
-
 Benchmark harness and baseline results for the NeuroBench algorithms track.
 
 ## API
-A proposed API structure and a few of the many outstanding questions.
+This branch contains an example API that highlights how pieces of NeuroBench might be implemented. It is not meant to be a definitive solution, in certain cases (like running processors and metrics on data) two different approaches are used to show variety in implementation.
 
-`neurobench.benchmarks`: Benchmark pipelines that take a `Dataset`, `Model`, & list of `PreProcessor` and output `Result`
-- Metrics management?
-- Model simulation?
-- Hardware deployment?
-- Result publishing?
+It also shows how dependencies can be managed with optional installations, preventing unnecessary bloat. Optional dependencies are specified using the `-E` flag when running `poetry install` or placed in square brackets when installing the final wheel from PyPI (`pip install neurobench[snntorch]`).
 
-`neurobench.datasets`: Wrappers for existing datasets, focusing on consistency and performant loading
-- Dataset downloading?
-- Dataset folder structure?
-- Storage of pre-processed intermediate data?
-
-`neurobench.models`: Light-weight wrapper for existing model frameworks, focusing on support for existing SNN frameworks (SNNTorch, Rockpool, etc.), typical ANN models, and forcing a consistent data dimensionality/structure between them (eg. `[batch, ..., timesteps]`)
-- Inference API?
-
-`neurobench.preprocessing`: Functions for processing data to prepare it for neuromorphic models (spike conversion algorithms, etc.)
-- Benchmarking preprocessors?
+## Running the code
+To run the code, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
+```
+poetry install -E "snntorch speech2spikes"
+poetry run python neurobench/examples/benchmark_model.py
+```

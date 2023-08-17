@@ -13,17 +13,9 @@ from neurobench.accumulators import choose_max_count
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
 
-test_set = SpeechCommands("data/speech_commands/", split="testing")
+test_set = SpeechCommands(subset="testing")
 
-# print(test_set[0][0].shape)
-# torch.Size([1, 16000])
-# --> TODO: this should be (timesteps, channels) so (16000, 1)?
-
-# TODO: DataLoader fails because samples are different lengths
-test_set_loader = DataLoader(test_set, batch_size=2, shuffle=True)
-# for data in test_set_loader:
-#     print(data)
-#     breakpoint()
+test_set_loader = DataLoader(test_set, batch_size=32, shuffle=True)
 
 beta = 0.9
 spike_grad = surrogate.fast_sigmoid()

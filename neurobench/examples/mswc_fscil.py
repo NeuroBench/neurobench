@@ -1,44 +1,40 @@
 import torch
 
-from speech2spikes import S2S
+from torch.utils.data import DataLoader
 
-from neurobench.datasets import MSWC_FSCIL
-from neurobench.models import NeuroBenchModel
+from neurobench.data.datasets import MSWC
+from neurobench.models import M5
 from neurobench.benchmarks import Benchmark
+from neurobench.preprocessing import MFCCProcessor
 
-# seed run
+from torch_mate.data.utils import FewShot
+
 torch.manual_seed(0)
 
-# TODO: discuss general FSCIL dataloader in subgroup
+train = lambda net, data: net
 
-# iterable loaders
-#   train_loader = MSWC_FSCIL("data/mswc", split="training")
-#   test_loader = MSWC_FSCIL("data/mswc", split="testing")
+model = M5(n_input=48, n_output=40)
+dataset = MSWC(root="data/MSWC", subset="evaluation")
 
-# generalized format
-#   mswc = MSWC()
-#   train_loader, test_loader = FSCIL_Loader(mswc, classes=[[base_classes],[ses1],[ses2],...], max_train_samples=..., max_test_samples=...)
+few_shot_dataset = FewShot(dataset, 5, 5,
+                            first_iter_ways_shots=(10, 10),
+                            incremental=True,
+                            cumulative=True)
 
-s2s = S2S()
+few_shot_dataloader = DataLoader(few_shot_dataset, batch_size=1)
 
-## Define model ##
-class SNN_MAML(TorchModel):
-    def __init__(self, net):
-        self.net = net
+benchmark = Benchmark(model, dataset, [], ["accuracy", "model_size", "latency", "MACs"])
 
-    def __call__(self, data):
-        ...
+for session, (X, y) in enumerate(few_shot_dataloader):
+    print(f"Session: {session}")
 
-net = ...
-model = SNN_MAML(net)
-benchmark = Benchmark(model, test_data, [s2s], ["accuracy", "model_size", "latency", "MACs"])
-
-for session, (train_data, test_data) in enumerate(zip(train_loader, test_loader)):
-    print("Session: {}".format(session))
+    X_train, X_test = X
+    y_train, y_test = y
     
-    ## train model using train_data ##
-    net = train(net, train_data)
+    # Train model using train_data
+    net = train(net, (X_train, y_train))
 
     ## run benchmark ##
     session_results = benchmark.run() # TODO: need to re-instantiate model/benchmark when net changes?
+
     print(session_results)

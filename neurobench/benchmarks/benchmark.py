@@ -4,39 +4,50 @@ from tqdm import tqdm
 from . import metrics
 
 class Benchmark():
-    def __init__(self, model, data, processors, metric_list):
+    def __init__(self, model, dataloader, preprocessors, postprocessors, metric_list):
         self.model = model
-        self.data = data
-        self.processors = processors
-        self.metrics = {m: getattr(metrics, m) for m in metric_list}
+        self.dataloader = dataloader # assuming dataloader not dataset
+        self.preprocessors = preprocessors
+        self.postprocessors = postprocessors
+        
+        # self.metrics = {m: getattr(metrics, m) for m in metric_list}
+
+        self.static_metrics = {m: getattr(metrics, m) for m in metric_list[0]}
+        self.data_metrics = {m: getattr(metrics, m) for m in metric_list[1]}
 
     def run(self):
-        run_data = {}
-        run_data["model"] = self.model
-        run_data["data"] = self.data
+        print("Running benchmark")
 
-        print("Preprocessing data")
-        data = self.data
-        for alg in self.processors:
-            data = zip(*alg(tqdm(data)))
-
-        print("Running model on test data")
-        run_data["preds"] = []
-        for d in tqdm(data, total=len(self.data)):
-            pred = self.model(d[0]) # TODO: prediction is output to be compared to labels?
-            run_data["preds"].append(pred)
-
-            batch_data = model.track_batch()
-            for k, v in batch_data.items():
-                if k not in run_data:
-                    run_data[k] = []
-                run_data[k].append(v)
-
-        run_data = run_data | model.track_run()
-        
-        print("Calculating metrics")
+        # Static metrics
         results = {}
-        for m in tqdm(self.metrics):
-            results[m] = self.metrics[m](run_data)
+        for m in self.static_metrics.keys():
+            results[m] = self.static_metrics[m](self.model)
+
+        dataset_len = len(self.dataloader.dataset)
+        for data in tqdm(self.dataloader, total=len(dataloader)):
+            batch_size = data[0].size(0)
+
+            print("Preprocessing data")
+            for alg in self.preprocessors:
+                data = zip(*alg(data))
+
+            print("Running model on test data")
+            preds = self.model(data[0])
+
+            # TODO: postprocessors are applied to model output only?
+            for alg in self.postprocessors: 
+                preds = alg(preds)
+
+            # Data metrics
+            batch_results = {}
+            for m in self.data_metrics.keys():
+                batch_results[m] = self.data_metrics[m](self.model, preds, data)
+
+            # Accumulate data metrics via mean
+            for m, v in batch_results.items():
+                if m not in results:
+                    results[m] = v * batch_size / dataset_len
+                else:
+                    results[m] += v * batch_size / dataset_len
 
         return results

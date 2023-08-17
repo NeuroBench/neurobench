@@ -40,3 +40,13 @@ class SNNTorchModel(NeuroBenchModel):
         spikes = torch.stack(spikes).transpose(0, 1)
         
         return spikes
+
+    def size(self):
+        param_size = 0
+        for param in self.net.parameters():
+            param_size += param.numel() * param.element_size()
+
+        buffer_size = 0
+        for buffer in self.net.buffers():
+            buffer_size += buffer.numel() * buffer.element_size()
+        return param_size + buffer_size

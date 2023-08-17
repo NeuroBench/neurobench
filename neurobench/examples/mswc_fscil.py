@@ -5,7 +5,6 @@ from torch.utils.data import DataLoader
 from neurobench.data.datasets import MSWC
 from neurobench.models import M5
 from neurobench.benchmarks import Benchmark
-from neurobench.preprocessing import MFCCProcessor
 
 from torch_mate.data.utils import FewShot
 
@@ -32,9 +31,9 @@ for session, (X, y) in enumerate(few_shot_dataloader):
     y_train, y_test = y
     
     # Train model using train_data
-    net = train(net, (X_train, y_train))
+    model = train(model, (X_train, y_train))
 
     ## run benchmark ##
-    session_results = benchmark.run() # TODO: need to re-instantiate model/benchmark when net changes?
+    session_results = benchmark.run()
 
     print(session_results)

@@ -179,6 +179,6 @@ class EchoStateNetwork(nn.Module):
             predictions.append(prediction)
             self.prior_prediction = prediction
 
-        return torch.tensor(predictions)
+        return torch.tensor(predictions).unsqueeze(-1)
    
         

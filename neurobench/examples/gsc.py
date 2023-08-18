@@ -13,9 +13,9 @@ from neurobench.accumulators import choose_max_count
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
 
-test_set = SpeechCommands(subset="testing")
+test_set = SpeechCommands(path="data/", subset="testing")
 
-test_set_loader = DataLoader(test_set, batch_size=32, shuffle=True)
+test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
 beta = 0.9
 spike_grad = surrogate.fast_sigmoid()

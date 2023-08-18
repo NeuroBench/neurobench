@@ -27,9 +27,13 @@ class Benchmark():
         for data in tqdm(self.dataloader, total=len(self.dataloader)):
             batch_size = data[0].size(0)
 
+            # convert data to tuple
+            if type(data) is not tuple:
+                data = tuple(data)
+
             # Preprocessing data
             for alg in self.preprocessors:
-                data = zip(*alg(data))
+                data = alg(data)
 
             # Run model on test data
             preds = self.model(data[0])

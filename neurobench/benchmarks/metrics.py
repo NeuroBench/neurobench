@@ -2,6 +2,8 @@
 """
 import torch
 
+from .utils.metric_utils import check_shape
+
 # static metrics, only require model
 # TODO: should these be defined by the NeuroBenchModel class or defined here?
 def model_size(model):
@@ -33,6 +35,7 @@ def activation_sparsity(model, preds, data):
     '''
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
     #       Standard FF ANN should be zero (no activation sparsity)
+    check_shape(preds, data[1])
     return model.activation_sparsity()
 
 def multiply_accumulates(model, preds, data):
@@ -43,6 +46,7 @@ def multiply_accumulates(model, preds, data):
     #   Spiking model: number of spike activations * fanout (see snnmetrics)
     #   Recurrent layers: each connection is one MAC
     #   ANN: use PyTorch profiler
+    check_shape(preds, data[1])
     macs = 0.0
     return macs
 
@@ -50,16 +54,16 @@ def classification_accuracy(model, preds, data):
     '''
     Classification accuracy of the model predictions.
     '''
+    check_shape(preds, data[1])
     equal = torch.eq(preds, data[1])
     return torch.mean(equal.float()).item()
 
-def NRMSE(model, preds, data):
+def MSE(model, preds, data):
     '''
-    Normalized root mean squared error (NRMSE) of the model predictions.
+    Mean squared error of the model predictions.
     '''
-    # TODO
-    
-    return 5.0
+    check_shape(preds, data[1])
+    return torch.mean((preds - data[1])**2).item()
 
 
 

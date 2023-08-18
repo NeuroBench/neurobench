@@ -1,5 +1,3 @@
-"""
-"""
 from tqdm import tqdm
 from . import metrics
 
@@ -10,19 +8,21 @@ class Benchmark():
         self.processors = processors
         self.metrics = {m: getattr(metrics, m) for m in metric_list}
 
-    def run(self):
+    def run(self, data=None):
         run_data = {}
         run_data["model"] = self.model
-        run_data["data"] = self.data
+        run_data["data"] = self.data if data is None else data
 
         print("Preprocessing data")
-        data = self.data
+        data = run_data["data"]
+
         for alg in self.processors:
             data = zip(*alg(tqdm(data)))
 
         print("Running model on test data")
         run_data["preds"] = []
-        for d in tqdm(data, total=len(self.data)):
+        
+        for d in tqdm(data, total=len(data)):
             pred = self.model(d[0]) # TODO: prediction is output to be compared to labels?
             run_data["preds"].append(pred)
 

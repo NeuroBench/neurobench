@@ -56,7 +56,7 @@ def classification_accuracy(model, preds, data):
     '''
     check_shape(preds, data[1])
     equal = torch.eq(preds, data[1])
-    return torch.mean(equal.float())
+    return torch.mean(equal.float()).item()
 
 def MSE(model, preds, data):
     '''

@@ -1,3 +1,21 @@
+# Copyright
+# LICENSE
+#
+#
+
+"""
+metric_utils.py
+------------------------------------------------------------
+Utilities required for the metrics.
+
+References
+~~~~~~~~~~
+
+Authors
+~~~~~~~
+
+
+"""
 import torch
 
 def check_shape(preds, labels):

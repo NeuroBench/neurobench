@@ -1,37 +1,41 @@
-# Copyright
-# LICENSE
-#
-#
-
 """
-benchmark.py
-------------------------------------------------------------
-Benchmark class 
-
-References
-~~~~~~~~~~
-
-Authors
-~~~~~~~
-
-
+Authors:
+    Jason Yik
+    Noah Pacik-Nelson
 """
 from tqdm import tqdm
 from . import metrics
 
 class Benchmark():
+    """ Top-level benchmark class for running benchmarks.
+    """
     def __init__(self, model, dataloader, preprocessors, postprocessors, metric_list):
+        """
+        Args:
+            model: A NeuroBenchModel.
+            dataloader: A PyTorch DataLoader.
+            preprocessors: A list of NeuroBenchProcessors.
+            postprocessors: A list of NeuroBenchAccumulators.
+            metric_list: A list of lists of strings of metrics to run. 
+                First item is static metrics, second item is data metrics.
+        """
         self.model = model
-        self.dataloader = dataloader # assuming dataloader not dataset
+        self.dataloader = dataloader # dataloader not dataset
         self.preprocessors = preprocessors
         self.postprocessors = postprocessors
-        
-        # self.metrics = {m: getattr(metrics, m) for m in metric_list}
 
         self.static_metrics = {m: getattr(metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(metrics, m) for m in metric_list[1]}
 
     def run(self):
+        """ Runs batched evaluation of the benchmark.
+
+        Currently, data metrics are accumulated via mean over the entire
+        test set, and thus must return a float or int.
+
+        Returns:
+            results: A dictionary of results.
+        """
         print("Running benchmark")
 
         # Static metrics

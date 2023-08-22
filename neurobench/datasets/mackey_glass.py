@@ -28,36 +28,7 @@ from jitcdde import jitcdde, y, t, jitcdde_lyap
 
 
 class MackeyGlass(Dataset):
-    """
-    Dataset for the Mackey-Glass task
-
-    Parameters
-    ----------
-    tau    :  float
-        parameter of the Mackey-Glass equation
-    constant_past    :  float
-        initial condition for the solver
-    nmg    :  float
-        parameter of the Mackey-Glass equation
-    beta    :  float
-        parameter of the Mackey-Glass equation
-    gamma    :  float
-        parameter of the Mackey-Glass equation
-    dt  : float
-        time step length for sampling data
-    splits  : list
-        data split in time units for training and testing data, respectively
-    start_offset  : float
-        added offset of the starting point of the time-series, in case of repeating using same function values
-    seed_id  : int
-        seed for generating function solution
-
-    Methods
-    ----------
-    generate__data
-        generate time-series using the provided parameters of the equation 
-    split_data
-        split data into training and testing sets
+    """ Dataset for the Mackey-Glass task.
     """
     def __init__(self, 
                  tau,  
@@ -70,6 +41,20 @@ class MackeyGlass(Dataset):
                  start_offset=0.,
                  seed_id=0,
     ):
+        """
+        Initializes the Mackey-Glass dataset.
+
+        Args:
+            tau (float): parameter of the Mackey-Glass equation
+            constant_past (float): initial condition for the solver
+            nmg (float): parameter of the Mackey-Glass equation
+            beta (float): parameter of the Mackey-Glass equation
+            gamma (float): parameter of the Mackey-Glass equation
+            dt (float): time step length for sampling data
+            splits (tuple): data split in time units for training and testing data, respectively
+            start_offset (float): added offset of the starting point of the time-series, in case of repeating using same function values
+            seed_id (int): seed for generating function solution
+        """
 
         super().__init__()
 
@@ -108,9 +93,7 @@ class MackeyGlass(Dataset):
         
 
     def generate_data(self):
-        """
-        Generate time-series using the provided parameters of the equation 
-
+        """ Generate time-series using the provided parameters of the equation.
         """
         np.random.seed(self.seed_id)
 
@@ -141,39 +124,28 @@ class MackeyGlass(Dataset):
 
 
     def split_data(self):
-        """
-        Generate training and testing indices.
-
+        """ Generate training and testing indices.
         """
         self.ind_train = torch.arange(0, self.traintime_pts)
         self.ind_test = torch.arange(self.traintime_pts, self.maxtime_pts-1)
              
     def __len__(self):
-        """
-        Returns number of samples in dataset
+        """ Returns number of samples in dataset.
 
-        Returns
-        ----------
-        length:  int
-            number of samples in dataset
+        Returns:
+            int: number of samples in dataset
         """
         return len(self.mackeyglass_soln-1)
     
     def __getitem__(self, idx):
-        """
-        Getter method for test data in the Dataloader
+        """ Getter method for dataset.
 
-        Parameters
-        ----------
-        idx : int
-            index of sample.
+        Args:
+            idx (int): index of sample to return
 
-        Returns
-        ----------
-        sample:  tensor, shape=(timestamps, features)=(1,1)
-            individual data sample
-        target:  tensor, shape=(label,)=(1,)
-            corresponding next state of the system
+        Returns:
+            sample (tensor): individual data sample, shape=(timestamps, features)=(1,1)
+            target (tensor): corresponding next state of the system, shape=(label,)=(1,)
         """
         sample = torch.unsqueeze(self.mackeyglass_soln[idx, :], dim=0)
         target = self.mackeyglass_soln[idx+1, :]

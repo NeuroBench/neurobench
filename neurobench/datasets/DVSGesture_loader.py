@@ -38,20 +38,29 @@ from matplotlib.animation import FuncAnimation
 class DVSGesture(NeuroBenchDataset):
     """
     Installs DVSGesture Dataset with individual events in each file,
-    if not yet installed, else pass path of tonic DVSGesture install
+    if not yet installed, else pass the path of the tonic DVSGesture install.
 
     Data information:
-    event rate: 1MHz -> dt 1e-6
-    sample length: 1.7 seconds
-    default timestep for frames: 5 ms
+    - Event rate: 1MHz -> dt 1e-6
+    - Sample length: 1.7 seconds
+    - Default timestep for frames: 5 ms
 
-    For possible preprocessing functions see:
+    For possible preprocessing functions, see:
     https://docs.prophesee.ai/stable/tutorials/ml/data_processing/event_preprocessing.html?highlight=metavision_ml%20preprocessing
-    """
 
+    Args:
+        path (str): Path of DVS Gesture dataset folder if applicable, else the destination of DVS Gesture dataset.
+        split (str): Return testing or training data.
+        data_type (str): If 'frames', returns frames with preprocessing applied; else returns raw events.
+        preprocessing (str): Preprocessing to get frames from raw events.
+    """
     def __init__(
         self, path, split="testing", data_type="frames", preprocessing="stack"
     ):
+        '''
+        Initialization will load in data from path if possible, else will download dataset into path. 
+        '''
+        # download or load data
         if split == "training":
             self.dataset = tonic_DVSGesture(save_to=path)
         else:
@@ -68,9 +77,28 @@ class DVSGesture(NeuroBenchDataset):
         self.random_window = False
 
     def __len__(self):
+        """
+        Returns the number of samples in the dataset.
+
+        Returns:
+            int: The number of samples in the dataset.
+        """
         return len(self.filenames)
 
     def __getitem__(self, idx):
+        """
+        Getter method for test data in the DataLoader.
+
+        Parameters:
+            idx (int): Index of the sample.
+
+        Returns:
+            tuple:
+                sample (tensor): Individual data sample, which can be a sequence of frames or raw data.
+                    Shape: (timestamps, features)
+                target (tensor): Corresponding gesture label.
+                    Shape: (1,)
+        """
         structured_array = self.dataset[idx][0]
 
         x_data = np.array(structured_array["x"], dtype=np.int16)
@@ -126,9 +154,14 @@ class DVSGesture(NeuroBenchDataset):
 
         return sample, self.dataset[idx][1]
 
-    def set_sample_params(self, delta_t=5, length=1700, random_window=True):
-        """Enter delta t and sample length in ms
-        If random_window is True, sample will be random timewindow of length within the gesture
+    def set_sample_params(self, delta_t=5, length=1700, random_window=False):
+        """
+        Sets sample parameters used if frames are created from events.
+
+        Args:
+            delta_t (int): Time steps to stack events into frames (in milliseconds).
+            length (int): Length in milliseconds of each sample.
+            random_window (bool): If True, the sample will be a random time window of length within the gesture.
         """
         self._deltat = delta_t * 1000  # convert to microseconds
         self._T = length
@@ -138,6 +171,18 @@ class DVSGesture(NeuroBenchDataset):
 def stack_preprocessing(
     xypt, delta_t=5000, tbins=200, h_og=128, w_og=128, channels=3, display_frame=False
 ):
+    """
+    Applies stack preprocessing to events. If at least one event has occurred at (x,y) in delta_t corresponding channel 
+    (pos or neg) will be 1, else zero.
+
+    Args:
+        delta_t (int): Time steps to stack events into frames (in milliseconds).
+        tbins (int): Number of frames required.
+        h_og (int): Number of pixels in height.
+        w_og (int): Number of pixels in width.
+        channels (int): Number of channels in each frame (default 3 for plotting purposes).
+        display_frame (bool): If True, will create an animation to visualize event frames.
+    """
     frames = np.zeros((tbins, channels, h_og, w_og))
     for frame in frames:
         # delete prev neg times
@@ -168,6 +213,18 @@ def stack_preprocessing(
 
 
 def histogram_difference_preprocessing(xypt, delta_t=5000, tbins=200, h_og=128, w_og=128, channels=3, display_frame=False):
+    """
+    Applies histogram preprocessing to events. For every positive (pos) or negative (neg) event that has occurred 
+    at (x,y) in delta_t, 1 will be added to (x,y) in the corresponding channel (pos or neg).
+
+    Args:
+        delta_t (int): Time steps to stack events into frames (in milliseconds).
+        tbins (int): Number of frames required.
+        h_og (int): Number of pixels in height.
+        w_og (int): Number of pixels in width.
+        channels (int): Number of channels in each frame (default 3 for plotting purposes).
+        display_frame (bool): If True, will create an animation to visualize event frames.
+    """
     histogram = np.zeros((tbins, channels, h_og, w_og))
     for frame in histogram:
         # delete prev neg times
@@ -217,6 +274,9 @@ fig, ax = plt.subplots()
 
 
 def update(frame, frames):
+    '''
+    Helper function for animation. 
+    '''
     ax.clear()
     image = frames[frame].transpose(1, 2, 0)
 

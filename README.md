@@ -3,28 +3,27 @@ A harness for running evaluations on NeuroBench algorithm benchmarks.
 
 This framework is in a beta state and is still under active development. Currently, only pytorch-based models and frameworks are supported.
 
-NeuroBench is a community-driven project, and we welcome further development from the community. If you are interested in developing extensions to features, programming frameworks, or metrics and tasks. Please see the [contributing guidelines](CONTRIBUTING.md).
+NeuroBench is a community-driven project, and we welcome further development from the community. If you are interested in developing extensions to features, programming frameworks, or metrics and tasks, please see the [contributing guidelines](CONTRIBUTING.md).
 
 ## Installation
 TODO: notes about poetry
+
+To run the code, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
+```
+poetry install -E "snntorch speech2spikes"
+poetry run python neurobench/examples/benchmark_model.py
+```
 
 ## Getting started
 Example benchmark scripts can be found under the `neurobench/examples` folder. 
 
 In general, the design flow for using the framework is as follows:
 	
-	1. Train a network using the train split from a particular dataset.
-	2. Wrap the network in a `NeuroBenchModel`.
-	3. Pass the model, evaluation split dataloader, pre-/post-processors, and a list of metrics to the `Benchmark` and `run()`.
+1. Train a network using the train split from a particular dataset.
+2. Wrap the network in a `NeuroBenchModel`.
+3. Pass the model, evaluation split dataloader, pre-/post-processors, and a list of metrics to the `Benchmark` and `run()`.
 
-Documentation for the framework interfaces can found in `API.md`.
-
-## Running the code
-To run the code, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
-```
-poetry install -E "snntorch speech2spikes"
-poetry run python neurobench/examples/benchmark_model.py
-```
+Documentation for the framework interfaces can found in [API.md](API.md).
 
 ## Developers
 NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Anurag Kumar Mishra.

@@ -11,16 +11,18 @@ numpy = "^1.24.3"
 torch = "^2.0.1"
 torchaudio = "^2.0.2"
 tqdm = "^4.65.0"
-snntorch = {version = "^0.6.4", optional = true}
-speech2spikes = {version = "^1.0.0", optional = true}
+snntorch = {version = "^0.7.0", optional = true}
+jitcdde = {version = "^1.8.1", optional = true}
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^7.0.0"
 pytest-cov = "^4.1.0"
+snntorch = "^0.7.0"
+jitcdde = "^1.8.1"
 
 [tool.poetry.extras]
 snntorch = ["snntorch"]
-speech2spikes = ["speech2spikes"]
+jitcdde = ["mackey-glass"]
 
 [build-system]
 requires = ["poetry-core"]

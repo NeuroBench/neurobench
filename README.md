@@ -6,12 +6,13 @@ This framework is in a beta state and is still under active development. Current
 NeuroBench is a community-driven project, and we welcome further development from the community. If you are interested in developing extensions to features, programming frameworks, or metrics and tasks, please see the [contributing guidelines](CONTRIBUTING.md).
 
 ## Installation
-TODO: notes about poetry
+TODO: pip install
 
+### Development
 To run the code, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
 ```
-poetry install -E "snntorch speech2spikes"
-poetry run python neurobench/examples/benchmark_model.py
+poetry install
+poetry run python neurobench/examples/gsc.py
 ```
 
 ## Getting started

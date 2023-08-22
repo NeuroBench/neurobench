@@ -1,4 +1,20 @@
+# Copyright
+# LICENSE
+#
+#
+
 """
+benchmark.py
+------------------------------------------------------------
+Benchmark class 
+
+References
+~~~~~~~~~~
+
+Authors
+~~~~~~~
+
+
 """
 from tqdm import tqdm
 from . import metrics

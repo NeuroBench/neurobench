@@ -47,19 +47,18 @@ class DVSGesture(NeuroBenchDataset):
 
     For possible preprocessing functions, see:
     https://docs.prophesee.ai/stable/tutorials/ml/data_processing/event_preprocessing.html?highlight=metavision_ml%20preprocessing
-
-    Args:
-        path (str): Path of DVS Gesture dataset folder if applicable, else the destination of DVS Gesture dataset.
-        split (str): Return testing or training data.
-        data_type (str): If 'frames', returns frames with preprocessing applied; else returns raw events.
-        preprocessing (str): Preprocessing to get frames from raw events.
     """
     def __init__(
         self, path, split="testing", data_type="frames", preprocessing="stack"
     ):
-        '''
-        Initialization will load in data from path if possible, else will download dataset into path. 
-        '''
+        """ Initialization will load in data from path if possible, else will download dataset into path. 
+        
+        Args:
+            path (str): Path of DVS Gesture dataset folder if applicable, else the destination of DVS Gesture dataset.
+            split (str): Return testing or training data.
+            data_type (str): If 'frames', returns frames with preprocessing applied; else returns raw events.
+            preprocessing (str): Preprocessing to get frames from raw events.
+        """
         # download or load data
         if split == "training":
             self.dataset = tonic_DVSGesture(save_to=path)
@@ -77,8 +76,7 @@ class DVSGesture(NeuroBenchDataset):
         self.random_window = False
 
     def __len__(self):
-        """
-        Returns the number of samples in the dataset.
+        """ Returns the number of samples in the dataset.
 
         Returns:
             int: The number of samples in the dataset.
@@ -86,18 +84,14 @@ class DVSGesture(NeuroBenchDataset):
         return len(self.filenames)
 
     def __getitem__(self, idx):
-        """
-        Getter method for test data in the DataLoader.
+        """ Getter method for test data in the DataLoader.
 
-        Parameters:
+        Args:
             idx (int): Index of the sample.
 
         Returns:
-            tuple:
-                sample (tensor): Individual data sample, which can be a sequence of frames or raw data.
-                    Shape: (timestamps, features)
-                target (tensor): Corresponding gesture label.
-                    Shape: (1,)
+            sample (tensor): Individual data sample, which can be a sequence of frames or raw data.
+            target (tensor): Corresponding gesture label.
         """
         structured_array = self.dataset[idx][0]
 
@@ -274,9 +268,9 @@ fig, ax = plt.subplots()
 
 
 def update(frame, frames):
-    '''
+    """
     Helper function for animation. 
-    '''
+    """
     ax.clear()
     image = frames[frame].transpose(1, 2, 0)
 

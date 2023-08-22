@@ -10,17 +10,18 @@ class SNNTorchModel(NeuroBenchModel):
     """
     The SNNTorch class wraps the forward pass of the SNNTorch framework and ensures that spikes are in the correct 
     format for downstream NeuroBench components.
-
-    Args:
-        net: A trained SNNTorch network.
     """
     def __init__(self, net):
+        """ Init using a trained network.
+
+        Args:
+            net: A trained SNNTorch network.
+        """
         self.net = net
         self.net.eval()
 
     def __call__(self, data):
-        """
-        Executes the forward pass of SNNTorch models on data that follows the
+        """ Executes the forward pass of SNNTorch models on data that follows the
         NeuroBench specification. Ensures spikes are compatible with downstream
         components.
 
@@ -43,8 +44,7 @@ class SNNTorchModel(NeuroBenchModel):
         return spikes
 
     def size(self):
-        """
-        Returns the size of the model in bytes.
+        """ Returns the size of the model in bytes.
         """
         param_size = 0
         for param in self.net.parameters():

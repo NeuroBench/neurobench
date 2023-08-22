@@ -1,5 +1,5 @@
 # NeuroBench Algorithm Benchmarks
-A harness for running evaluations on NeuroBench algorithm benchmarks.
+A harness for running evaluations on [NeuroBench](https://neurobench.ai) algorithm benchmarks.
 
 This framework is in a beta state and is still under active development. Currently, only pytorch-based models and frameworks are supported.
 

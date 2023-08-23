@@ -4,7 +4,7 @@ from torch.utils.data import DataLoader
 from torch_mate.data.utils import FewShot
 from torch_mate.utils import get_device
 
-from neurobench.data.datasets import MSWC
+from neurobench.datasets import MSWC
 from neurobench.examples.few_shot_learning.utils import train_using_MAML
 from neurobench.models import M5
 from neurobench.utils import Dict2Class

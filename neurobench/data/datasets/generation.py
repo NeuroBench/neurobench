@@ -81,14 +81,6 @@ google_commands_list = [
 VOICE_COMMANDS = voice_commands + google_commands_list
 
 
-SAMPLE_RATE = 48000
-ALL_LANGUAGES = ["en"] #, "es"]
-FOLDER_AUDIO = "clips"
-
-PRE_TRAINING_TAGS = []
-EVALUATION_TAGS = []
-
-
 def generate_mswc_fscil_splits(root: Union[str, Path], 
                                languages: List[str] = None, 
                                visualize: Optional[bool] = False):

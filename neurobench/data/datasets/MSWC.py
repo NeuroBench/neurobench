@@ -12,9 +12,6 @@ SAMPLE_RATE = 48000
 ALL_LANGUAGES = ["en"] #, "es"]
 FOLDER_AUDIO = "clips"
 
-PRE_TRAINING_TAGS = []
-EVALUATION_TAGS = []
-
 def _load_list(root: Union[str, Path], languages: List[str], split: str) -> List[Tuple[str, str, bool, str, str]]:
     walker = []
 
@@ -58,7 +55,7 @@ class MSWC(Dataset):
 
         if languages is not None and languages != ['en']:
             print('Other languages than english are not supported yet.')
-        # self.languages = languages if languages is not None else ALL_LANGUAGES
+        self.languages = languages if languages is not None else ALL_LANGUAGES
 
         # If the fscil subset split files don't exist anymore, generate them
         if not os.path.isfile(os.path.join(root, 'en', f'{"en"}_{split}.csv')):

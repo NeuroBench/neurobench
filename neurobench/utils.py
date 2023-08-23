@@ -1,5 +1,3 @@
-"""
-"""
 from importlib import import_module
 
 def _lazy_import(package_name, module_name, class_name):

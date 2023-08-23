@@ -1,5 +1,3 @@
-"""
-"""
 import torch
 
 class NeuroBenchAccumulator():
@@ -11,6 +9,9 @@ class NeuroBenchAccumulator():
 
     def __init__(self, args):
         """ Initialize accumulator with any parameters needed
+
+        Args:
+            args: A dictionary of arguments for the accumulator
         """
         raise NotImplementedError("Subclasses of NeuroBenchAccumulator should implement __init__")
 

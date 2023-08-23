@@ -5,19 +5,15 @@ Example Python snippets may be shown here and will be kept up-to-date.
 
 
 ## Overview
-| **Component** | **Status** | **Known Errata** |
-|---------------|------------|------------------|
-| Data          | Frozen     |                  |
-| Dataset       | Frozen     |                  |
-| Processor     | Frozen     |                  |
-| Model         | Tentative  |                  |
-| Metrics       | Proposed   |                  |
-| Benchmark     | Tentative  |                  |
-
-### **Status**:
-- **Frozen**: Work can be started with the expectation that the I/O around that component is defined and will not change.
-- **Tentative**: Almost frozen, work can be started but functions may need to be added, renamed, etc.
-- **Proposed**: Implement this at your own risk.
+| **Components** |
+|----------------|
+| Data           |
+| Dataset        |
+| Processor      |
+| Accumulator    |
+| Model          |
+| Metrics        |
+| Benchmark      |
 
 <div class="page"/>
 
@@ -25,7 +21,7 @@ Example Python snippets may be shown here and will be kept up-to-date.
 ### **Data:**
 ```
 Format:
-    tensor: A PyTorch tensor of shape (batch, timesteps, ...)
+    tensor: A PyTorch tensor of shape (batch, timesteps, features*), where features* can be any number of dimensions.
 ```
 ### **Dataset:**
 ```
@@ -33,6 +29,9 @@ Output:
     (data, targets): A tuple of PyTorch tensors. The first dimension (batch) is expected to match.
 ```
 ### **Processor:**
+
+Processing data / preprocessing.
+
 ```
 Input:
     (data, targets): A tuple of PyTorch tensors. The first dimension (batch) is expected to match.
@@ -40,7 +39,7 @@ Output:
     (data, targets): A tuple of PyTorch tensors. The first dimension (batch) is expected to match.
 ```
 ```python
-class Processor:
+class Processor(NeuroBenchProcessor):
     def __init__(self):
 		...
     def __call__(self, dataset):
@@ -49,65 +48,106 @@ class Processor:
 alg = Processor()
 new_dataset = alg(dataset) # dataset: (data, targets)
 ```
+### **Accumulator:**
 
-<div class="page"/>
+Accumulating predictions / postprocessing.
 
-### **Model\*:**
 ```
 Input:
-    data: A PyTorch tensor of shape (batch, timesteps, ...)
+    preds: A PyTorch tensor.
 Output:
-    preds: A PyTorch tensor of shape [TODO].
+    results: A PyTorch tensor. Accumulators may be chained together. Final shape is expected to match the data targets for comparison.
 ```
 ```python
-class NeurobenchModel:
+class Accumulator(NeuroBenchAccumulator):
+    def __init__(self):
+        ...
+    def __call__(self, preds):
+        ...
+
+alg = Accumulator()
+model = NeuroBenchModel(...)
+preds = model(data) # data: (batch, timesteps, features*)
+results = alg(preds)
+```
+
+### **Model:**
+```
+Input:
+    data: A PyTorch tensor of shape (batch, timesteps, features*)
+Output:
+    preds: A PyTorch tensor. Can either be the final shape to be compared with targets or an arbitrary shape to be postprocessed by Accumulator(s).
+```
+```python
+class SNNTorchModel(NeuroBenchModel):
     def __init__(self, net):
 		...
     def __call__(self, batch):
 		...
 
 model = SNNTorchModel(net)
-pred = model(batch)
-output = (pred, targets) # Follow dataset format
+preds = model(batch)
 ```
-### **Metrics\*:**
-```
-TODO
-```
+### **Metrics:**
+There are two types of metrics: *static* and *data*. Static metrics can be computed using the model alone, while data metrics require the model predictions and the targets as well.
 
-<div class="page"/>
+Currently, data metrics are accumulated over batched evaluation using mean.
 
-### **Benchmark\*:**
 ```
+**Static Metrics:**
 Input:
-    model: The model to be tested. Must be wrapped in a NeuroBench class.
-    test_set: The dataset of form (data, targets) to be inferred.
-    pre_processors: A list of processor functions.
-    post_processors: A list of post-processor functions.
-    metrics: A list of strings. The names of the metric will be used to call it from the metrics file. User defined metrics should be discouraged.
+    model: A NeuroBenchModel object.
 Output:
-    results: Either a dict or specific NeuroBenchResults class.
+    result: Any type. The result of the metric.
+```
+
+```
+**Data Metrics:**
+Input:
+    model: A NeuroBenchModel object.
+    preds: A PyTorch tensor. To be compared with targets.
+    data: Tuple of (data, targets). 
+Output:
+    result: A float or int, which can be accumulated with the results from other batches.
 ```
 ```python
-class Benchmark:
-    def __init__(self, model, test_set, pre_processors, post_processors, metrics):
-		...
-    def run(self):
-		...
+def static_metric(model):
+    ...
+
+def data_metric(model, preds, data):
+    return compare(preds, data[1])
+```
+
+### **Benchmark:**
+```
+Input:
+    model: The NeuroBenchModel to be tested.
+    dataloader: A PyTorch DataLoader which loads the evaluation dataset.
+    processors: A list of Processors.
+    accumulators: A list of Accumulators.
+    metric_list: [[static_metrics], [data_metrics]], where each are strings. The names of the metric will be used to call it from the metrics file. User defined metrics should be discouraged.
+Output:
+    results: A dict of {metric: result}.
+```
+```python
+model = TorchModel(net)
+test_set = NeuroBenchDataset(...)
+test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
+processors = [Processor1(), Processor2()]
+accumulators = [Accumulator1()]
+static_metrics = ["model_size", "connection_sparsity"]
+data_metrics = ["accuracy", "activation_sparsity"]
 
 benchmark = Benchmark(
 	model, 
-	test_set,
-	[processor1, processor2],
-    [processor3, processor4], 
-	["accuracy", "model_size"]
+	test_set_loader,
+	processors,
+    accumulators, 
+	[static_metrics, data_metrics]
 )
+results = benchmark.run()
 
 ```
-
-**\* =** Tentative or Proposed API
-
-<div class="page"/>
 
 ## Known Errata
 Any anomalies that break the high-level API will be noted here but attempts will be made to keep this to a minimum.

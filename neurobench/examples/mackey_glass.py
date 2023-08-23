@@ -42,7 +42,7 @@ test_set = Subset(mg, mg.ind_test)
 # torch.save(esn, 'model_data/esn.pth')
 
 ## Load Model ##
-net = torch.load('model_data/esn.pth')
+net = torch.load('neurobench/examples/model_data/esn.pth')
 test_set_loader = DataLoader(test_set, batch_size=2000, shuffle=False)
 
 model = TorchModel(net)

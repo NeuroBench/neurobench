@@ -40,8 +40,7 @@ import torchaudio
 
 
 def tensor_to_events(batch, threshold=1, device=None):
-    """
-    Converts a batch of continuous signals to binary spikes via delta modulation
+    """ Converts a batch of continuous signals to binary spikes via delta modulation
     (https://en.wikipedia.org/wiki/Delta_modulation).
 
     Args:
@@ -71,15 +70,15 @@ def tensor_to_events(batch, threshold=1, device=None):
 
 
 class S2SProcessor(NeuroBenchProcessor):
-    """
-    The SpikeEncoder class manages the conversion from raw audio into spikes
+    """ The SpikeEncoder class manages the conversion from raw audio into spikes
     and stores the required conversion parameters.
-
-    Args:
-        device (torch.device, optional): A torch.Device used by PyTorch for the
-            computation. Defaults to None.
     """
     def __init__(self, device=None):
+        """
+        Args:
+            device (torch.device, optional): A torch.Device used by PyTorch for the
+                computation. Defaults to None.
+        """
         self.device = device
         self._default_spec_kwargs = {
             "sample_rate": 16000,
@@ -94,17 +93,15 @@ class S2SProcessor(NeuroBenchProcessor):
         )
 
     def __call__(self, batch):
-        """
-        Converts raw audio data to spikes using Speech2Spikes algorithm
+        """ Converts raw audio data to spikes using Speech2Spikes algorithm
         (https://doi.org/10.1145/3584954.3584995)
 
         Args:
             batch: A tuple of data and corresponding targets (data_tensor, targets)
 
         Returns:
-            (tensor, targets):
-                tensors: PyTorch int8 tensor of shape (batch, timesteps, ...)
-                targets: A tensor of corresponding targets.
+            tensors: PyTorch int8 tensor of shape (batch, timesteps, ...)
+            targets: A tensor of corresponding targets.
 
         TODO:
             Add support for cumulative sum of features
@@ -119,8 +116,7 @@ class S2SProcessor(NeuroBenchProcessor):
         return tensors, targets
 
     def configure(self, threshold=1, **spec_kwargs):
-        """
-        Allows the user to configure parameters of the S2S class and the
+        """ Allows the user to configure parameters of the S2S class and the
         MelSpectrogram transform from torchaudio.
 
         Go to (https://pytorch.org/audio/main/generated/torchaudio.transforms.MelSpectrogram.html)

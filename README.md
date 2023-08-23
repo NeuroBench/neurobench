@@ -9,7 +9,7 @@ NeuroBench is a community-driven project, and we welcome further development fro
 TODO: pip install
 
 ### Development
-To run the code, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
+If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
 ```
 poetry install
 poetry run python neurobench/examples/gsc.py

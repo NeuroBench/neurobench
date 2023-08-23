@@ -4,7 +4,7 @@ import torch
 
 
 class MFCCProcessor(NeuroBenchProcessor):
-    """cDoes MFCC computation on dataset using torchaudio.transforms.MFCC.
+    """ Does MFCC computation on dataset using torchaudio.transforms.MFCC.
     Call expects loaded .wav data and targets as a tuple (data, targets).
     Expects sample_rate to be the same for all samples in data.
     """

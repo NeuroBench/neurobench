@@ -40,21 +40,22 @@ import torchaudio
 
 
 def tensor_to_events(batch, threshold=1, device=None):
-    """Converts a batch of continuous signals to binary spikes via delta
-    modulation (https://en.wikipedia.org/wiki/Delta_modulation).
+    """
+    Converts a batch of continuous signals to binary spikes via delta modulation
+    (https://en.wikipedia.org/wiki/Delta_modulation).
 
     Args:
-        batch: PyTorch tensor of shape (..., timesteps)
-        threshold: The difference between the residual and signal that
+        batch (Tensor): PyTorch tensor of shape (..., timesteps).
+        threshold (float): The difference between the residual and signal that
             will be considered an increase or decrease. Defaults to 1.
-        device: A torch.Device used by PyTorch for the computation. Defaults to 
-            None.
+        device (torch.device, optional): A torch.Device used by PyTorch for the
+            computation. Defaults to None.
 
     Returns:
-        A PyTorch int8 tensor of events of shape (..., timesteps).
+        Tensor: A PyTorch int8 tensor of events of shape (..., timesteps).
 
     TODO:
-        Add support for using multiple channels for polarity instead of signs
+        Add support for using multiple channels for polarity instead of signs.
     """
     events = torch.zeros(batch.shape)
     levels = torch.round(batch[..., 0])
@@ -70,14 +71,14 @@ def tensor_to_events(batch, threshold=1, device=None):
 
 
 class S2SProcessor(NeuroBenchProcessor):
-    """The S2S class manages the conversion from raw audio into spikes and
-    stores the required conversion parameters.
-
-    Attributes:
-        device: A torch.Device used by PyTorch for the computation. Defaults to 
-            None.
     """
+    The SpikeEncoder class manages the conversion from raw audio into spikes
+    and stores the required conversion parameters.
 
+    Args:
+        device (torch.device, optional): A torch.Device used by PyTorch for the
+            computation. Defaults to None.
+    """
     def __init__(self, device=None):
         self.device = device
         self._default_spec_kwargs = {
@@ -93,7 +94,8 @@ class S2SProcessor(NeuroBenchProcessor):
         )
 
     def __call__(self, batch):
-        """Converts raw audio data to spikes using Speech2Spikes algorithm
+        """
+        Converts raw audio data to spikes using Speech2Spikes algorithm
         (https://doi.org/10.1145/3584954.3584995)
 
         Args:
@@ -117,16 +119,17 @@ class S2SProcessor(NeuroBenchProcessor):
         return tensors, targets
 
     def configure(self, threshold=1, **spec_kwargs):
-        """Allows the user to configure parameters of the S2S class and the
+        """
+        Allows the user to configure parameters of the S2S class and the
         MelSpectrogram transform from torchaudio.
 
         Go to (https://pytorch.org/audio/main/generated/torchaudio.transforms.MelSpectrogram.html)
         for more information on the available transform parameters.
 
         Args:
-            threshold: The difference between the residual and signal that
+            threshold (float): The difference between the residual and signal that
                 will be considered an increase or decrease. Defaults to 1.
-            **spec_kwargs: Keyword arguments pass to torchaudio's MelSpectrogram
+            **spec_kwargs: Keyword arguments passed to torchaudio's MelSpectrogram.
         """
         self.threshold = threshold
 

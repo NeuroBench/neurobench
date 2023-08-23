@@ -7,8 +7,7 @@ from snntorch import utils
 from .model import NeuroBenchModel
 
 class SNNTorchModel(NeuroBenchModel):
-    """
-    The SNNTorch class wraps the forward pass of the SNNTorch framework and ensures that spikes are in the correct 
+    """ The SNNTorch class wraps the forward pass of the SNNTorch framework and ensures that spikes are in the correct 
     format for downstream NeuroBench components.
     """
     def __init__(self, net):

@@ -1,23 +1,3 @@
-# Copyright
-# LICENSE
-#
-#
-
-"""
-DVSGesture_loader.py
-------------------------------------------------------------
-DVS Gesture dataset
-
-
-References
-~~~~~~~~~~
-https://research.ibm.com/interactive/dvsgesture/
-
-Author
-~~~~~~
-Korneel Van den Berghe
-
-"""
 import torch
 from torch.utils.data import DataLoader
 

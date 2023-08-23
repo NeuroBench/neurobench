@@ -1,7 +1,3 @@
-"""
-Authors:
-    Jason Yik
-"""
 import torch
 from .model import NeuroBenchModel
 

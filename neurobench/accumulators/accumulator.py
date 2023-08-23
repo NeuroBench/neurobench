@@ -1,22 +1,3 @@
-# Copyright
-# LICENSE
-#
-#
-
-"""
-accumulator.py
-------------------------------------------------------------
-Accumulator class and basic spike accumulator.
-
-
-References
-~~~~~~~~~~
-
-Authors
-~~~~~~~
-
-
-"""
 import torch
 
 class NeuroBenchAccumulator():

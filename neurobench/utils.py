@@ -1,5 +1,2 @@
-"""
-"""
-
 def utility_function():
     ...

@@ -1,6 +1,3 @@
-"""
-"""
-
 from .dataset import NeuroBenchDataset
 
 class PrimateReaching(NeuroBenchDataset):

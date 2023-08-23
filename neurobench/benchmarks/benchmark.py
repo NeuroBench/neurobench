@@ -1,8 +1,3 @@
-"""
-Authors:
-    Jason Yik
-    Noah Pacik-Nelson
-"""
 from tqdm import tqdm
 from . import metrics
 

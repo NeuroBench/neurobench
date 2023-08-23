@@ -1,25 +1,3 @@
-# Copyright
-# LICENSE
-#
-#
-
-"""
-mackey_glass.py
-------------------------------------------------------------
-MackeyGlass dataset
-
-
-References
-~~~~~~~~~~
-
-Authors
-~~~~~~~
-Denis Kleyko
-Jason Yik
-
-"""
-
-
 from neurobench.datasets.dataset import Dataset
 import numpy as np
 import torch

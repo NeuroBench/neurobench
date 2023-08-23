@@ -1,5 +1,3 @@
-"""
-"""
 import torch
 
 from .utils.metric_utils import check_shape

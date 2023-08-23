@@ -1,5 +1,3 @@
-"""
-"""
 import torch
 
 from snntorch import utils

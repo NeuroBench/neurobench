@@ -1,6 +1,3 @@
-"""
-"""
-
 class NeuroBenchModel:
     """ Abstract class for NeuroBench models. Individual model frameworks are
     responsible for defining model inference.

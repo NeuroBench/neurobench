@@ -7,27 +7,13 @@ import glob
 
 class Gen4DetectionDataLoader(SequentialDataLoader):
     """NeuroBench DataLoader for Gen4 pre-computed dataset
+
     The default parameters are set for the Gen4 Histograms dataset, which can be downloaded from
     https://docs.prophesee.ai/stable/datasets.html#precomputed-datasets
     but you can change that easily by downloading one of the other pre-computed datasets and
     changing the preprocess_function_name and channels parameters accordingly.
 
     Once downloaded, extract the zip folder and set the dataset_path parameter to the path of the extracted folder.
-
-    Parameters:
-        dataset_path: path to the dataset folder
-        split: split to use, can be 'training', 'validation' or 'testing'
-        label_map_path: path to the label_map_dictionary.json file
-        batch_size: batch size
-        num_tbins: number of time bins in a mini batch
-        preprocess_function_name: name of the preprocessing function to use, 'histo' by default. Can be that are listed under https://docs.prophesee.ai/stable/metavision_sdk/modules/ml/python_api/preprocessing.html#module-metavision_ml.preprocessing.event_to_tensor
-        delta_t: time interval between two consecutive frames
-        channels: number of channels in the input data, 2 by default for histograms
-        height: height of the input data
-        width: width of the input data
-        max_incr_per_pixel: maximum number of events per pixel
-        class_selection: list of classes to use
-        num_workers: number of workers for the dataloader
     """
     def __init__(
         self,
@@ -45,6 +31,24 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         class_selection=["pedestrian", "two wheeler", "car"],
         num_workers=4
     ):
+        """ Initializes the Gen4DetectionDataLoader dataloader.
+
+        Args:
+            dataset_path: path to the dataset folder
+            split: split to use, can be 'training', 'validation' or 'testing'
+            label_map_path: path to the label_map_dictionary.json file
+            batch_size: batch size
+            num_tbins: number of time bins in a mini batch
+            preprocess_function_name: name of the preprocessing function to use, 'histo' by default. Can be that are listed under https://docs.prophesee.ai/stable/metavision_sdk/modules/ml/python_api/preprocessing.html#module-metavision_ml.preprocessing.event_to_tensor
+            delta_t: time interval between two consecutive frames
+            channels: number of channels in the input data, 2 by default for histograms
+            height: height of the input data
+            width: width of the input data
+            max_incr_per_pixel: maximum number of events per pixel
+            class_selection: list of classes to use
+            num_workers: number of workers for the dataloader
+        """
+
         self.dataset_path = Path(dataset_path)
         self.files_train = glob.glob(str(self.dataset_path / "train" / "*.h5"))
         self.files_val = glob.glob(str(self.dataset_path / "val" / "*.h5"))

@@ -1,17 +1,47 @@
-# Motor Prediction for non-human primate
+# NeuroBench Algorithm Benchmarks
+A harness for running evaluations on [NeuroBench](https://neurobench.ai) algorithm benchmarks.
 
-This branch contains the models used for predicting cursor location based on the dataset from: https://zenodo.org/record/3854034#.ZEufx-xBwfj
+This framework is in a beta state and is still under active development. Currently, only pytorch-based models and frameworks are supported.
 
-## Dataset
-The following files were used to test our network:
-* loco_20170301_05.mat
-* loco_20170217_02.mat
-* loco_20170210_03.mat
-* indy_20170131_02.mat
-* indy_20160630_01.mat
-* indy_20160407_02.mat
+NeuroBench is a community-driven project, and we welcome further development from the community. If you are interested in developing extensions to features, programming frameworks, or metrics and tasks, please see the [contributing guidelines](CONTRIBUTING.md).
 
-The .mat files originally downloaded from https://zenodo.org/record/3854034#.ZEufx-xBwfj is incompatible with Scipy's loadmat() method, as file's format version is not supported. We have converted the files mentioned above to a loadmat() compatible version, which can be downloaded from:
+## Installation
+TODO: pip install
 
-https://drive.google.com/drive/folders/170i_kEprZ6pwF1RmAwLBdShjqUD6W_8o
+### Development
+If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
+```
+poetry install
+poetry run python neurobench/examples/gsc.py
+```
 
+## Getting started
+Example benchmark scripts can be found under the `neurobench/examples` folder. 
+
+In general, the design flow for using the framework is as follows:
+	
+1. Train a network using the train split from a particular dataset.
+2. Wrap the network in a `NeuroBenchModel`.
+3. Pass the model, evaluation split dataloader, pre-/post-processors, and a list of metrics to the `Benchmark` and `run()`.
+
+Documentation for the framework interfaces can found in [API.md](API.md).
+
+## Developers
+NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Anurag Kumar Mishra.
+
+## Contributing
+If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md).
+
+## Citition
+If you use this framework in your research, please cite the following whitepaper:
+
+```
+@misc{neurobench_arxiv2023,
+      title={NeuroBench: Advancing Neuromorphic Computing through Collaborative, Fair and Representative Benchmarking}, 
+      author={Jason Yik and Soikat Hasan Ahmed and Zergham Ahmed and Brian Anderson and Andreas G. Andreou and Chiara Bartolozzi and Arindam Basu and Douwe den Blanken and Petrut Bogdan and Sander Bohte and Younes Bouhadjar and Sonia Buckley and Gert Cauwenberghs and Federico Corradi and Guido de Croon and Andreea Danielescu and Anurag Daram and Mike Davies and Yigit Demirag and Jason Eshraghian and Jeremy Forest and Steve Furber and Michael Furlong and Aditya Gilra and Giacomo Indiveri and Siddharth Joshi and Vedant Karia and Lyes Khacef and James C. Knight and Laura Kriener and Rajkumar Kubendran and Dhireesha Kudithipudi and Gregor Lenz and Rajit Manohar and Christian Mayr and Konstantinos Michmizos and Dylan Muir and Emre Neftci and Thomas Nowotny and Fabrizio Ottati and Ayca Ozcelikkale and Noah Pacik-Nelson and Priyadarshini Panda and Sun Pao-Sheng and Melika Payvand and Christian Pehle and Mihai A. Petrovici and Christoph Posch and Alpha Renner and Yulia Sandamirskaya and Clemens JS Schaefer and André van Schaik and Johannes Schemmel and Catherine Schuman and Jae-sun Seo and Sadique Sheik and Sumit Bam Shrestha and Manolis Sifalakis and Amos Sironi and Kenneth Stewart and Terrence C. Stewart and Philipp Stratmann and Guangzhi Tang and Jonathan Timcheck and Marian Verhelst and Craig M. Vineyard and Bernhard Vogginger and Amirreza Yousefzadeh and Biyan Zhou and Fatima Tuz Zohora and Charlotte Frenkel and Vijay Janapa Reddi},
+      year={2023},
+      eprint={2304.04640},
+      archivePrefix={arXiv},
+      primaryClass={cs.AI}
+}
+```

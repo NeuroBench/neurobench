@@ -165,4 +165,3 @@ data/
 # DVS Gesture dataset
 neurobench/datasets/DVSGesture
 .vscode/settings.json
->>>>>>> dev

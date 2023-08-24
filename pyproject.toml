@@ -1,0 +1,33 @@
+[tool.poetry]
+name = "neurobench"
+version = "0.1.0"
+description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
+authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+numpy = "^1.24.3"
+torch = "^2.0.1"
+torchaudio = "^2.0.2"
+tqdm = "^4.65.0"
+tonic = "^1.4.0"
+numba = "^0.57.1"
+llvmlite = "^0.40.1"
+snntorch = {version = "^0.7.0", optional = true}
+jitcdde = {version = "^1.8.1", optional = true}
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^7.0.0"
+pytest-cov = "^4.1.0"
+snntorch = "^0.7.0"
+jitcdde = "^1.8.1"
+librosa = "^0.10.1"
+
+[tool.poetry.extras]
+snntorch = ["snntorch"]
+jitcdde = ["mackey-glass"]
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

@@ -1,34 +1,22 @@
-"""
-"""
 from torch.utils.data import Dataset
 
-class Dataset(Dataset):
-
+class NeuroBenchDataset(Dataset):
+    """
+    Abstract class for NeuroBench datasets. Individual datasets are responsible
+    for collating and splitting data. The top-level benchmark expects that the
+    dataset is wrapped into a DataLoader.
+    """
     def __init__(self):
-        self.samples = None
-        self.labels = None
-        self.ind_train, self.ind_val, self.ind_test = [], [], []
-
-    def get_feature_size(self):
-        return self.samples.size()
-
-    def get_labels_size(self):
-        return self.labels.size()
-
-    def __getitem__(self, idx):
-        sample = self.samples[idx, :, :]
-        label = self.labels[idx, :, :]
-        return sample, label
-
-class CustomDataset(Dataset):
-    def __init__(self, samples, labels):
-        self.samples = samples
-        self.labels = labels
-
-    def __getitem__(self, idx):
-        sample = self.samples[:, idx, :]
-        label = self.labels[:, idx]
-        return sample, label
+        """ Init dataset.
+        """
+        raise NotImplementedError("Subclasses of NeuroBenchDataset should implement __init__")
 
     def __len__(self):
-        return self.samples.shape[1]
+        """ Returns length of dataset.
+        """
+        raise NotImplementedError("Subclasses of NeuroBenchDataset should implement __len__")
+
+    def __getitem__(self, idx):
+        """ Returns a sample from the dataset.
+        """
+        raise NotImplementedError("Subclasses of NeuroBenchDataset should implement __getitem__")

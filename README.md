@@ -27,7 +27,7 @@ In general, the design flow for using the framework is as follows:
 Documentation for the framework interfaces can found in [API.md](API.md).
 
 ## Developers
-NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Anurag Kumar Mishra.
+NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang, Anurag Kumar Mishra, Soikat Hasan Ahmed.
 
 ## Contributing
 If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md).

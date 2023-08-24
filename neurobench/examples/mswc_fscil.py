@@ -15,8 +15,7 @@ train = lambda net, data: net
 model = M5(n_input=48, n_output=40)
 dataset = MSWC(root="data/MSWC", subset="evaluation")
 
-few_shot_dataset = FewShot(dataset, 5, 5,
-                            first_iter_ways_shots=(10, 10),
+few_shot_dataset = FewShot(dataset, 10, 5, 20,
                             incremental=True,
                             cumulative=True)
 
@@ -30,10 +29,8 @@ for session, (X, y) in enumerate(few_shot_dataloader):
     X_train, X_test = X
     y_train, y_test = y
     
-    # Train model using train_data
-    model = train(model, (X_train, y_train))
+    model = train(model, (X_train[0], y_train[0]))
 
-    ## run benchmark ##
-    session_results = benchmark.run()
+    session_results = benchmark.run([(X_train[0], y_train[0])])
 
     print(session_results)

@@ -1,7 +1,7 @@
 from tqdm import tqdm
 from . import metrics
 
-class Benchmark():
+class Benchmark:
     def __init__(self, model, data, processors, metric_list):
         self.model = model
         self.data = data

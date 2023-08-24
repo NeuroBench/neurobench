@@ -113,7 +113,7 @@ class MackeyGlass(Dataset):
         Returns:
             int: number of samples in dataset
         """
-        return len(self.mackeyglass_soln-1)
+        return len(self.mackeyglass_soln)-1
     
     def __getitem__(self, idx):
         """ Getter method for dataset.

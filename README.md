@@ -32,7 +32,7 @@ NeuroBench is a collaboration between industry and academic engineers and resear
 ## Contributing
 If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md).
 
-## Citition
+## Citation
 If you use this framework in your research, please cite the following whitepaper:
 
 ```

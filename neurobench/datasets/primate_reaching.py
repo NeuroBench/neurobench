@@ -199,7 +199,7 @@ class PrimateReaching(NeuroBenchDataset):
         total_segments = self.time_segments.shape[0]
         sub_length = int(total_segments / split_num)  # This is no of segments in each chunk
         stride = int(self.stride / SAMPLING_RATE)
-        print(total_segments, sub_length)
+        # print(total_segments, sub_length)
 
         train_len = math.floor(self.train_ratio * sub_length)
         val_len = math.floor((sub_length - train_len) / 2)

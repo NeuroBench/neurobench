@@ -107,6 +107,11 @@ def MSE(model, preds, data):
 def r2(model, preds, data):
     """ R2 Score of the model predictions.
 
+    Currently implemented for 2D output only.
+
+    Errata: R2 score currently is accumulated by mean for batched eval.
+            Currently it is only correct for full-batch evaluation.
+
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.

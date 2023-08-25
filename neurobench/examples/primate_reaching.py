@@ -5,8 +5,11 @@ from neurobench.benchmarks import Benchmark
 import torch
 import torch.nn as nn
 
+# Download data to /data/primate_reaching/PrimateReachingDataset. See PrimateReaching
+# class for download instructions.
+
 # The dataloader and preprocessor has been combined together into a single class
-primate_reaching_dataset = PrimateReaching(file_path="/PrimateReachingDataset/", filename="indy_20170131_02.mat",
+primate_reaching_dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename="indy_20170131_02.mat",
                                            num_steps=7, train_ratio=0.8, mode="3D", model_type="ANN")
 test_set = primate_reaching_dataset.create_dataloader(primate_reaching_dataset.ind_test, batch_size=256, shuffle=True)
 

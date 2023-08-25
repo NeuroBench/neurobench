@@ -3,6 +3,7 @@ from pathlib import Path
 import os
 from torch import Tensor
 from torchaudio.datasets.utils import _load_waveform
+import torch
 
 import csv
 import json
@@ -276,6 +277,10 @@ class MSWC(Dataset):
         dirname = os.path.join(self.root, item[2], FOLDER_AUDIO)
         waveform = _load_waveform(dirname, item[0], SAMPLE_RATE)
 
+        if waveform.size()[1] != SAMPLE_RATE:
+            full_size = torch.zeros((1,SAMPLE_RATE))
+            full_size[:, :waveform.size()[1]] = waveform
+            waveform = full_size
 
         return (waveform, item[1])
 

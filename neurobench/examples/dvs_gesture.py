@@ -9,29 +9,24 @@ from snntorch import surrogate
 from neurobench.datasets import DVSGesture
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
+from neurobench.accumulators.accumulator import aggregate,choose_max_count
 
-test_set = DVSGesture("data/dvs_gesture/", split="testing", preprocessing="histo_diff")
-test_set_loader = DataLoader(test_set, batch_size=16, shuffle=True)
+from neurobench.examples.model_data.ConvSNN import Conv_SNN
+test_set = DVSGesture("data/dvs_gesture/", split="testing", preprocessing="stack")
+test_set_loader = DataLoader(test_set, batch_size=16, shuffle=True,drop_last=True)
 
-# useless network always returns 1
-class OnesNet(nn.Module):
-	def __init__(self):
-		super(OnesNet, self).__init__()
-	
-	def forward(self, x):
-		return torch.ones(x.shape[0])
-net = OnesNet()
-
-# for data in test_set_loader:
-# 	print(net(data[0]))
-# 	breakpoint()
+net = Conv_SNN()
+net.load_state_dict(torch.load('neurobench/examples/model_data/DVS_SNN_untrained.pth'))
 
 ## Define model ##
 model = TorchModel(net)
 
+# postprocessors
+postprocessors = [choose_max_count]
+
 static_metrics = ["model_size"]
 data_metrics = ["classification_accuracy"]
 
-benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics])
+benchmark = Benchmark(model, test_set_loader, [], postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
 print(results)

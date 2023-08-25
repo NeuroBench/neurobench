@@ -17,6 +17,22 @@ SAMPLING_RATE = 0.004
 class PrimateReaching(NeuroBenchDataset):
     """
         Dataset for the Primate Reaching Task
+
+        The Dataset can be downloaded from the following website:
+        https://zenodo.org/record/583331
+
+        For this task, the following files are selected:
+        1. indy_20170131_02.mat
+        2. indy_20160630_01.mat
+        3. indy_20160622_01.mat
+        4. loco_20170301_05.mat
+        5. loco_20170217_02.mat
+        6. loco_20170210_03.mat
+
+        The description of the structure of the dataset can be found on the website
+        in the section: Variable names.
+
+        Once these .mat files are downloaded, store them in the same directory.
     """
     def __init__(self, file_path, postpr_data_path, filename, first_process, num_steps, train_ratio=0.8,
                  mode="3D", model_type="ANN", dtype=torch.float, biological_delay=0,

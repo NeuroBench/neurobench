@@ -5,7 +5,7 @@ from tonic.datasets import DVSGesture as tonic_DVSGesture
 
 # from glob import glob
 
-from .dataset import NeuroBenchDataset
+from neurobench.datasets.dataset import NeuroBenchDataset
 
 import os
 import numpy as np
@@ -75,6 +75,10 @@ class DVSGesture(NeuroBenchDataset):
         """
         structured_array = self.dataset[idx][0]
 
+        # label = torch.nn.functional.one_hot(torch.tensor(self.dataset[idx][1]), num_classes=11)
+        label = torch.tensor(self.dataset[idx][1])
+
+        # get data
         x_data = np.array(structured_array["x"], dtype=np.int16)
         y_data = np.array(structured_array["y"], dtype=np.int16)
         p_data = np.array(structured_array["p"], dtype=bool)
@@ -113,7 +117,7 @@ class DVSGesture(NeuroBenchDataset):
                     w_og=128,
                     display_frame=False,
                 )
-                return events, self.dataset[idx][1]
+                return events, label
 
             elif self.prepr == "stack":
                 events = stack_preprocessing(
@@ -124,9 +128,9 @@ class DVSGesture(NeuroBenchDataset):
                     w_og=128,
                     display_frame=False,
                 )
-                return events, self.dataset[idx][1]
+                return events, label
 
-        return sample, self.dataset[idx][1]
+        return sample, label
 
     def set_sample_params(self, delta_t=5, length=1700, random_window=False):
         """
@@ -261,11 +265,10 @@ def update(frame, frames):
 if __name__ == "__main__":
     path = os.curdir
     dataset = DVSGesture(
-        os.path.join(path, "neurobench/datasets/DVSGesture"),
+        os.path.join(path, "data/dvs_gesture"),
         split="testing", preprocessing="histo_diff"
     )
 
-    print(dataset[8],dataset[8][1])
     dataloader = DataLoader(dataset, batch_size=16, shuffle=True)
     for local_batch, local_labels in dataloader:
-        print(local_batch[0].shape, local_labels)
+        print(local_batch[0].shape, local_labels.shape)

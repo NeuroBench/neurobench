@@ -34,3 +34,14 @@ def choose_max_count(spikes):
     """
     # Sum across time and return index with highest count
     return spikes.sum(1).argmax(1) 
+
+def aggregate(spikes):
+    """ Returns the aggregated spikes
+
+    Args:
+        spikes: A torch tensor of spikes of shape (batch, timestep, classes)
+    
+    Returns:
+        spikes: A torch tensor of spikes of shape (batch, classes)
+    """
+    return spikes.sum(1)

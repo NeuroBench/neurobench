@@ -1,2 +1,0 @@
-from .SPEECHCOMMANDS_35C import SPEECHCOMMANDS_35C
-from .MSWC import MSWC

@@ -6,10 +6,9 @@ import torch
 import torch.nn as nn
 
 # The dataloader and preprocessor has been combined together into a single class
-primate_reaching_dataset = PrimateReaching(file_path="/PrimateReachingDataset/", postpr_data_path="/PrimateReachingDatasetPostProcess",
-                                           filename="indy_20170131_02.mat", first_process=False, num_steps=7,
-                                           train_ratio=0.8, mode="3D", model_type="ANN")
-test_set = primate_reaching_dataset.create_dataloader("Test", batch_size=256, shuffle=True)
+primate_reaching_dataset = PrimateReaching(file_path="/PrimateReachingDataset/", filename="indy_20170131_02.mat",
+                                           num_steps=7, train_ratio=0.8, mode="3D", model_type="ANN")
+test_set = primate_reaching_dataset.create_dataloader(primate_reaching_dataset.ind_test, batch_size=256, shuffle=True)
 
 ## Define model ##
 # The model defined here is a vanilla Fully Connected Network

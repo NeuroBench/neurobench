@@ -179,6 +179,9 @@ class EchoStateNetwork(nn.Module):
             predictions.append(prediction)
             self.prior_prediction = prediction
 
+        # reset so that next batch will not have prior prediction
+        self.prior_prediction = None
+
         return torch.tensor(predictions).unsqueeze(-1)
    
         

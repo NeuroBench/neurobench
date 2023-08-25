@@ -1,6 +1,5 @@
 import torch
 from torch.utils.data import DataLoader
-from torchvision import transforms
 
 import snntorch as snn
 
@@ -21,6 +20,7 @@ class Conv_SNN(nn.Module):
 		beta = .9
 		alpha = .95
 
+		self.reduce = nn.AvgPool3d(kernel_size=(1, 4, 4), stride=(1, 4, 4))
 		grad = surrogate.fast_sigmoid()
 		stride = 2
 		self.pool1 = nn.AvgPool2d(2,stride=stride)
@@ -43,8 +43,7 @@ class Conv_SNN(nn.Module):
 
 	def forward(self, frame, warmup_frames = 0):
 		out_spk = 0
-
-		frame = transforms.Resize((32,32), antialias=True)(frame).to(dtype=torch.float32)
+		frame = self.reduce(frame).to(dtype=torch.float32)
 
 		x = self.conv1(frame)
 		x = self.pool1(x)
@@ -70,8 +69,8 @@ class Conv_SNN(nn.Module):
 		# from [nr_batches,nr_frames,c,h,w] -> [nr_frames,nr_batches,c,h,w]
 		frames = frames.transpose(1,0)
 		for i, frame in enumerate(frames):
-			frame = transforms.Resize((32,32), antialias=True)(frame).to(dtype=torch.float32)
-
+			frame = self.reduce(frame).to(dtype=torch.float32)
+			# frame = transforms.Resize((32,32))(frame).to(dtype=torch.float32)
 			x = self.conv1(frame)
 			x = self.pool1(x)
 			x, self.mem1, self.cur1 = self.syn1(x, self.mem1,self.cur1)
@@ -82,7 +81,6 @@ class Conv_SNN(nn.Module):
 			
 			x = self.conv3(x)
 			x, self.mem3, self.cur3 = self.syn3(x, self.mem3,self.cur3)
-
 			if i >= warmup_frames:
 				out_spk += x
 		

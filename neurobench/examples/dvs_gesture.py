@@ -7,7 +7,7 @@ from torch import nn
 from snntorch import surrogate
 
 from neurobench.datasets import DVSGesture
-from neurobench.models import TorchModel
+from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
 from neurobench.accumulators.accumulator import aggregate,choose_max_count
 
@@ -19,7 +19,7 @@ net = Conv_SNN()
 net.load_state_dict(torch.load('neurobench/examples/model_data/DVS_SNN_untrained.pth'))
 
 ## Define model ##
-model = TorchModel(net)
+model = SNNTorchModel(net)
 
 # postprocessors
 postprocessors = [choose_max_count]

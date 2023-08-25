@@ -1,5 +1,3 @@
-"""
-"""
 import torch
 
 class NeuroBenchAccumulator():
@@ -11,6 +9,9 @@ class NeuroBenchAccumulator():
 
     def __init__(self, args):
         """ Initialize accumulator with any parameters needed
+
+        Args:
+            args: A dictionary of arguments for the accumulator
         """
         raise NotImplementedError("Subclasses of NeuroBenchAccumulator should implement __init__")
 
@@ -33,3 +34,14 @@ def choose_max_count(spikes):
     """
     # Sum across time and return index with highest count
     return spikes.sum(1).argmax(1) 
+
+def aggregate(spikes):
+    """ Returns the aggregated spikes
+
+    Args:
+        spikes: A torch tensor of spikes of shape (batch, timestep, classes)
+    
+    Returns:
+        spikes: A torch tensor of spikes of shape (batch, classes)
+    """
+    return spikes.sum(1)

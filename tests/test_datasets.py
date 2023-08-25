@@ -20,12 +20,11 @@ def test_speech_commands():
 
     assert len(ds) > 0
     assert ds[0][0].shape
-    assert list(ds[0][0].shape) == [1, 16000]
+    assert list(ds[0][0].shape) == [16000, 1] # timesteps, channels
     assert int(ds[0][1]) == 0
 
 def test_dvs_gesture():
-    dataset_path = 'neurobench/datasets/'
-    path = dataset_path + "DVSGesture/"
+    path = dataset_path + "dvs_gesture/"
     try:
         assert os.path.exists(path)
     except AssertionError:

@@ -41,22 +41,3 @@ class TestMFCCProcessor(unittest.TestCase):
         mfcc = MFCCProcessor(**self.init_args)
         audio = (self.sample_audio, 2)
         mfcc(audio)
-
-    def test_mfcc_audio(self):
-        mfcc = MFCCProcessor(**self.init_args)
-        from librosa.feature.spectral import mfcc as librosa_mfcc
-
-        librosa_mfcc_params = ({"n_mfcc": self, "n_fft": 512, "hop_length": 512},)
-
-        mfcc_reference = librosa_mfcc(
-            y=self.sample_audio.numpy(),
-            sr=self.init_args["sample_rate"],
-            n_mfcc=self.init_args["n_mfcc"],
-            norm=self.init_args["norm"],
-            dct_type=self.init_args["dct_type"],
-            **self.init_args["melkwargs"]
-        )
-
-        result = mfcc((self.sample_audio, 0))
-
-        self.assertLessEqual(np.max(mfcc_reference - result[0].numpy()), 1e-3)

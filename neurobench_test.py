@@ -3,9 +3,10 @@ import torch
 # from speech2spikes import S2S
 
 import torchvision
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
+import torchaudio
 
-from torch_mate.data.utils import FewShot
+from torch_mate.data.utils import FewShot, IncrementalFewShot
 from torch_mate.utils import get_device
 
 from neurobench.data.datasets.MSWC import MSWC
@@ -13,80 +14,53 @@ from neurobench.examples.few_shot_learning.utils import train_using_MAML
 from neurobench.models import M5
 from neurobench.utils import Dict2Class
 
+from neurobench.benchmarks import Benchmark
+
+
+import timeit
 ROOT = "//scratch/p306982/data/fscil/mswc/"
 
-cfg = {
-    "criterion": {"name": "CrossEntropyLoss"},
-    "meta_learning": {
-        "fast_lr": 0.4,
-        "adaptation_steps": 1,
-        "test_adaptation_steps": 1,
-        "meta_batch_size": 32,
-        "num_iterations": 30000,
-        "name": "MAML",
-        "first_order": False,
-        "ways": 5,
-        "shots": 1,
-        "query_shots": 100,
-    },
-    "continual_learning": {
-        "max_classes_to_learn": 200
-    },
-    "model": {
-        "name": "M5",
-        "cfg": {
-            "stride": 16,
-            "n_channel": 32
-        },
-    },
-    "optimizer": {"name": "Adam", "cfg": {"lr": 0.001, "betas": (0.9, 0.999)}},
-    "seed": 4223747124,
-    "task": {
-        "name": "MWSC",
-        "cfg": {
-            "representation": {
-                "name": "MFCC",
-                "cfg": {
-                    "center": True,
-                    "hop_length": 160,
-                    "n_fft": 400,
-                    "n_mels": 96,
-                    "n_mfcc": 48
 
-                }
-            }
-        }
-    },
-}
+train = lambda net, data: net
 
-cfg = Dict2Class(cfg)
+model = M5(n_input=48, n_output=40)
+eval_set = MSWC(root=ROOT, subset="evaluation")
+# transform = torchaudio.transforms.MFCC(sample_rate: int = 16000, n_mfcc: int = 40, dct_type: int = 2, norm: str = 'ortho', log_mels: bool = False, melkwargs: Optional[dict] = None)
 
-model = M5(n_input=cfg.task.cfg.representation.cfg.n_mfcc,
-           stride=cfg.model.cfg.stride,
-           n_channel=cfg.model.cfg.n_channel,
-           n_output=cfg.continual_learning.max_classes_to_learn)
+few_shot_dataloader = FewShot(eval_set, 10, 5, 100,
+                            incremental=True,
+                            cumulative=True,
+                            support_query_split=(100,100),
+                            samples_per_class=200,
+                            transform=torch.nn.Identity())
 
-eval_dataset = MSWC(ROOT, subset='evaluation')
+# few_shot_dataloader = DataLoader(few_shot_dataloader, batch_size=1, num_workers=8)
 
-fscil_set = FewShot(eval_dataset, 10, 5, 100, None, (100, 100), True, True, None, 200, torch.nn.Identity(), None)
 
-eval_data_loader = DataLoader(fscil_set, 1, num_workers=8)
+base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
 
-for session, (X, y) in enumerate(fscil_set):
-    print("Session: {}".format(session))
+benchmark = Benchmark(model, metric_list=[[],["classification_accuracy"]], dataloader=None, preprocessors=[torch.nn.Identity()], postprocessors=[torch.nn.Identity()])
+
+
+for session, (X, y) in enumerate(few_shot_dataloader):
+    print(f"Session: {session}")
+
     X_train, X_test = X
     y_train, y_test = y
-    
-    # TRAIN model using train_data
-    # model = train(model, (X_train, y_train))
+
+    # X_train = X_train.squeeze()
+    # y_train = y_train.squeeze()
+    # X_test = X_test.squeeze()
+    # y_test = y_test.squeeze()
 
 
-    ### TEST
-    # y_pred_test = model(X_test)
+    # model = train(model, (X_train[0], y_train[0]))
 
-    # print('test')
-    ## run benchmark ##
-    # session_results = benchmark.run()
+    # ### Testing phase ###
+    # session_query_set = torch.utils.data.TensorDataset(X_test,y_test)
+    # full_session_test_set = ConcatDataset([base_test_set, session_query_set])
+    # full_session_test_loader = DataLoader(full_session_test_set, batch_size=256, num_workers=8)
+
+    # session_results = benchmark.run(data = full_session_test_loader)
 
     # print(session_results)
-

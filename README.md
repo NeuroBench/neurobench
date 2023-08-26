@@ -7,7 +7,10 @@ Extension of the harness to cover system track benchmarks in the future is plann
 NeuroBench is a community-driven project, and we welcome further development from the community. If you are interested in developing extensions to features, programming frameworks, or metrics and tasks, please see the [contributing guidelines](CONTRIBUTING.md).
 
 ## Installation
-TODO: pip install
+Install from PyPI:
+```
+pip install neurobench
+```
 
 ### Development
 If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:

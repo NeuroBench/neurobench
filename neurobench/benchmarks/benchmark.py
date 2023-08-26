@@ -15,7 +15,7 @@ class Benchmark():
                 First item is static metrics, second item is data metrics.
         """
 
-        self.model = model
+        self.model = model 
         self.dataloader = dataloader # dataloader not dataset
         self.preprocessors = preprocessors
         self.postprocessors = postprocessors
@@ -23,7 +23,7 @@ class Benchmark():
         self.static_metrics = {m: getattr(metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(metrics, m) for m in metric_list[1]}
 
-    def run(self, custom_data_loader=None):
+    def run(self, dataloader=None, postprocessors=None):
         """ Runs batched evaluation of the benchmark.
 
         Currently, data metrics are accumulated via mean over the entire
@@ -39,10 +39,12 @@ class Benchmark():
         for m in self.static_metrics.keys():
             results[m] = self.static_metrics[m](self.model)
 
-        data_loader = custom_data_loader if custom_data_loader is not None else self.dataloader
+        dataloader = dataloader if dataloader is not None else self.dataloader
 
-        dataset_len = len(data_loader.dataset)
-        for data in tqdm(data_loader, total=len(self.dataloader)):
+        postprocessors = postprocessors if postprocessors is not None else self.postprocessors
+
+        dataset_len = len(dataloader.dataset)
+        for data in tqdm(dataloader, total=len(dataloader)):
             batch_size = data[0].size(0)
 
             # convert data to tuple
@@ -57,7 +59,7 @@ class Benchmark():
             preds = self.model(data[0])
 
             # TODO: postprocessors are applied to model output only?
-            for alg in self.postprocessors: 
+            for alg in postprocessors: 
                 preds = alg(preds)
 
             # Data metrics

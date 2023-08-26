@@ -23,11 +23,16 @@ class Benchmark():
         self.static_metrics = {m: getattr(metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(metrics, m) for m in metric_list[1]}
 
-    def run(self, dataloader=None, postprocessors=None):
+    def run(self, dataloader=None, preprocessors=None, postprocessors=None):
         """ Runs batched evaluation of the benchmark.
 
         Currently, data metrics are accumulated via mean over the entire
         test set, and thus must return a float or int.
+
+        Args:
+            dataloader (optional): override DataLoader for this run.
+            preprocessors (optional): override preprocessors for this run.
+            postprocessors (optional): override postprocessors for this run.
 
         Returns:
             results: A dictionary of results.
@@ -40,7 +45,7 @@ class Benchmark():
             results[m] = self.static_metrics[m](self.model)
 
         dataloader = dataloader if dataloader is not None else self.dataloader
-
+        preprocessors = preprocessors if preprocessors is not None else self.preprocessors
         postprocessors = postprocessors if postprocessors is not None else self.postprocessors
 
         dataset_len = len(dataloader.dataset)
@@ -52,13 +57,12 @@ class Benchmark():
                 data = tuple(data)
 
             # Preprocessing data
-            for alg in self.preprocessors:
+            for alg in preprocessors:
                 data = alg(data)
 
             # Run model on test data
             preds = self.model(data[0])
 
-            # TODO: postprocessors are applied to model output only?
             for alg in postprocessors: 
                 preds = alg(preds)
 

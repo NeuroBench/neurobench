@@ -160,3 +160,11 @@ cython_debug/
 #.idea/
 
 .DS_Store
+data/
+
+# DVS Gesture dataset
+neurobench/datasets/DVSGesture
+.vscode/settings.json
+
+# mackey-glass
+neurobench/examples/model_data/esn.pth

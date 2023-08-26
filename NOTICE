@@ -1,0 +1,15 @@
+NeuroBench Algorithms Benchmarks
+Copyright 2023 The NeuroBench Developers.
+
+Speech2Spikes Notice
+Copyright © 2023 Accenture
+This product includes Speech2Spikes as an optional pre-processing algorithm. 
+Speech2Spikes is made available under a proprietary license that permits using, 
+copying, sharing, and making derivative works from Speech2Spikes and its source 
+code for academics/non-commercial purposes only, as long as the above copyright 
+notice and this permission notice are included in all copies of the software. 
+For more information please see the full license in 
+`preprocessing/speech2spikes.py`. If you are interested to use Speech2Spikes 
+and/or develop derivatives for commercial purposes, licenses can be purchased 
+from Accenture, please contact neuromorphic_inquiries@accenture.com for more 
+information.

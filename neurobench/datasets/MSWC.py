@@ -238,7 +238,22 @@ def _load_list(root: Union[str, Path], languages: List[str], split: str) -> List
 
 
 class MSWC(Dataset):
-    def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, languages: Optional[List[str]] = None):
+    """ 
+    Subset version of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/).
+    When running for the first time will create the new data splits csv files based on:
+    - Metadata.json file from MSWC to put in the base root folder
+    - Original csv splits file to put in en/ folder inside root
+    """
+    def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, languages: Optional[List[str]] = None
+                 ):
+        """ Initialization will create the new base eval splits if needed .
+        
+        Args:
+            root (str): Path of MSWC dataset folder where the Metadata.json file and en/ folders should be.
+            subset (str): Return "base" or "evaluation" classes.
+            procedure (str): For base subset, return "training", "testing" or "validation" samples.
+            languages (List[str]): List of languages to use. Not implemented for now, only english will be used.
+        """
         self.root = root
 
         if subset == 'base':
@@ -265,13 +280,22 @@ class MSWC(Dataset):
             print('Other languages than english are not supported yet.')
         self.languages = languages if languages is not None else ALL_LANGUAGES
 
-        # If the fscil subset split files don't exist anymore, generate them
+        # If the fscil subset split files don't exist yet, generate them
         if not os.path.isfile(os.path.join(root, 'en', f'{"en"}_{split}.csv')):
             generate_mswc_fscil_splits(root, languages)
 
         self._walker = _load_list(root, self.languages, split)
 
-    def __getitem__(self, index: int) -> Tuple[Tensor, str, bool, str, str, str]:
+    def __getitem__(self, index: int) -> Tuple[Tensor, int]:
+        """ Getter method to get waveform samples.
+
+        Args:
+            idx (int): Index of the sample.
+
+        Returns:
+            sample (tensor): Individual waveform sample, padded to always match dimension (1, 48000).
+            target (int): Corresponding keyword index based on FSCIL_KEYWORDS order (by decreasing number of samples in original dataset).
+        """
         item = self._walker[index]
 
         dirname = os.path.join(self.root, item[2], FOLDER_AUDIO)
@@ -285,6 +309,11 @@ class MSWC(Dataset):
         return (waveform, item[1])
 
     def __len__(self):
+        """ Returns the number of samples in the dataset.
+
+        Returns:
+            int: The number of samples in the dataset.
+        """
         return(len(self._walker))
 
 

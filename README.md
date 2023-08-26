@@ -13,13 +13,13 @@ pip install neurobench
 ```
 
 ### Development
-If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
+If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the root directory run:
 ```
 poetry install
 poetry run pytest tests/
 ```
 
-Currently the end-to-end examples can be run from the `algorithms_benchmarks` folder via:
+Currently the end-to-end examples can be run from the root directory via:
 ```
 poetry run python neurobench/examples/dvs_gesture.py
 poetry run python neurobench/examples/gsc.py

@@ -1,28 +1,32 @@
 import torch
 
-import torchvision
 from torch.utils.data import DataLoader, ConcatDataset
 import torchaudio
 
-from torch_mate.data.utils import FewShot, IncrementalFewShot
-from torch_mate.utils import get_device
+from torch_mate.data.utils import FewShot
 
-from neurobench.datasets.MSWC import MSWC
-from neurobench.models import M5
-from neurobench.utils import Dict2Class
+from neurobench.datasets import MSWC
+from neurobench.examples.model_data.M5 import M5
 
 from neurobench.benchmarks import Benchmark
 
 ROOT = "data/MSWC/"
+NUM_WORKERS = 1
 
+dummy_train = lambda net, data: net
+
+
+model = M5(n_input=1, n_output=200)
 
 ### Pre-training phase ###
+base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
 # @TODO Add your own pre-training on the base_train and base_val classes here 
+model = dummy_train(model, base_train_set)
 
+del base_train_set
 
 
 ### Evaluation phase ###
-dummy_train = lambda net, data: net
 
 # Get Datasets: evaluation + all test samples from base classes to test forgetting
 eval_set = MSWC(root=ROOT, subset="evaluation")
@@ -36,7 +40,7 @@ few_shot_dataloader = FewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
                             samples_per_class=200)
 
 
-model = M5(n_input=1, n_output=200)
+
 
 # Define an arbitrary resampling as an example of pre-processor to feed to the Benchmark object
 new_sample_rate = 8000
@@ -63,7 +67,7 @@ for session, (X, y) in enumerate(few_shot_dataloader):
     # Define session specific dataloader with query + base_test samples
     session_query_set = torch.utils.data.TensorDataset(X_test,y_test)
     full_session_test_set = ConcatDataset([base_test_set, session_query_set])
-    full_session_test_loader = DataLoader(full_session_test_set, batch_size=256, num_workers=8)
+    full_session_test_loader = DataLoader(full_session_test_set, batch_size=256, num_workers=NUM_WORKERS)
 
     # Create a mask function to only consider accuracy on classes presented so far
     session_classes = torch.cat((torch.arange(0,100, dtype=int), torch.unique(y_test))) 

@@ -1,6 +1,3 @@
-
-from neurobench.models.M5 import M5
-
 from .model import *
 from ..utils import _lazy_import
 

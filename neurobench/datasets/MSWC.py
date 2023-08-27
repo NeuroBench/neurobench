@@ -239,10 +239,35 @@ def _load_list(root: Union[str, Path], languages: List[str], split: str) -> List
 
 class MSWC(Dataset):
     """ 
-    Subset version of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/).
-    When running for the first time will create the new data splits csv files based on:
-    - Metadata.json file from MSWC to put in the base root folder
-    - Original csv splits file to put in en/ folder inside root
+    Subset version of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/)
+    for a few-shot class-incremental learning (FSCIL) task consisting of 200 voice commands keywords:
+    - 100 base classes available for pre-training with:
+        - 500 train samples
+        - 100 validation samples
+        - 100 test samples
+    - 100 evaluation classes to do class-incremental learning on with 200 samples each.
+
+    Before the first use, you need to download the english dataset, metadata.json and data splits 
+    from the MSWC website and organize them in the neurobench/data/ folder as follows:
+    data/
+    MSWC/
+        metadata.json
+        en/
+            clips/
+            *.csv
+            version.txt
+    To do so, on https://mlcommons.org/en/multilingual-spoken-words/, follow:
+    1.
+        Kind -> Language
+        Language -> English
+        Download "Audio", extract in /data/MSWC, which creates /data/MSWC/en
+        Download "Splits", extract in /data/MSWC/en
+    2. 
+        Kind --> Metadata
+        Download in /data/MSWC
+
+    When running for the first time, MSWC will create new data splits csv files based on metadata.json
+    and the original csv splits file to select the samples to use for the MSWC FSCIL task.
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, languages: Optional[List[str]] = None
                  ):
@@ -329,6 +354,11 @@ def generate_mswc_fscil_splits(root: Union[str, Path],
     100 evaluation classes with 200 samples each (to use in a 10 sessions of 10 way set-up with N shots support to train on per class and the rest as a query to evaluate performance).
     The 200 classes are arbitrarily chosen as common voice command words.
     The base ones are then the 100 of these with the most clips (at least 700) per sample and the evaluation ones as the 100 following ones.
+
+    Args
+        root (str): Path of MSWC dataset folder where the Metadata.json file and en/ folders should be.
+        languages (List[str]): List of languages to use. Not implemented for now, only english will be used.
+        visualize (bool): Plots Word Clouds with library wordcloud for a visualization of the FSCIL keywords.
 
     Returns: base_keywords, evaluation keywords (dictionarries)
     They represent the number of available samples per respective keyword in the original MSWC dataset (although the number is then clipped as detailed above).

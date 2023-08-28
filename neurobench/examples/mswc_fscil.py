@@ -14,7 +14,7 @@ from neurobench.examples.model_data.M5 import M5
 
 from neurobench.benchmarks import Benchmark
 
-ROOT = "data/MSWC/"
+ROOT = "neurobench/data/MSWC/"
 NUM_WORKERS = 1
 
 dummy_train = lambda net, data: net

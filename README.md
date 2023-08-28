@@ -1,25 +1,39 @@
-# NeuroBench Algorithm Benchmarks
+# NeuroBench Algorithm Benchmarks Harness
 A harness for running evaluations on [NeuroBench](https://neurobench.ai) algorithm benchmarks.
 
 This framework is in a beta state and is still under active development. Currently, only pytorch-based models and frameworks are supported.
+Extension of the harness to cover system track benchmarks in the future is planned.
 
 NeuroBench is a community-driven project, and we welcome further development from the community. If you are interested in developing extensions to features, programming frameworks, or metrics and tasks, please see the [contributing guidelines](CONTRIBUTING.md).
 
 ## Installation
-TODO: pip install
+Install from PyPI:
+```
+pip install neurobench
+```
 
 ### Development
-If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the `algorithms_benchmarks` folder run:
+If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the root directory run:
 ```
 poetry install
-poetry run python neurobench/examples/gsc.py
+poetry run pytest tests/
 ```
+
+Currently the end-to-end examples can be run from the root directory via:
+```
+poetry run python neurobench/examples/dvs_gesture.py
+poetry run python neurobench/examples/gsc.py
+poetry run python neurobench/examples/mackey_glass.py
+poetry run python neurobench/examples/primate_reaching.py
+```
+The examples may not yet have trained models or a full set of metrics.
+
 
 ## Getting started
 Example benchmark scripts can be found under the `neurobench/examples` folder. 
 
 In general, the design flow for using the framework is as follows:
-	
+      
 1. Train a network using the train split from a particular dataset.
 2. Wrap the network in a `NeuroBenchModel`.
 3. Pass the model, evaluation split dataloader, pre-/post-processors, and a list of metrics to the `Benchmark` and `run()`.

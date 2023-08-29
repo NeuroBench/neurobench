@@ -14,6 +14,8 @@ from neurobench.examples.model_data.M5 import M5
 
 from neurobench.benchmarks import Benchmark
 
+import numpy as np
+
 ROOT = "neurobench/data/MSWC/"
 NUM_WORKERS = 1
 
@@ -37,16 +39,6 @@ if __name__ == '__main__':
     eval_set = MSWC(root=ROOT, subset="evaluation")
     base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
 
-    # FewShot Dataloader used in incremental mode to generate class-incremental sessions
-    few_shot_dataloader = FewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
-                                incremental=True,
-                                cumulative=True,
-                                support_query_split=(100,100),
-                                samples_per_class=200)
-
-
-
-
     # Define an arbitrary resampling as an example of pre-processor to feed to the Benchmark object
     new_sample_rate = 8000
     resample = torchaudio.transforms.Resample(orig_freq=48000, new_freq=new_sample_rate)
@@ -56,9 +48,30 @@ if __name__ == '__main__':
     benchmark = Benchmark(model, metric_list=[[],["classification_accuracy"]], dataloader=None, preprocessors=[pre_proc_resample], postprocessors=[torch.nn.Identity()])
     all_results = []
 
+    # Base Accuracy measurement
+    base_test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS)
+
+    mask = torch.zeros((200,))
+    mask[torch.arange(0,100, dtype=int)] = float('-inf')
+    out_mask = lambda x: x*mask
+    out2pred = lambda x: torch.argmax(x, dim=-1)
+
+    print(f"Session: 0")
+    pre_train_results = benchmark.run(dataloader = base_test_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
+    all_results.append(pre_train_results['classification_accuracy'])
+    print(f"The base accuracy is {all_results[-1]*100}%")
+
+    # FewShot Dataloader used in incremental mode to generate class-incremental sessions
+    few_shot_dataloader = FewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
+                                incremental=True,
+                                cumulative=True,
+                                support_query_split=(100,100),
+                                samples_per_class=200)
+
+
     # Iteration over incremental sessions
     for session, (X, y) in enumerate(few_shot_dataloader):
-        print(f"Session: {session}")
+        print(f"Session: {session+1}")
 
         X_train, X_test = X
         y_train, y_test = y
@@ -87,5 +100,5 @@ if __name__ == '__main__':
 
         print(f"The session accuracy is {all_results[-1]*100}%")
 
-    mean_accuracy = torch.mean(all_results)
+    mean_accuracy = np.mean(all_results)
     print(f"The total mean accuracy is {mean_accuracy*100}%")

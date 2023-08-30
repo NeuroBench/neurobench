@@ -25,17 +25,7 @@ class TorchModel(NeuroBenchModel):
         """
         return self.net(batch)
 
-    def size(self):
-        """ Model footprint in bytes.
-
-        Returns:
-            size: An int representing the size of the model in bytes.
+    def __net__(self):
+        """ Returns the underlying network.
         """
-        param_size = 0
-        for param in self.net.parameters():
-            param_size += param.numel() * param.element_size()
-
-        buffer_size = 0
-        for buffer in self.net.buffers():
-            buffer_size += buffer.numel() * buffer.element_size()
-        return param_size + buffer_size
+        return self.net

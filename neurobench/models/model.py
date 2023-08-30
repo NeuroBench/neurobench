@@ -18,3 +18,8 @@ class NeuroBenchModel:
             batch: A batch of data to run inference on
         """
         raise NotImplementedError("Subclasses of NeuroBenchModel should implement __call__")
+
+    def __net__(self):
+        """ Returns the underlying network
+        """
+        raise NotImplementedError("Subclasses of NeuroBenchModel should implement __net__")

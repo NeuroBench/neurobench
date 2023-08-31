@@ -293,10 +293,13 @@ class MSWC(Dataset):
                 raise ValueError("procedure must be one of \"training\", \"validation\", or \"testing\"")
 
             split = self.subset +'_' + self.procedure
+            self.return_path = False
+
         elif subset == 'evaluation':
             self.subset = 'evaluation'
             self.procedure = None
             split = self.subset
+            self.return_path = True
 
         else:
             raise ValueError("subset must be one of \"base\" or \"evaluation\"")
@@ -331,7 +334,10 @@ class MSWC(Dataset):
             full_size[:, :waveform.size()[1]] = waveform
             waveform = full_size
 
-        return (waveform, item[1])
+        if self.return_path:
+            return (waveform, item[1], dirname, item[0])
+        else:
+            return (waveform, item[1])
 
     def __len__(self):
         """ Returns the number of samples in the dataset.

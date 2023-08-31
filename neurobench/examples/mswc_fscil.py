@@ -7,17 +7,19 @@ import torch
 from torch.utils.data import DataLoader, ConcatDataset
 import torchaudio
 
-from torch_mate.data.utils import FewShot
+# from torch_mate.data.utils import IncrementalFewShot
 
 from neurobench.datasets import MSWC
+from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
 from neurobench.examples.model_data.M5 import M5
 
 from neurobench.benchmarks import Benchmark
 
 import numpy as np
 
-ROOT = "neurobench/data/MSWC/"
-NUM_WORKERS = 1
+ROOT = "C:/Users/maxim/Documents/Groningen/Simulations/algorithms_benchmarks/neurobench/data/MSWC/"
+NUM_WORKERS = 4
+BATCH_SIZE = 256
 
 if __name__ == '__main__':
 
@@ -49,11 +51,11 @@ if __name__ == '__main__':
     all_results = []
 
     # Base Accuracy measurement
-    base_test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS)
+    base_test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)
 
-    mask = torch.zeros((200,))
-    mask[torch.arange(0,100, dtype=int)] = float('-inf')
-    out_mask = lambda x: x*mask
+    mask = torch.full((200,), float('inf'))
+    mask[torch.arange(0,100, dtype=int)] = 0
+    out_mask = lambda x: x - mask
     out2pred = lambda x: torch.argmax(x, dim=-1)
 
     print(f"Session: 0")
@@ -61,8 +63,8 @@ if __name__ == '__main__':
     all_results.append(pre_train_results['classification_accuracy'])
     print(f"The base accuracy is {all_results[-1]*100}%")
 
-    # FewShot Dataloader used in incremental mode to generate class-incremental sessions
-    few_shot_dataloader = FewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
+    # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
+    few_shot_dataloader = IncrementalFewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
                                 incremental=True,
                                 cumulative=True,
                                 support_query_split=(100,100),
@@ -70,11 +72,10 @@ if __name__ == '__main__':
 
 
     # Iteration over incremental sessions
-    for session, (X, y) in enumerate(few_shot_dataloader):
+    for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
         print(f"Session: {session+1}")
 
-        X_train, X_test = X
-        y_train, y_test = y
+        X_train, y_train = support
 
         ### Few Shot Learning phase ###
         model = dummy_train(model, (X_train[0], y_train[0]))
@@ -83,15 +84,14 @@ if __name__ == '__main__':
         ### Testing phase ###
 
         # Define session specific dataloader with query + base_test samples
-        session_query_set = torch.utils.data.TensorDataset(X_test,y_test)
-        full_session_test_set = ConcatDataset([base_test_set, session_query_set])
-        full_session_test_loader = DataLoader(full_session_test_set, batch_size=256, num_workers=NUM_WORKERS)
+        full_session_test_set = ConcatDataset([base_test_set, query])
+        full_session_test_loader = DataLoader(full_session_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)
 
         # Create a mask function to only consider accuracy on classes presented so far
-        session_classes = torch.cat((torch.arange(0,100, dtype=int), torch.unique(y_test))) 
-        mask = torch.zeros((200,))
-        mask[session_classes] = float('-inf')
-        out_mask = lambda x: x*mask
+        session_classes = torch.cat((torch.arange(0,100, dtype=int), torch.IntTensor(query_classes))) 
+        mask = torch.full((200,), float('inf'))
+        mask[session_classes] = 0
+        out_mask = lambda x: x - mask
 
         # Run benchmark to evaluate accuracy of this specific session
         out2pred = lambda x: torch.argmax(x, dim=-1)

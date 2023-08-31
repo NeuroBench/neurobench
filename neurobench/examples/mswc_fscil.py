@@ -51,9 +51,9 @@ if __name__ == '__main__':
     # Base Accuracy measurement
     base_test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS)
 
-    mask = torch.zeros((200,))
-    mask[torch.arange(0,100, dtype=int)] = float('-inf')
-    out_mask = lambda x: x*mask
+    mask = torch.full((200,), float('inf'))
+    mask[torch.arange(0,100, dtype=int)] = 0
+    out_mask = lambda x: x - mask
     out2pred = lambda x: torch.argmax(x, dim=-1)
 
     print(f"Session: 0")
@@ -89,9 +89,9 @@ if __name__ == '__main__':
 
         # Create a mask function to only consider accuracy on classes presented so far
         session_classes = torch.cat((torch.arange(0,100, dtype=int), torch.unique(y_test))) 
-        mask = torch.zeros((200,))
-        mask[session_classes] = float('-inf')
-        out_mask = lambda x: x*mask
+        mask = torch.full((200,), float('inf'))
+        mask[session_classes] = 0
+        out_mask = lambda x: x - mask
 
         # Run benchmark to evaluate accuracy of this specific session
         out2pred = lambda x: torch.argmax(x, dim=-1)

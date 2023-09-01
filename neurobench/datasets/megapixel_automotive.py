@@ -19,7 +19,7 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         self,
         dataset_path="data/Gen 4 Histograms",
         split="testing",
-        label_map_path="label_map_dictionary.json",
+        label_map_path="neurobench/datasets/label_map_dictionary.json",
         batch_size: int = 4,
         num_tbins: int = 12,
         preprocess_function_name="histo",

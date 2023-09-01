@@ -28,13 +28,14 @@ class Conv_SNN(nn.Module):
 		self.syn1  = snn.Synaptic(alpha=alpha, beta= beta, spike_grad = grad)
 
 		self.pool2 = nn.AvgPool2d(2,stride=stride)
-		self.conv2 = nn.Conv2d(32,32,5,1)
+		self.conv2 = nn.Conv2d(32,64,5,1)
 		self.syn2  = snn.Synaptic(alpha=alpha, beta= beta, spike_grad = grad)
 
 		self.pool3 = nn.AvgPool2d(2,stride=stride)
-		self.conv3 = nn.Conv2d(32,11,5,1)
+		self.conv3 = nn.Conv2d(64,128,5,1)
 		self.syn3  = snn.Synaptic(alpha=alpha, beta= beta, spike_grad = grad)
 
+		self.lin   = nn.Linear(128,11)
 
 		self.mem1, self.cur1 = self.syn1.init_synaptic()
 		self.mem2, self.cur2 = self.syn2.init_synaptic()
@@ -56,11 +57,13 @@ class Conv_SNN(nn.Module):
 		x = self.conv3(x)
 		out_spk, self.mem3, self.cur3 = self.syn3(x, self.mem3,self.cur3)
 
+		out_spk = self.lin(out_spk.reshape(-1,128))
+
 		prediction = out_spk.reshape(-1,11)
 		
 		return prediction, self.mem3
 	
-	def single_forward(self, frames, warmup_frames = 0):
+	def single_forward(self, frames, warmup_frames = 70):
 		self.mem1, self.cur1 = self.syn1.init_synaptic()
 		self.mem2, self.cur2 = self.syn2.init_synaptic()
 		self.mem3, self.cur3 = self.syn3.init_synaptic()
@@ -81,6 +84,9 @@ class Conv_SNN(nn.Module):
 			
 			x = self.conv3(x)
 			x, self.mem3, self.cur3 = self.syn3(x, self.mem3,self.cur3)
+
+			x = self.lin(x.reshape(-1,128))
+
 			if i >= warmup_frames:
 				out_spk += x
 		
@@ -88,11 +94,12 @@ class Conv_SNN(nn.Module):
 		
 		return prediction
 	
-	def fit(self, dataloader_training, warmup_frames, optimizer, nr_episodes = 10):
+	def fit(self, dataloader_training, warmup_frames, optimizer, nr_episodes = 1000):
+		loss_lst = []
 		for _ in tqdm(range(nr_episodes)):
 			for frames, labels in dataloader_training:
 				prediction = self.single_forward(frames, warmup_frames)
-				print(prediction.shape)
+
 				label_tensor = labels.clone().detach()
 				targets_one_hot = torch.nn.functional.one_hot(label_tensor, num_classes=11).transpose(1,0)
 
@@ -100,16 +107,20 @@ class Conv_SNN(nn.Module):
 				optimizer.zero_grad()
 				loss.backward()
 				optimizer.step()
-			print(loss.item())
 
+				loss_lst.append(loss.item())
+				# print(loss.item())
+
+			print(sum(loss_lst)/len(loss_lst))
+			loss_lst = []
             
 
 if __name__ =='__main__':
 	data = DVSGesture('data/dvs_gesture/', split='testing', preprocessing='stack')
-	dataloader_training = DataLoader(data, 2,shuffle=True)
+	dataloader_training = DataLoader(data, 16,shuffle=True)
 	model = Conv_SNN()
 	
 	torch.save(model.state_dict(), 'neurobench/examples/model_data/DVS_SNN_untrained.pth')
 
-	optimizer = torch.optim.Adam(model.parameters(),lr=1.2e-3,betas=[0.9,0.99])
+	optimizer = torch.optim.Adam(model.parameters(),lr=1.2e-3,betas=[0.,0.95])
 	model.fit(dataloader_training=dataloader_training,warmup_frames=70, optimizer=optimizer, nr_episodes=1000)

@@ -269,7 +269,8 @@ class MSWC(Dataset):
     When running for the first time, MSWC will create new data splits csv files based on metadata.json
     and the original csv splits file to select the samples to use for the MSWC FSCIL task.
     """
-    def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, languages: Optional[List[str]] = None
+    def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
+                 languages: Optional[List[str]] = None, incremental: Optional[bool] = False
                  ):
         """ Initialization will create the new base eval splits if needed .
         
@@ -293,7 +294,10 @@ class MSWC(Dataset):
                 raise ValueError("procedure must be one of \"training\", \"validation\", or \"testing\"")
 
             split = self.subset +'_' + self.procedure
-            self.return_path = False
+            if incremental:
+                self.return_path = True
+            else:
+                self.return_path = False
 
         elif subset == 'evaluation':
             self.subset = 'evaluation'

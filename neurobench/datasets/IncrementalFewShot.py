@@ -2,6 +2,7 @@ from typing import Callable, List, Optional, Tuple, Union, Dict
 
 from itertools import repeat, chain
 
+import random
 import numpy as np
 import torch
 from torch.utils.data import Dataset, IterableDataset, BatchSampler, RandomSampler
@@ -93,7 +94,6 @@ class IncrementalFewShot(IterableDataset):
                  incremental: bool = False,
                  cumulative: bool = False,
                  always_include_classes: Optional[List[int]] = None,
-                 always_include_query_classes: Optional[List[int]] = None,
                  samples_per_class: Optional[int] = None,
                  transform: Optional[Callable] = None,
                  per_class_transform: Optional[Callable] = None):
@@ -122,7 +122,6 @@ class IncrementalFewShot(IterableDataset):
             incremental (bool, optional): Whether to incrementally sample classes. Defaults to False.
             cumulative (bool, optional): Whether to increase the query set size with each iteration. This flag will only work when incremental is set to True. Defaults to False.
             always_include_classes (Optional[List[int]], optional): List of classes to always include in both in the support and query set. Defaults to None.
-            always_include_query_classes (Optional[List[int]], optional): List of classes to always include in the query set. These classes will never occur in the support set. Defaults to None.
             samples_per_class (Optional[int], optional): Number of samples per class to use. Can be used for large datasets where the classes are ordered (class_0_sample_0, c0s1, c0s2, c1s0, c1s1, c1s2, ...) to avoid iterating over the whole dataset for index per class computation. Defaults to None.
             transform (Optional[Callable], optional): Transform applied to every data sample. Will be reapplied every time a batch is served. Defaults to None.
             per_class_transform (Optional[Callable], optional): Transform applied to every data sample. Will be applied to every class separately. Defaults to None.
@@ -157,8 +156,6 @@ class IncrementalFewShot(IterableDataset):
         self.query_shots = query_shots if query_shots != -1 else k_shot
 
         self.always_include_classes = always_include_classes
-        self.always_include_query_classes = always_include_query_classes if always_include_query_classes is not None else []
-
         self.first_iter_ways_shots = first_iter_ways_shots
 
         self.incremental = incremental
@@ -167,14 +164,8 @@ class IncrementalFewShot(IterableDataset):
         self.total_classes = len(self.indices_per_class)
 
         if self.incremental:
-            first_iter_classes = 0
-            first_iter = []
 
-            if self.first_iter_ways_shots:
-                raise NotImplementedError("first_iter_ways_shots is not yet implemented.")
-
-            classes_to_sample_from = list(set(self.indices_per_class.keys()) - set(self.always_include_query_classes))
-            self.class_sampler = BatchSampler(DataSampler(classes_to_sample_from, RandomSampler(classes_to_sample_from, replacement=False)), batch_size=self.n_way, drop_last=True)
+            self.classes_to_sample_from = list(set(self.indices_per_class.keys()))
         else:
             self.class_sampler = InfiniteClassSampler(self.total_classes, self.n_way)
 
@@ -187,67 +178,132 @@ class IncrementalFewShot(IterableDataset):
 
         cumulative_classes = []
 
-        query_shots = self.query_shots
-
         # Change the way and shots for the first iteration
         if self.first_iter_ways_shots:
-            _, k_shot = self.first_iter_ways_shots
-        else:
-            k_shot = self.k_shot
+            first_iter_ways, k_shot = self.first_iter_ways_shots
+            first_iter = random.sample(self.classes_to_sample_from, first_iter_ways)  
+            self.classes_to_sample_from = list(filter(lambda index:index not in first_iter, self.classes_to_sample_from))
+
+            if self.cumulative:
+                cumulative_classes.extend(first_iter)
+
+            # Yields first iteration
+            out = self._inner_iter(first_iter, first_iter_ways, k_shot)
+            yield out
+
+
+        k_shot = self.k_shot
+
+        class_sampler = BatchSampler(DataSampler(self.classes_to_sample_from, RandomSampler(self.classes_to_sample_from, replacement=False)), batch_size=self.n_way, drop_last=True)
+
 
         
-        for new_class_indices in self.class_sampler:
-            X_train_samples = []
-            y_train_samples = []
-            query_info = []
-
+        for new_class_indices in class_sampler:
             n_way = len(new_class_indices)
 
-            class_indices = new_class_indices + cumulative_classes + self.always_include_query_classes
+            class_indices = new_class_indices + cumulative_classes
 
             if self.cumulative:
                 cumulative_classes.extend(new_class_indices)
 
-            if self.always_include_classes is not None:
-                # This line also makes sure that the always include classes are always
-                # in the same position in the batch
-                class_indices = list(
-                    set(class_indices) - set(self.always_include_classes)
-                )[:len(class_indices) - len(self.always_include_classes
-                                            )] + self.always_include_classes
-
-            for i, class_index in enumerate(class_indices):
-                if self.support_query_split:
-                    within_class_indices = np.concatenate([np.random.choice(self.indices_per_class[class_index][j], shot, replace=False) for j, shot in [(0, k_shot), (1, query_shots)]])
-                else:
-                    within_class_indices = np.random.choice(
-                        self.indices_per_class[class_index],
-                        k_shot + query_shots,
-                        replace=False)
-
-                local_class_index = i if not self.incremental else class_index
-
-                # Only in the case of cumulative we need to make sure that we only
-                # include the new classes in the support set and not the previous classes
-                if i < n_way:
-                    support_samples = torch.stack(
-                        [self.dataset[j][0] for j in within_class_indices[:k_shot]])
-                    y_train_samples.extend([local_class_index] * k_shot)
-                    X_train_samples.extend(support_samples)
-
-
-                query_info += [(self.dataset[j][2], self.dataset[j][3], local_class_index) for j in within_class_indices[k_shot:]]
-
-
-            query_set = MSWC_query(query_info)
-
-            out = ((X_train_samples,torch.tensor(y_train_samples)),
-                   query_set, class_indices)
-
-            # Reset the way and shots for the next iteration if the first iteration was different
-            if self.first_iter_ways_shots:
-                k_shot = self.k_shot
-                query_shots = self.query_shots
-
+            # Yields iterative sessions
+            out = self._inner_iter(class_indices, n_way, k_shot)
             yield out
 
+            # # Reset the way and shots for the next iteration if the first iteration was different
+            # if self.first_iter_ways_shots:
+            #     k_shot = self.k_shot
+
+
+            # if self.always_include_classes is not None:
+            #     # This line also makes sure that the always include classes are always
+            #     # in the same position in the batch
+            #     class_indices = list(
+            #         set(class_indices) - set(self.always_include_classes)
+            #     )[:len(class_indices) - len(self.always_include_classes
+            #                                 )] + self.always_include_classes
+
+            # for i, class_index in enumerate(class_indices):
+            #     if self.support_query_split:
+            #         within_class_indices = np.concatenate([np.random.choice(self.indices_per_class[class_index][j], shot, replace=False) for j, shot in [(0, k_shot), (1, query_shots)]])
+            #     else:
+            #         within_class_indices = np.random.choice(
+            #             self.indices_per_class[class_index],
+            #             k_shot + query_shots,
+            #             replace=False)
+
+            #     local_class_index = i if not self.incremental else class_index
+
+            #     # Only in the case of cumulative we need to make sure that we only
+            #     # include the new classes in the support set and not the previous classes
+            #     if i < n_way:
+            #         support_samples = torch.stack(
+            #             [self.dataset[j][0] for j in within_class_indices[:k_shot]])
+            #         y_train_samples.extend([local_class_index] * k_shot)
+            #         X_train_samples.extend(support_samples)
+
+
+            #     query_info += [(self.dataset[j][2], self.dataset[j][3], local_class_index) for j in within_class_indices[k_shot:]]
+
+
+            # query_set = MSWC_query(query_info)
+
+            # out = ((X_train_samples,torch.tensor(y_train_samples)),
+            #        query_set, class_indices)
+
+            # # Reset the way and shots for the next iteration if the first iteration was different
+            # if self.first_iter_ways_shots:
+            #     k_shot = self.k_shot
+            #     query_shots = self.query_shots
+
+            # yield out
+
+    def _inner_iter(self, iter_classes, n_way, k_shot):
+        X_train_samples = []
+        y_train_samples = []
+        query_info = []
+
+        # n_way = len(iter_classes)
+
+        # class_indices = iter_classes + cumulative_classes + self.always_include_query_classes
+
+        # if self.cumulative:
+        #     cumulative_classes.extend(iter_classes)
+
+        if self.always_include_classes is not None:
+            # This line also makes sure that the always include classes are always
+            # in the same position in the batch
+            iter_classes = list(
+                set(iter_classes) - set(self.always_include_classes)
+            )[:len(iter_classes) - len(self.always_include_classes
+                                        )] + self.always_include_classes
+
+        for i, class_index in enumerate(iter_classes):
+            if self.support_query_split:
+                within_class_indices = np.concatenate([np.random.choice(self.indices_per_class[class_index][j], shot, replace=False) for j, shot in [(0, k_shot), (1, self.query_shots)]])
+            else:
+                within_class_indices = np.random.choice(
+                    self.indices_per_class[class_index],
+                    k_shot + self.query_shots,
+                    replace=False)
+
+            local_class_index = i if not self.incremental else class_index
+
+            # Only in the case of cumulative we need to make sure that we only
+            # include the new classes in the support set and not the previous classes
+            if i < n_way:
+                support_samples = torch.stack(
+                    [self.dataset[j][0] for j in within_class_indices[:k_shot]])
+                y_train_samples.extend([local_class_index] * k_shot)
+                X_train_samples.extend(support_samples)
+
+
+            query_info += [(self.dataset[j][2], self.dataset[j][3], local_class_index) for j in within_class_indices[k_shot:]]
+
+
+        query_set = MSWC_query(query_info)
+
+        out = ((torch.stack(X_train_samples),torch.tensor(y_train_samples)),
+                query_set, iter_classes)
+
+        return out

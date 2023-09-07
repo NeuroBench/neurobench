@@ -37,4 +37,4 @@ class M5(nn.Module):
         x = x.permute(0, 2, 1)
         x = self.fc1(x)
 
-        return F.log_softmax(x, dim=2)
+        return x #F.log_softmax(x, dim=2)

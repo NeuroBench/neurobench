@@ -27,6 +27,11 @@ Format:
 ```
 Output:
     (data, targets): A tuple of PyTorch tensors. The first dimension (batch) is expected to match.
+
+Alternatively, if other metadata is required from the dataset, like in 1MP object detection, then there can be a 3-tuple with kwargs.
+
+Output:
+    (data, targets, kwargs): kwargs is a dictionary of metadata.
 ```
 ### **Processor:**
 

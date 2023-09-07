@@ -55,12 +55,20 @@ class MFCCProcessor(NeuroBenchProcessor):
         """
         self.dataset_validity_check(dataset)
 
-        data, targets = dataset
+        data = dataset[0]
+        targets = dataset[1]
+        if len(dataset) == 3:
+            kwargs = dataset[2]
+        else:
+            kwargs = None
+
         if isinstance(data, list):
             data = torch.vstack(data)
 
         self.results = self.mfcc(data)
 
+        if kwargs:
+            return self.results, targets, kwargs
         return self.results, targets
 
     @staticmethod
@@ -70,5 +78,5 @@ class MFCCProcessor(NeuroBenchProcessor):
         if not isinstance(dataset, tuple):
             raise TypeError("Expected dataset to be tuple")
 
-        if not len(dataset) == 2:
-            raise ValueError("Dataset tuple should have values as (data, targets)")
+        if not len(dataset) == 2 and not len(dataset) == 3:
+            raise ValueError("Dataset tuple should have values as (data, targets), or (data, targets, kwargs)")

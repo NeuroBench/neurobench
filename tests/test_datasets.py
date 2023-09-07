@@ -1,7 +1,7 @@
 import os
 
 from neurobench.datasets import SpeechCommands
-from neurobench.datasets import MegapixelAutomotive
+from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.datasets import PrimateReaching
 from neurobench.datasets import DVSGesture
 from neurobench.datasets import MackeyGlass
@@ -57,4 +57,36 @@ def test_mackey_glass():
     assert(torch.eq(trainset[0][1], mg[0][1]))
     assert(torch.eq(testset[0][0], mg[mg.traintime_pts][0]))
     assert(torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
+
+def test_1mp():
+    path = dataset_path + "Gen 4 Histograms/"
+    try:
+        assert os.path.exists(path)
+    except AssertionError:
+        raise FileExistsError(f"Can't find {path}")
+
+    dl = Gen4DetectionDataLoader(
+        dataset_path=path,
+        split="testing",
+        label_map_path="neurobench/datasets/label_map_dictionary.json",
+        batch_size = 1,
+        num_tbins = 12,
+        preprocess_function_name="histo",
+        delta_t=50000,
+        channels=2,  # histograms have two channels
+        height=360,
+        width=640,
+        max_incr_per_pixel=5,
+        class_selection=["pedestrian", "two wheeler", "car"],
+        num_workers=1)
+
+    assert len(dl) > 0
+    assert iter(dl) is not None
+    assert next(iter(dl)) is not None
+
+    data = next(iter(dl))
+    assert len(data) == 3
+    assert data[0].shape == (1, 12, 2, 360, 640) # batch, timestep, channel, height, width
+    assert isinstance(data[1], list) # list[list[nparr]]
+    assert isinstance(data[2], dict)
 

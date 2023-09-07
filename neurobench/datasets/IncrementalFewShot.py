@@ -169,6 +169,17 @@ class IncrementalFewShot(IterableDataset):
         else:
             self.class_sampler = InfiniteClassSampler(self.total_classes, self.n_way)
 
+    def reset(self):
+        """Reset sampler for new iteration of dataset
+        """
+
+        if self.incremental:
+
+            self.classes_to_sample_from = list(set(self.indices_per_class.keys()))
+        else:
+            self.class_sampler = InfiniteClassSampler(self.total_classes, self.n_way)
+
+
     def __iter__(self):
         """Get a batch of samples for a k-shot n-way task.
 
@@ -194,11 +205,11 @@ class IncrementalFewShot(IterableDataset):
 
         k_shot = self.k_shot
 
-        class_sampler = BatchSampler(DataSampler(self.classes_to_sample_from, RandomSampler(self.classes_to_sample_from, replacement=False)), batch_size=self.n_way, drop_last=True)
+        self.class_sampler = BatchSampler(DataSampler(self.classes_to_sample_from, RandomSampler(self.classes_to_sample_from, replacement=False)), batch_size=self.n_way, drop_last=True)
 
 
         
-        for new_class_indices in class_sampler:
+        for new_class_indices in self.class_sampler:
             n_way = len(new_class_indices)
 
             class_indices = new_class_indices + cumulative_classes
@@ -210,65 +221,11 @@ class IncrementalFewShot(IterableDataset):
             out = self._inner_iter(class_indices, n_way, k_shot)
             yield out
 
-            # # Reset the way and shots for the next iteration if the first iteration was different
-            # if self.first_iter_ways_shots:
-            #     k_shot = self.k_shot
-
-
-            # if self.always_include_classes is not None:
-            #     # This line also makes sure that the always include classes are always
-            #     # in the same position in the batch
-            #     class_indices = list(
-            #         set(class_indices) - set(self.always_include_classes)
-            #     )[:len(class_indices) - len(self.always_include_classes
-            #                                 )] + self.always_include_classes
-
-            # for i, class_index in enumerate(class_indices):
-            #     if self.support_query_split:
-            #         within_class_indices = np.concatenate([np.random.choice(self.indices_per_class[class_index][j], shot, replace=False) for j, shot in [(0, k_shot), (1, query_shots)]])
-            #     else:
-            #         within_class_indices = np.random.choice(
-            #             self.indices_per_class[class_index],
-            #             k_shot + query_shots,
-            #             replace=False)
-
-            #     local_class_index = i if not self.incremental else class_index
-
-            #     # Only in the case of cumulative we need to make sure that we only
-            #     # include the new classes in the support set and not the previous classes
-            #     if i < n_way:
-            #         support_samples = torch.stack(
-            #             [self.dataset[j][0] for j in within_class_indices[:k_shot]])
-            #         y_train_samples.extend([local_class_index] * k_shot)
-            #         X_train_samples.extend(support_samples)
-
-
-            #     query_info += [(self.dataset[j][2], self.dataset[j][3], local_class_index) for j in within_class_indices[k_shot:]]
-
-
-            # query_set = MSWC_query(query_info)
-
-            # out = ((X_train_samples,torch.tensor(y_train_samples)),
-            #        query_set, class_indices)
-
-            # # Reset the way and shots for the next iteration if the first iteration was different
-            # if self.first_iter_ways_shots:
-            #     k_shot = self.k_shot
-            #     query_shots = self.query_shots
-
-            # yield out
 
     def _inner_iter(self, iter_classes, n_way, k_shot):
         X_train_samples = []
         y_train_samples = []
         query_info = []
-
-        # n_way = len(iter_classes)
-
-        # class_indices = iter_classes + cumulative_classes + self.always_include_query_classes
-
-        # if self.cumulative:
-        #     cumulative_classes.extend(iter_classes)
 
         if self.always_include_classes is not None:
             # This line also makes sure that the always include classes are always

@@ -8,7 +8,7 @@ from neurobench.datasets import MackeyGlass
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from model_data.echo_state_network import EchoStateNetwork
+from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
 
 mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)
@@ -44,10 +44,10 @@ for series_id in range(len(mg_parameters)):
     warmup_pts = round(warmup*mg.pts_per_lyaptime)
     train_labels = train_labels[warmup_pts:]
     esn.fit(train_data, train_labels, warmup_pts)
-    torch.save(esn, 'neurobench/examples/model_data/esn.pth')
+    torch.save(esn, 'neurobench/examples/mackey_glass/model_data/esn.pth')
      
     ## Load Model ##
-    net = torch.load('neurobench/examples/model_data/esn.pth')
+    net = torch.load('neurobench/examples/mackey_glass/model_data/esn.pth')
     test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
 
     model = TorchModel(net)

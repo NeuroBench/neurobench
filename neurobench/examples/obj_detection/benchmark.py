@@ -11,13 +11,6 @@ test_set = Prophesee1MP(..., split="testing")
 # Data preprocessors, wrap metavision
 preprocessors = [Preprocessor(), ...]
 
-## Define model ##
-class ObjDetectionModel(NeuroBenchModel):
-    def __init__(self, net, box_coder, head):
-        ...
-
-    def __call__(self, x):
-    	...
 
 # load model
 net = ...

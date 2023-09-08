@@ -8,7 +8,7 @@ from neurobench.datasets import MackeyGlass
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from model_data.echo_state_network import EchoStateNetwork
+from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
 
 mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)

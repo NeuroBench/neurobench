@@ -3,7 +3,6 @@ import torch
 from snntorch import utils
 
 from .model import NeuroBenchModel
-from memory_profiler import profile
 
 class SNNTorchModel(NeuroBenchModel):
     """ The SNNTorch class wraps the forward pass of the SNNTorch framework and ensures that spikes are in the correct 
@@ -18,7 +17,6 @@ class SNNTorchModel(NeuroBenchModel):
         self.net = net
         self.net.eval()
 
-    @profile
     def __call__(self, data):
         """ Executes the forward pass of SNNTorch models on data that follows the
         NeuroBench specification. Ensures spikes are compatible with downstream

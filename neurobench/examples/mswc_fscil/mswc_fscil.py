@@ -10,6 +10,9 @@ from neurobench.datasets import MSWC_FSCIL
 from neurobench.models import NeuroBenchModel
 from neurobench.benchmarks import Benchmark
 
+from neurobench.examples.mswc_fscil.SNN_NAML import SNN_MAML
+from neurobench.examples.mswc_fscil.training import train
+
 # seed run
 torch.manual_seed(0)
 
@@ -25,13 +28,6 @@ torch.manual_seed(0)
 
 s2s = S2S()
 
-## Define model ##
-class SNN_MAML(TorchModel):
-    def __init__(self, net):
-        self.net = net
-
-    def __call__(self, data):
-        ...
 
 net = ...
 model = SNN_MAML(net)

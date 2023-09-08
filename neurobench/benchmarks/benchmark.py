@@ -22,10 +22,6 @@ class Benchmark():
         self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
 
-        for m in self.data_metrics.keys():
-            if isinstance(self.data_metrics[m],type) and issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                self.data_metrics[m] = self.data_metrics[m]()
-
     def run(self):
         """ Runs batched evaluation of the benchmark.
 
@@ -41,6 +37,13 @@ class Benchmark():
         results = {}
         for m in self.static_metrics.keys():
             results[m] = self.static_metrics[m](self.model)
+
+        # Init/re-init stateful data metrics
+        for m in self.data_metrics.keys():
+            if isinstance(self.data_metrics[m],type) and issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                self.data_metrics[m] = self.data_metrics[m]()
+            elif isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                self.data_metrics[m] = self.data_metrics[m]()
 
         dataset_len = len(self.dataloader.dataset)
         for data in tqdm(self.dataloader, total=len(self.dataloader)):

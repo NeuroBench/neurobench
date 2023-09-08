@@ -6,6 +6,16 @@ from .utils.metric_utils import check_shape
 
 # static metrics, only require model
 # TODO: should these be defined by the NeuroBenchModel class or defined here?
+def parameter_count(model):
+    """ Number of parameters in the model.
+
+    Args:
+        model: A NeuroBenchModel.
+    Returns:
+        int: Number of parameters.
+    """
+    return sum(p.numel() for p in model.__net__().parameters())
+
 def model_size(model):
     """ Memory footprint of the model.
 
@@ -14,31 +24,41 @@ def model_size(model):
     Returns:
         float: Model size in bytes.
     """
-    # TODO: should be calculated for nn.Module via parameters/buffers
-    return model.size() 
+    # Count the number of parameters and multiply by the size of each parameter in bytes
+    param_size = 0
+    for param in model.__net__().parameters():
+        param_size += param.numel() * param.element_size()
 
-def frequency(model):
-    """ Frequency of model forward based on data input window, in Hz.
+    # Count the number of buffers and multiply by the size of each buffer in bytes
+    buffer_size = 0
+    for buffer in model.__net__().buffers():
+        buffer_size += buffer.numel() * buffer.element_size()
 
-    Args:
-        model: A NeuroBenchModel.
-    Returns:
-        float: Frequency in Hz.
-    """
-    # TODO: can also be extracted from the dataset? but prob model to keep consistent
-    return model.frequency()
+    # Return the sum of the parameters and buffers
+    return param_size + buffer_size
 
 def connection_sparsity(model):
-    """ Sparsity of model connections between layers.
+    """ Sparsity of model connections between layers. Based on number of zeros 
+    in Linear and Conv layers.
 
     Args:
         model: A NeuroBenchModel.
     Returns:
         float: Connection sparsity.
     """
-    # TODO: should be calculated for nn.Module based on number of zeros in Linear and Conv layers.
-    return model.connection_sparsity()
+    # Pull the layers from the model's network
+    layers = model.__net__().children()
 
+    # For each layer, count where the weights are zero
+    count_zeros = 0
+    count_weights = 0
+    for module in layers:
+        if isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.Conv2d):
+            count_zeros += torch.sum(module.weight == 0)
+            count_weights += module.weight.numel()
+
+    # Return the ratio of zeros to weights
+    return count_zeros / count_weights
 
 # dynamic metrics, require model, model predictions, and labels
 def activation_sparsity(model, preds, data):
@@ -103,6 +123,20 @@ def MSE(model, preds, data):
     """
     check_shape(preds, data[1])
     return torch.mean((preds - data[1])**2).item()
+
+def sMAPE(model, preds, data):
+    """ Symmetric mean absolute percentage error of the model predictions.
+
+    Args:
+        model: A NeuroBenchModel.
+        preds: A tensor of model predictions.
+        data: A tuple of data and labels.
+    Returns:
+        float: Symmetric mean absolute percentage error.
+    """
+    check_shape(preds, data[1])
+    smape = 200*torch.mean(torch.abs(preds - data[1])/(torch.abs(preds)+torch.abs(data[1])))
+    return torch.nan_to_num(smape, nan=200.0).item()
 
 def r2(model, preds, data):
     """ R2 Score of the model predictions.

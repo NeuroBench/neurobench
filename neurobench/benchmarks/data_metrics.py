@@ -96,6 +96,20 @@ def MSE(model, preds, data):
     check_shape(preds, data[1])
     return torch.mean((preds - data[1])**2).item()
 
+def sMAPE(model, preds, data):
+    """ Symmetric mean absolute percentage error of the model predictions.
+
+    Args:
+        model: A NeuroBenchModel.
+        preds: A tensor of model predictions.
+        data: A tuple of data and labels.
+    Returns:
+        float: Symmetric mean absolute percentage error.
+    """
+    check_shape(preds, data[1])
+    smape = 200*torch.mean(torch.abs(preds - data[1])/(torch.abs(preds)+torch.abs(data[1])))
+    return torch.nan_to_num(smape, nan=200.0).item()
+
 class r2(AccumulatedMetric):
     """ R2 Score of the model predictions.
 

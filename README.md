@@ -21,10 +21,10 @@ poetry run pytest tests/
 
 Currently the end-to-end examples can be run from the root directory via:
 ```
-poetry run python neurobench/examples/dvs_gesture.py
-poetry run python neurobench/examples/gsc.py
-poetry run python neurobench/examples/mackey_glass.py
-poetry run python neurobench/examples/primate_reaching.py
+poetry run python neurobench/examples/dvs_gesture/benchmark.py
+poetry run python neurobench/examples/gsc/benchmark.py
+poetry run python neurobench/examples/mackey_glass/benchmark.py
+poetry run python neurobench/examples/primate_reaching/benchmark.py
 ```
 The examples may not yet have trained models or a full set of metrics.
 

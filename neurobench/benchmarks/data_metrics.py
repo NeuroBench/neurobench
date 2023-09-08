@@ -96,34 +96,6 @@ def MSE(model, preds, data):
     check_shape(preds, data[1])
     return torch.mean((preds - data[1])**2).item()
 
-# def r2(model, preds, data):
-#     """ R2 Score of the model predictions.
-
-#     Currently implemented for 2D output only.
-
-#     Errata: R2 score currently is accumulated by mean for batched eval.
-#             Currently it is only correct for full-batch evaluation.
-
-#     Args:
-#         model: A NeuroBenchModel.
-#         preds: A tensor of model predictions.
-#         data: A tuple of data and labels.
-#     Returns:
-#         float: R2 Score.
-#     """
-#     breakpoint()
-#     X_numerator = torch.sum((data[1][:, 0] - preds[:, 0])**2)
-#     Y_numerator = torch.sum((data[1][:, 1] - preds[:, 1])**2)
-#     X_original_label_mean = torch.mean(data[1][:, 0])
-#     Y_original_label_mean = torch.mean(data[1][:, 1])
-#     X_denominator = torch.sum((data[1][:, 0] - X_original_label_mean)**2)
-#     Y_denominator = torch.sum((data[1][:, 1] - Y_original_label_mean)**2)
-#     X_r2 = 1 - (X_numerator/ X_denominator)
-#     Y_r2 = 1 - (Y_numerator/ Y_denominator)
-#     r2 = (X_r2 + Y_r2)/2
-
-#     return r2.item()
-
 class r2(AccumulatedMetric):
     """ R2 Score of the model predictions.
 

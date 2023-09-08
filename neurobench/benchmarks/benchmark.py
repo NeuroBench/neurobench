@@ -23,7 +23,7 @@ class Benchmark():
         self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
 
         for m in self.data_metrics.keys():
-            if issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
+            if isinstance(self.data_metrics[m],type) and issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
                 self.data_metrics[m] = self.data_metrics[m]()
 
     def run(self):

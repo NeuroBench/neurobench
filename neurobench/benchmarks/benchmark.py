@@ -1,5 +1,5 @@
 from tqdm import tqdm
-from . import metrics
+from . import static_metrics, data_metrics
 
 class Benchmark():
     """ Top-level benchmark class for running benchmarks.
@@ -19,8 +19,12 @@ class Benchmark():
         self.preprocessors = preprocessors
         self.postprocessors = postprocessors
 
-        self.static_metrics = {m: getattr(metrics, m) for m in metric_list[0]}
-        self.data_metrics = {m: getattr(metrics, m) for m in metric_list[1]}
+        self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
+        self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
+
+        for m in self.data_metrics.keys():
+            if issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                self.data_metrics[m] = self.data_metrics[m]()
 
     def run(self):
         """ Runs batched evaluation of the benchmark.
@@ -53,7 +57,6 @@ class Benchmark():
             # Run model on test data
             preds = self.model(data[0])
 
-            # TODO: postprocessors are applied to model output only?
             for alg in self.postprocessors: 
                 preds = alg(preds)
 
@@ -62,12 +65,16 @@ class Benchmark():
             for m in self.data_metrics.keys():
                 batch_results[m] = self.data_metrics[m](self.model, preds, data)
 
-            # Accumulate data metrics via mean
             for m, v in batch_results.items():
-                assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
-                if m not in results:
-                    results[m] = v * batch_size / dataset_len
+                # AccumulatedMetrics are computed with past state
+                if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                    results[m] = v
+                # otherwise accumulate via mean
                 else:
-                    results[m] += v * batch_size / dataset_len
+                    assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
+                    if m not in results:
+                        results[m] = v * batch_size / dataset_len
+                    else:
+                        results[m] += v * batch_size / dataset_len
 
         return results

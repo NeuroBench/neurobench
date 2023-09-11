@@ -1,7 +1,4 @@
-from tqdm import tqdm
-import numpy as np
 import torch
-from collections import defaultdict
 
 from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.models import NeuroBenchModel
@@ -11,9 +8,6 @@ from obj_det_model import Vanilla, Vanilla_lif
 
 from metavision_ml.detection.anchors import Anchors
 from metavision_ml.detection.rpn import BoxHead
-from metavision_ml.data import box_processing as box_api
-from metavision_ml.metrics.coco_eval import CocoEvaluator
-from metavision_sdk_core import EventBbox
 
 # dataloader itself takes about 7 minutes for loading, with model evaluation and score calculation is about 20 minutes on i9-12900KF, RTX3080
 test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi channel",

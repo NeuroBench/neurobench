@@ -12,9 +12,9 @@ class NeuroBenchProcessor():
         raise NotImplementedError("Subclasses of NeuroBenchProcessor should implement __init__")
 
     def __call__(self, dataset):
-        """ Process dataset of format (data, targets) to prepare for model inference
+        """ Process dataset of format (data, targets), or (data, targets, kwargs) to prepare for model inference
 
         Args:
-            dataset: A tuple of (data, targets) where data is a PyTorch tensor of shape (batch, timesteps, ...)
+            dataset: A tuple of (data, targets) or (data, targets, kwargs) where data is a PyTorch tensor of shape (batch, timesteps, ...)
         """
         raise NotImplementedError("Subclasses of NeuroBenchProcessor should implement __call__")

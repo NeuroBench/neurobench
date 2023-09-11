@@ -96,7 +96,10 @@ preds = model(batch)
 ### **Metrics:**
 There are two types of metrics: *static* and *data*. Static metrics can be computed using the model alone, while data metrics require the model predictions and the targets as well.
 
-Currently, data metrics are accumulated over batched evaluation using mean.
+Static metrics are stateless functions.
+
+Data metrics can also be stateless functions (in which case they are accumulated over batched evaluation via mean),
+or they can be stateful subclasses of AccumulatedMetric.
 
 ```
 **Static Metrics:**
@@ -105,22 +108,36 @@ Input:
 Output:
     result: Any type. The result of the metric.
 ```
-
+```python
+def static_metric(model):
+    ...
+```
 ```
 **Data Metrics:**
+
 Input:
     model: A NeuroBenchModel object.
     preds: A PyTorch tensor. To be compared with targets.
     data: Tuple of (data, targets). 
 Output:
-    result: A float or int, which can be accumulated with the results from other batches.
+    result: A float or int.
 ```
 ```python
-def static_metric(model):
-    ...
-
 def data_metric(model, preds, data):
+    # must return an int or float to be accumulated with mean
     return compare(preds, data[1])
+```
+```python
+class data_metric_with_state(AccumulatedMetric):
+    def __init__(self):
+        ...
+    
+    def __call__(self, model, preds, data):
+        # accumulate state from this batch
+        return self.compute()
+    
+    def compute():
+        # compute metric from accumulated state
 ```
 
 ### **Benchmark:**

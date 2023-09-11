@@ -11,12 +11,12 @@ from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
 from neurobench.accumulators.accumulator import aggregate,choose_max_count
 
-from neurobench.examples.model_data.ConvSNN import Conv_SNN
+from neurobench.examples.dvs_gesture.CSNN import Conv_SNN
 test_set = DVSGesture("data/dvs_gesture/", split="testing", preprocessing="stack")
 test_set_loader = DataLoader(test_set, batch_size=16, shuffle=True,drop_last=True)
 
 net = Conv_SNN()
-net.load_state_dict(torch.load('neurobench/examples/model_data/DVS_SNN_untrained.pth'))
+net.load_state_dict(torch.load('neurobench/examples/dvs_gesture/model_data/DVS_SNN_untrained.pth'))
 
 ## Define model ##
 model = SNNTorchModel(net)

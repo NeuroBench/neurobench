@@ -47,7 +47,6 @@ def accumulate_predictions(preds, targets, video_infos, frame_is_labeled,skip_us
         gt_detections (dict): dictionary of video name to list of EventBbox
 
     """
-    breakpoint()
     dt_detections = {}
     gt_detections = {}
     for t in range(len(targets)):

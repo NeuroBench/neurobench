@@ -29,7 +29,11 @@ class SNNTorchModel(NeuroBenchModel):
             spikes: A PyTorch tensor of shape (batch, timesteps, ...)
         """
         spikes = []
-        utils.reset(self.net)
+        # utils.reset(self.net) does not seem to delete all traces for the synaptic neuron model
+        if hasattr(self.net, 'reset'):
+            self.net.reset()
+        else:
+            utils.reset(self.net)
         spikes = []
 
         # Data is expected to be shape (batch, timestep, features*)

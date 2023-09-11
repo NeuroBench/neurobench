@@ -1,5 +1,5 @@
 import torch
-
+import numpy as np
 from .utils.metric_utils import check_shape
 
 class AccumulatedMetric:
@@ -173,7 +173,10 @@ class COCO_mAP(AccumulatedMetric):
         """ Initalize metric state.
         """
         from metavision_ml.metrics.coco_eval import CocoEvaluator
+        from collections import defaultdict
 
+        self.dt_detections = defaultdict(list)
+        self.gt_detections = defaultdict(list)
         self.evaluator = CocoEvaluator(classes=['background'] + ["pedestrian", "two wheeler", "car"], height=360, width=640)
 
     def __call__(self, model, preds, data):
@@ -194,9 +197,6 @@ class COCO_mAP(AccumulatedMetric):
         frame_is_labeled = data[2]["frame_is_labeled"]
         skip_us = 500000
 
-        dt_detections = {}
-        gt_detections = {}
-
         for t in range(len(targets)):
             for i in range(len(targets[t])):
                 gt_boxes = targets[t][i]
@@ -209,10 +209,10 @@ class COCO_mAP(AccumulatedMetric):
                     continue
 
                 name = video_info.path
-                if name not in dt_detections:
-                    dt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
-                if name not in gt_detections:
-                    gt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
+                if name not in self.dt_detections:
+                    self.dt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
+                if name not in self.gt_detections:
+                    self.gt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
                 assert video_info.start_ts == 0
                 ts = tbin_start + t * video_info.delta_t
 
@@ -229,23 +229,23 @@ class COCO_mAP(AccumulatedMetric):
                     labels = pred['labels'].cpu().data.numpy()
                     scores = pred['scores'].cpu().data.numpy()
                     dt_boxes = box_api.box_vectors_to_bboxes(boxes, labels, scores, ts=ts)
-                    dt_detections[name].append(dt_boxes)
+                    self.dt_detections[name].append(dt_boxes)
                 else:
-                    dt_detections[name].append(np.zeros((0), dtype=EventBbox))
+                    self.dt_detections[name].append(np.zeros((0), dtype=EventBbox))
 
                 if len(gt_boxes):
                     gt_boxes["t"] = ts
-                    gt_detections[name].append(gt_boxes)
+                    self.gt_detections[name].append(gt_boxes)
                 else:
-                    gt_detections[name].append(np.zeros((0), dtype=EventBbox))
+                    self.gt_detections[name].append(np.zeros((0), dtype=EventBbox))
 
-        for key in gt_detections:
-            self.evaluator.partial_eval([np.concatenate(gt_detections[key])], [np.concatenate(dt_detections[key])])
-
-        return self.compute()
+        return 0.0 # too heavy to compute every iteration
 
     def compute(self):
         """ Compute COCO mAP using accumulated data.
         """
+        print("Computing COCO mAP.")
+        for key in self.gt_detections:
+            self.evaluator.partial_eval([np.concatenate(self.gt_detections[key])], [np.concatenate(self.dt_detections[key])])
         coco_kpi = self.evaluator.accumulate()
         return coco_kpi['mean_ap']

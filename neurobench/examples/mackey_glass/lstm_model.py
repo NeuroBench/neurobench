@@ -14,7 +14,7 @@ class LSTMModel(nn.Module):
     """
     LSTM model
 
-    Parameters:
+    Parameters: #TODO
         input_dim:   int
                      The number of expected features in the input x
         hidden_size: int 
@@ -48,20 +48,30 @@ class LSTMModel(nn.Module):
         assert self.mode in ["autonomous", "single_step"]
         self.prior_prediction = None
     
-        self.rnn = nn.LSTM(self.input_dim, 
-                           self.hidden_size, 
-                           self.n_layers, batch_first=False).type(dtype)
+        self.rnn = nn.LSTMCell(self.input_dim, 
+                               self.hidden_size).type(dtype)
         #self.drop = nn.Dropout(dropout_rate)
         self.activation = nn.ReLU().type(dtype)
-        self.fc1 = nn.Linear(hidden_size, output_dim).type(dtype)
+        self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
 
-    def forward(self, x):
-
-        print(x.size())
-
-        x, _ = self.rnn(x)
+    def single_forward(self, sample): 
+        x, _ = self.rnn(sample)
         x = self.activation(x)
         #x = self.drop(x)
-        out = self.fc1(x)
+        out = self.fc(x)
 
-        return out.squeeze(-1)
+        return out
+
+    def forward(self, x):
+        predictions = []
+        for sample in x:
+            if self.mode == 'autonomous' and self.prior_prediction is not None:
+                sample = self.prior_prediction
+            prediction = self.single_forward(sample)
+            predictions.append(prediction)
+            self.prior_prediction = prediction
+
+        # reset so that next batch will not have prior prediction
+        self.prior_prediction = None
+
+        return torch.stack(predictions).squeeze(-1)

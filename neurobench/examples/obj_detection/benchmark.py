@@ -7,7 +7,7 @@ from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.models import NeuroBenchModel
 from neurobench.benchmarks import Benchmark
 
-from model_data.obj_detection.models import Vanilla, Vanilla_lif
+from obj_det_model import Vanilla, Vanilla_lif
 
 from metavision_ml.detection.anchors import Anchors
 from metavision_ml.detection.rpn import BoxHead

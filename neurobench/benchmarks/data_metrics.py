@@ -48,6 +48,8 @@ def activation_sparsity(model, preds, data):
     """
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
     #       Standard FF ANN should be zero (no activation sparsity)
+    raise NotImplementedError("Activation sparsity not yet implemented")
+
     check_shape(preds, data[1])
     return model.activation_sparsity()
 
@@ -65,6 +67,8 @@ def multiply_accumulates(model, preds, data):
     #   Spiking model: number of spike activations * fanout (see snnmetrics)
     #   Recurrent layers: each connection is one MAC
     #   ANN: use PyTorch profiler
+    raise NotImplementedError("Multiply-accumulates not yet implemented")
+
     check_shape(preds, data[1])
     macs = 0.0
     return macs

@@ -1,0 +1,134 @@
+import torch
+from torch import nn
+
+from torch.utils.data import Subset, DataLoader
+
+import wandb
+import argparse
+import pandas as pd
+
+from neurobench.datasets import MackeyGlass
+from neurobench.models import TorchModel
+from neurobench.benchmarks import Benchmark
+
+from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
+from neurobench.examples.mackey_glass.lstm_model import LSTMModel
+
+mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
+mg_parameters = pd.read_csv(mg_parameters_file)
+
+parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
+parser.add_argument('--wb', dest='wandb_state', type=str, default="offline", help="wandb state")
+parser.add_argument('--name', type=str, default='LSTM_MG', help='wandb run name')
+parser.add_argument('--project', type=str, default='Neurobench', help='wandb project name')
+parser.add_argument('--n_layers', type=int, default=2)
+parser.add_argument('--hidden_size', type=int, default=50)
+parser.add_argument('--n_epochs', type=int, default=200)
+parser.add_argument('--series_id', type=int, default=0)
+parser.add_argument('--params_idx', type=int, default=0)
+parser.add_argument('--dropout_rate', type=float, default=0.)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
+parser.add_argument('--debug', type=bool, default=False)
+
+args, unparsed = parser.parse_known_args()
+
+if args.sw:
+    wandb.init(name=args.name,
+               mode=args.wandb_state,
+               config=wandb.config)
+
+    config_wb = wandb.config
+else:
+    wandb.init(project=args.project,
+               name=args.name,
+               mode=args.wandb_state)
+
+# LSTM parameters
+params = {}
+params['input_dim'] = 1
+params['hidden_size'] = args.hidden_size
+params['n_layers'] = args.n_layers
+params['output_dim'] = 1
+params['dropout_rate'] = args.dropout_rate
+params['dtype'] = torch.float64
+
+# benchmark run over 14 different series
+sMAPE_scores = []
+
+mg = MackeyGlass(tau = mg_parameters.tau[args.series_id], 
+                 lyaptime = mg_parameters.lyapunov_time[args.series_id],
+                 constant_past = mg_parameters.initial_condition[args.series_id],
+                 start_offset=0.)
+
+train_set = Subset(mg, mg.ind_train)
+test_set = Subset(mg, mg.ind_test)
+
+## Fitting Model ##
+seed_id = 0
+
+# Initialize an LSTM model
+lstm = LSTMModel(**params)
+
+# LSTM training phase
+lstm.train()
+
+criterion = nn.MSELoss()
+opt = torch.optim.Adam(lstm.parameters(), lr=args.lr)
+
+train_data, train_labels = train_set[:]
+
+train_data = train_data.permute(1,0,2) # (batch, timesteps, features)
+warmup = 0.6 # in Lyapunov times
+warmup_pts = round(warmup*mg.pts_per_lyaptime)
+train_labels = train_labels[warmup_pts:]
+
+# training loop
+for epoch in range(args.n_epochs):
+
+    pre = lstm(train_data)
+
+    loss_val = criterion(pre[warmup_pts:,:],
+                             train_labels)
+
+    opt.zero_grad()
+    loss_val.backward()
+    opt.step()
+
+    print(f"Epoch {epoch}: loss = {loss_val.item()}")
+    wandb.log({"loss": loss_val})
+
+if args.debug:
+    import matplotlib.pyplot as plt        
+
+    plt.figure()
+
+    plt.plot(pre[:,0].detach().cpu().numpy(), label='prediction')
+    plt.plot(train_labels[:,0].detach().cpu().numpy(), label='target')
+
+    plt.xlabel('time')
+    plt.legend()
+
+    print("saved training fit to ./fit_train.pdf")
+    plt.savefig("fit_train.pdf")
+
+torch.save(lstm, 'neurobench/examples/mackey_glass/model_data/lstm.pth')
+ 
+## Load Model ##
+net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
+test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
+
+model = TorchModel(net)
+
+# data_metrics = ["activation_sparsity", "multiply_accumulates", "sMAPE"]
+
+static_metrics = ["model_size", "connection_sparsity"]
+data_metrics = ["sMAPE"]
+
+benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
+results = benchmark.run()
+print(results)
+sMAPE_score = results["sMAPE"]
+
+print(f"sMAPE score {sMAPE_score} on time series id {args.series_id}")
+

@@ -223,8 +223,8 @@ class IncrementalFewShot(IterableDataset):
 
 
     def _inner_iter(self, iter_classes, n_way, k_shot):
-        X_train_samples = []
-        y_train_samples = []
+        X_train_samples = [[] for _ in range(k_shot)]
+        y_train_samples = [[] for _ in range(k_shot)]
         query_info = []
 
         if self.always_include_classes is not None:
@@ -249,18 +249,24 @@ class IncrementalFewShot(IterableDataset):
             # Only in the case of cumulative we need to make sure that we only
             # include the new classes in the support set and not the previous classes
             if i < n_way:
-                support_samples = torch.stack(
-                    [self.dataset[j][0] for j in within_class_indices[:k_shot]])
-                y_train_samples.extend([local_class_index] * k_shot)
-                X_train_samples.extend(support_samples)
+                for i, index in enumerate(within_class_indices[:k_shot]):
+                    X_train_samples[i].append(self.dataset[index][0])
+                    y_train_samples[i].append(local_class_index)
+                # support_samples = torch.stack(
+                #     [self.dataset[j][0] for j in within_class_indices[:k_shot]])
+                # y_train_samples.extend([local_class_index] * k_shot)
+                # X_train_samples.extend(support_samples)
 
 
             query_info += [(self.dataset[j][2], self.dataset[j][3], local_class_index) for j in within_class_indices[k_shot:]]
 
+        support = []
+        for x, y in zip(X_train_samples, y_train_samples):
+            shot = (torch.stack(x),torch.tensor(y, dtype=torch.long))
+            support.append(shot)
 
         query_set = MSWC_query(query_info)
 
-        out = ((torch.stack(X_train_samples),torch.tensor(y_train_samples)),
-                query_set, iter_classes)
+        out = (support, query_set, iter_classes)
 
         return out

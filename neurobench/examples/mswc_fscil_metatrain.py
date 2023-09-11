@@ -7,13 +7,14 @@ from tqdm import tqdm
 import torch
 import os
 
-from torch.utils.data import DataLoader, ConcatDataset
+from torch.utils.data import DataLoader, ConcatDataset, TensorDataset
 import torchaudio
 
 from torch import nn, optim, distributions as dist
 import torch.nn.functional as F
 
 import learn2learn as l2l
+import copy
 
 # from torch_mate.data.utils import IncrementalFewShot
 
@@ -46,12 +47,17 @@ def parse_arguments():
     parser.add_argument("--mt_query_shots", type=int, default=50, help="Number of query samples for meta-training")
     parser.add_argument("--mt_pseudo_ways", type=int, default=20, help="Number of ways for pseudo-base session in meta-training")
     parser.add_argument("--mt_pseudo_shots", type=int, default=50, help="Number of shots for pseudo-base session in meta-training")
+    parser.add_argument("--anil", action="store_true", help="Use ANIL version of MAML")
+    parser.add_argument("--masked", action="store_true", help="Only use 100 neurons for pre-training")
 
     # parser.add_argument("--mt_split", nargs=2, type=int, default=(250, 250), metavar=("X", "Y"),
                         # help="The support query split to use for meta-training. Can be integer values (X, Y)")
     parser.add_argument("--no_mt_split", action="store_true", help="Don't use mt fixed support query splits")
 
     parser.add_argument("--eval_shots", type=int, default=5, help="Number of shots for evaluation")
+    parser.add_argument("--eval_lr", type=float, default=0.001, help="Learning rate for evaluation learning")
+    parser.add_argument("--eval_deep_update", action="store_true", help="Update on all layers during evaluation")
+
 
     parser.add_argument("--save_pre_train", action="store_true", help="Save pre trained model")
     parser.add_argument("--load_pre_train", type=str, default=None, help="Name of pre trained model to load")
@@ -100,10 +106,14 @@ else:
     META_SPLITS = (250,250)
 EVAL_ITERATIONS = args.eval_iter
 EVAL_SHOTS = args.eval_shots
+EVAL_LR = args.eval_lr
 
 LOSS_FUNCTION = F.cross_entropy
 FEW_SHOT_LOSS_FUNCTION = lambda x,y : F.mse_loss(x, F.one_hot(y, x.shape[-1]).float())
 
+ANIL = args.anil
+MASKED = args.masked
+EVAL_OUT_ADAPT = not args.eval_deep_update
 
 new_sample_rate = 8000
 resample = torchaudio.transforms.Resample(orig_freq=48000, new_freq=new_sample_rate).to(device)
@@ -114,7 +124,7 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 test_loader = None
 
 # @TODO: Improve for test_loader recreatiom
-def test(test_model, mask, set=None):
+def test(test_model, mask, set=None, wandb_log="accuracy"):
     test_model.eval()
     if set is not None:
         test_loader = DataLoader(set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
@@ -131,8 +141,9 @@ def test(test_model, mask, set=None):
     pre_train_results = benchmark.run()
     test_accuracy = pre_train_results['classification_accuracy']
     if not args.no_wandb:
-        wandb.log({"accuracy":test_accuracy})
+        wandb.log({wandb_log:test_accuracy})
     return test_accuracy
+
 
 def pre_train(model):
     ### Pre-training phase ###
@@ -143,8 +154,11 @@ def pre_train(model):
     optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 
-    mask = torch.full((200,), float('inf')).to(device)
-    mask[torch.arange(0,100, dtype=int)] = 0
+    if MASKED:
+        mask = torch.full((100,), 0).to(device)
+    else:
+        mask = torch.full((200,), float('inf')).to(device)
+        mask[torch.arange(0,100, dtype=int)] = 0
 
     # pre_train_results = benchmark.run()
     print("PRE-TRAINING")
@@ -170,11 +184,14 @@ def pre_train(model):
         if epoch%5==0:
             test_acc = test(model, mask)
             print(f"The test accuracy is {test_acc*100}%")
-            wandb.log({"accuracy":test_acc})
         scheduler.step()
 
     if args.save_pre_train:
-        torch.save(model, os.path.join(ROOT,"model_ep"+str(PRE_TRAIN_EPOCHS)))
+        if MASKED:
+            name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_masked"
+        else:
+            name = "model_ep"+str(PRE_TRAIN_EPOCHS)
+        torch.save(model, os.path.join(ROOT,name))
 
 
 
@@ -191,7 +208,10 @@ if __name__ == '__main__':
         config=args.__dict__)
 
 
-    model = M5(n_input=1, n_output=200).to(device)
+    if MASKED:
+        model = M5(n_input=1, n_output=100).to(device)
+    else:
+        model = M5(n_input=1, n_output=200).to(device)
 
 
 
@@ -200,8 +220,12 @@ if __name__ == '__main__':
     else:
         pre_train(model)
 
-        mask = torch.full((200,), float('inf')).to(device)
-        mask[torch.arange(0,100, dtype=int)] = 0
+
+        if MASKED:
+            mask = torch.full((100,), 0).to(device)
+        else:
+            mask = torch.full((200,), float('inf')).to(device)
+            mask[torch.arange(0,100, dtype=int)] = 0
         pre_train_acc = test(model, mask)
         print(f"The test accuracy at the end of pre-training is {pre_train_acc*100}%")
 
@@ -216,14 +240,23 @@ if __name__ == '__main__':
                                 support_query_split=META_SPLITS,
                                 samples_per_class=500)
 
-    maml = l2l.algorithms.MAML(model, lr=1e-3)
+    if ANIL:
+        features = model.features
+        head = model.fc1
+        maml = l2l.algorithms.MAML(head, lr=EVAL_LR)
+    else:
+        maml = l2l.algorithms.MAML(model, lr=EVAL_LR)
+        
     meta_opt = optim.Adam(maml.parameters())
 
 
     # Iteration over incremental sessions
 
-    mask = torch.full((200,), float('inf')).to(device)
-    mask[torch.arange(0,100, dtype=int)] = 0
+    if MASKED:
+        mask = torch.full((100,), 0).to(device)
+    else:
+        mask = torch.full((200,), float('inf')).to(device)
+        mask[torch.arange(0,100, dtype=int)] = 0
 
     print("META-TRAINING")
     for iteration in range(META_ITERATIONS):
@@ -233,22 +266,36 @@ if __name__ == '__main__':
             # print(f"Session: {session+1}")
             
 
-            X_support, y_support = support
-            X_support = X_support.to(device)
-            y_support = y_support.to(device)
+            # X_support, y_support = support
+            # X_support = X_support.to(device)
+            # y_support = y_support.to(device)
 
 
             # @TODO: THink if mask is needed
             
+
+            ### Inner loop ###
             # Adaptation: Instanciate a copy of model
             learner = maml.clone()
 
-            ### Inner loop ###
+            # support_set = TensorDataset(X_support, y_support)
+            # support_loader = DataLoader(support_set, batch_size=META_WAYS, pin_memory=True)
 
-            # Adaptation: Compute and adapt to task loss
-            support_log = learner(resample(X_support))
-            support_loss = FEW_SHOT_LOSS_FUNCTION(support_log.squeeze(), y_support) # Works with log_softmax to create crossentropy
-            learner.adapt(support_loss)
+            if ANIL:
+                for X_shot, y_shot in support:
+                    data = X_shot.to(device)
+                    target = y_shot.to(device)
+                    data = features(resample(data))
+                    support_log = learner(data)
+                    support_loss = FEW_SHOT_LOSS_FUNCTION(support_log.squeeze(), target) # Works with log_softmax to create crossentropy
+                    learner.adapt(support_loss)
+            else:
+                for X_shot, y_shot in support:
+                    data = X_shot.to(device)
+                    target = y_shot.to(device)
+                    support_log = learner(resample(data))
+                    support_loss = FEW_SHOT_LOSS_FUNCTION(support_log.squeeze(), target) # Works with log_softmax to create crossentropy
+                    learner.adapt(support_loss)
 
 
             ### Outer loop ###
@@ -260,7 +307,11 @@ if __name__ == '__main__':
             for X_query, y_query in full_session_test_loader:
                 X_query = X_query.to(device)
                 y_query = y_query.to(device)
-                query_log = learner(resample(X_query))
+                if ANIL:
+                    data = features(resample(X_query))
+                    query_log = learner(data)
+                else:
+                    query_log = learner(resample(X_query))
                 query_loss = LOSS_FUNCTION(query_log.squeeze(), y_query)
                 meta_loss += query_loss/X_query.shape[0]
 
@@ -282,6 +333,12 @@ if __name__ == '__main__':
 
     del base_train_set
 
+    if MASKED:
+        new_model = M5(n_input=1, n_output=200).to(device)
+        new_model.features = model.features
+        new_model.fc1.weight.data[:100,:] = model.fc1.weight.data.clone()
+        new_model.fc1.bias.data[:100] = model.fc1.bias.data.clone()
+        model = new_model
 
     ### Evaluation phase ###
     print("EVALUATION")
@@ -300,10 +357,10 @@ if __name__ == '__main__':
         mask = torch.full((200,), float('inf')).to(device)
         mask[torch.arange(0,100, dtype=int)] = 0
 
-        eval_model = model.clone()
+        eval_model = copy.deepcopy(model)
 
         print(f"Session: 0")
-        pre_train_acc = test(eval_model, mask)
+        pre_train_acc = test(eval_model, mask, wandb_log="eval_accuracy")
         all_results.append(pre_train_acc)
         print(f"The base accuracy is {all_results[-1]*100}%")
 
@@ -314,9 +371,10 @@ if __name__ == '__main__':
                                     support_query_split=(100,100),
                                     samples_per_class=200)
 
-        few_shot_optimizer = optim.SGD(eval_model.fc1.parameters(), lr=0.001)
-
-        
+        if EVAL_OUT_ADAPT:
+            few_shot_optimizer = optim.SGD(eval_model.fc1.parameters(), lr=EVAL_LR)
+        else:
+            few_shot_optimizer = optim.SGD(eval_model.parameters(), lr=EVAL_LR)
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
@@ -324,19 +382,27 @@ if __name__ == '__main__':
 
             eval_model.train()
 
-            X_train, y_train = support
+            # X_train, y_train = support
 
             ### Few Shot Learning phase ###
-            data = X_train.to(device)
-            target = y_train.to(device)
+            # data = X_train.to(device)
+            # target = y_train.to(device)
 
-            data = resample(data)
-            output = eval_model(data)
-            loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
+            # data = resample(data)
 
-            few_shot_optimizer.zero_grad()
-            loss.backward()
-            few_shot_optimizer.step()
+            # support_set = TensorDataset(X_train, y_train)
+            # support_loader = DataLoader(support_set, batch_size=10, pin_memory=True)
+
+            for X_shot, y_shot in support:
+                data = X_shot.to(device)
+                data = resample(data)
+                target = y_shot.to(device)
+                output = eval_model(data)
+                loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
+
+                few_shot_optimizer.zero_grad()
+                loss.backward()
+                few_shot_optimizer.step()
 
             ### Testing phase ###
 
@@ -348,16 +414,24 @@ if __name__ == '__main__':
             mask = torch.full((200,), float('inf')).to(device)
             mask[session_classes] = 0
 
+            session_classes = torch.IntTensor(query_classes)
+            new_mask = torch.full((200,), float('inf')).to(device)
+            new_mask[session_classes] = 0
+
+            new_class_acc = test(eval_model, new_mask, set=query, wandb_log="query_accuracy")
+            print(f"The accuracy on new classes is {new_class_acc*100}%")
             # Run benchmark to evaluate accuracy of this specific session
-            session_acc = test(eval_model, mask, set=full_session_test_set)
+            session_acc = test(eval_model, mask, set=full_session_test_set, wandb_log="eval_accuracy")
             all_results.append(session_acc)
             
             print(f"The session accuracy is {all_results[-1]*100}%")
 
         mean_accuracy = np.mean(all_results)
         if not args.no_wandb:
-            wandb.log({"accuracy":mean_accuracy})
+            wandb.log({"eval_accuracy":mean_accuracy})
         print(f"The total mean accuracy is {mean_accuracy*100}%")
 
 
         few_shot_dataloader.reset()
+
+

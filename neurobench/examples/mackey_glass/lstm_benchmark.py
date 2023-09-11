@@ -27,7 +27,7 @@ parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
 parser.add_argument('--params_idx', type=int, default=0)
 parser.add_argument('--dropout_rate', type=float, default=0.)
-parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--lr', type=float, default=0.05)
 parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
 parser.add_argument('--debug', type=bool, default=False)
 

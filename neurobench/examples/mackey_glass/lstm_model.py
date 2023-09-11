@@ -33,7 +33,7 @@ class LSTMModel(nn.Module):
         n_layers: int = 2, 
         output_dim: int = 1, 
         dropout_rate: float = 0.5, 
-        mode: str = "autonomous",
+        mode: str = 'autonomous',
         dtype=torch.float64
         ):
         super().__init__()
@@ -45,17 +45,27 @@ class LSTMModel(nn.Module):
         self.dropout_rate = dropout_rate
         self.mode = mode
 
-        assert self.mode in ["autonomous", "single_step"]
+        assert self.mode in ['autonomous', 'single_step']
+        #assert n_layers == 1, 'multi-layer LSTM is not supported yet'
         self.prior_prediction = None
     
-        self.rnn = nn.LSTMCell(self.input_dim, 
-                               self.hidden_size).type(dtype)
+        # LSTM model
+        self.rnns = nn.ModuleList()
+        self.rnns.append(nn.LSTMCell(
+            self.input_dim, self.hidden_size).type(dtype))
+        self.rnns.extend(
+            [nn.LSTMCell(self.hidden_size, self.hidden_size).type(dtype)
+             for _ in range(1, self.n_layers)])
+
         #self.drop = nn.Dropout(dropout_rate)
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
 
     def single_forward(self, sample): 
-        x, _ = self.rnn(sample)
+
+        x, _ = self.rnns[0](sample)
+        for i in range(1, self.n_layers):
+            x, _ = self.rnns[i](x)
         x = self.activation(x)
         #x = self.drop(x)
         out = self.fc(x)

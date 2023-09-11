@@ -3,7 +3,7 @@ import torch.nn as nn
 import snntorch as snn
 import snntorch.surrogate as surrogate
 from neurobench.models import SNNTorchModel
-from neurobench.benchmarks.metrics import model_size, parameter_count, connection_sparsity
+from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity
 
 # Pytest for model_size from benchmarks/metrics
 def test_model_size():

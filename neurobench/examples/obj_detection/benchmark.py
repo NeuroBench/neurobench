@@ -32,96 +32,34 @@ test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi cha
 
 # Evaluation pipeline written and models trained by Shenqi Wang (wang69@imec.be) and Guangzhi Tang (guangzhi.tang@imec.nl) at imec.
 
-def accumulate_predictions(preds, targets, video_infos, frame_is_labeled,skip_us=500000):
-    """ Accumulates predictions and ground truth detections over batches.
+class ObjDetectionModel(NeuroBenchModel):
+    def __init__(self, net, box_coder, head):
+        self.net = net
+        self.box_coder = box_coder
+        self.head = head
 
-    Args:
-        preds: model outputs, list of list of dicts, shape=(timesteps,batch,boxes)
-        targets: targets, list of list of EventBbox (structured nparr), shape=(timesteps,batch) 
-        video_infos (tuple): metadata of each video in batch
-        frame_is_labeled (tensor): whether timestep in each sample is labeled, shape=(timestep,batch)
-        skip_us (int): skips the first 500000us (0.5s) of each video, since the event feed will not have any knowledge of static objects
+    def __call__(self, batch):
+        self.net.eval()
+        inputs = batch[0].permute(1, 0, 2, 3, 4).to(device='cuda') # dataloader supplies batch,timestep,*; model expects timestep,batch,*
+        with torch.no_grad():
+            feature = self.net(inputs)
+            loc_preds_val, cls_preds_val = self.head(feature)
+            scores = self.head.get_scores(cls_preds_val)
+            scores = scores.to('cpu')
+            for i, feat in enumerate(feature):
+                feature[i] = feature[i].to('cpu')
+            inputs = inputs.to('cpu')
+            loc_preds_val = loc_preds_val.to('cpu')
+            preds = box_coder.decode(feature, inputs, loc_preds_val, scores, batch_size=inputs.shape[1], score_thresh=0.05,
+                        nms_thresh=0.5, max_boxes_per_input=500)
+        return preds
 
-    Returns:
-        dt_detections (dict): dictionary of video name to list of EventBbox
-        gt_detections (dict): dictionary of video name to list of EventBbox
+    def __net__(self):
+        # returns only network, not box_coder and head
+        return self.net
 
-    """
-    dt_detections = {}
-    gt_detections = {}
-    for t in range(len(targets)):
-        for i in range(len(targets[t])):
-            gt_boxes = targets[t][i]
-            
-            pred = preds[t][i]
-
-            video_info, tbin_start, _ = video_infos[i]
-
-            if video_info.padding or frame_is_labeled[t, i] == False:
-                continue
-
-            name = video_info.path
-            if name not in dt_detections:
-                dt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
-            if name not in gt_detections:
-                gt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
-            assert video_info.start_ts == 0
-            ts = tbin_start + t * video_info.delta_t
-
-            if ts < skip_us:
-                continue
-
-            if isinstance(gt_boxes, torch.Tensor):
-                gt_boxes = gt_boxes.cpu().numpy()
-            if gt_boxes.dtype == np.float32:
-                gt_boxes = box_api.box_vectors_to_bboxes(gt_boxes[:, :4], gt_boxes[:, 4], ts=ts)
-
-            if pred['boxes'] is not None and len(pred['boxes']) > 0:
-                boxes = pred['boxes'].cpu().data.numpy()
-                labels = pred['labels'].cpu().data.numpy()
-                scores = pred['scores'].cpu().data.numpy()
-                dt_boxes = box_api.box_vectors_to_bboxes(boxes, labels, scores, ts=ts)
-                dt_detections[name].append(dt_boxes)
-            else:
-                dt_detections[name].append(np.zeros((0), dtype=EventBbox))
-
-            if len(gt_boxes):
-                gt_boxes["t"] = ts
-                gt_detections[name].append(gt_boxes)
-            else:
-                gt_detections[name].append(np.zeros((0), dtype=EventBbox))
-
-    return dt_detections, gt_detections
-
-def inference_epoch_end(outputs): 
-    """ Calculation of the COCO metrics.
-
-    Args:
-        outputs (list): list of dictionaries, each dictionary contains the detections and ground truths for a video
-    Returns:
-        coco_kpi (dict): dictionary of COCO metrics
-
-    """
-    print('==> Start evaluation')
-    dt_detections = defaultdict(list)
-    gt_detections = defaultdict(list)
-
-    for item in outputs:
-        for k, v in item['gt'].items():
-            gt_detections[k].extend(v)
-        for k, v in item['dt'].items():
-            dt_detections[k].extend(v)
-
-    evaluator = CocoEvaluator(classes=['background'] + ["pedestrian", "two wheeler", "car"], height=360, width=640)
-    for key in gt_detections:
-        evaluator.partial_eval([np.concatenate(gt_detections[key])], [np.concatenate(dt_detections[key])])
-    coco_kpi = evaluator.accumulate()
-    return coco_kpi
-
-# TODO: make the training scripts available in the repo, currently they are on the imec_object_detection branch
-
+# Loading the model
 mode = "hybrid"
-
 if mode == "ann":
     # baseline ANN RED architecture
     model = Vanilla(cin = 6, cout = 256, base = 16)
@@ -131,7 +69,6 @@ if mode == "ann":
     head = head.to('cuda')
     model.load_state_dict(torch.load('neurobench/examples/model_data/obj_detection/save_models/25_ann_model.pth',map_location=torch.device('cuda')))
     head.load_state_dict(torch.load('neurobench/examples/model_data/obj_detection/save_models/25_ann_pd.pth',map_location=torch.device('cuda')))
-
 elif mode == "hybrid":
     # hybrid SNN of above architecture
     model = Vanilla_lif(cin = 6, cout = 256, base = 16)
@@ -141,29 +78,22 @@ elif mode == "hybrid":
     head = head.to('cuda')
     model.load_state_dict(torch.load('neurobench/examples/model_data/obj_detection/save_models/14_hybrid_model.pth',map_location=torch.device('cuda')))
     head.load_state_dict(torch.load('neurobench/examples/model_data/obj_detection/save_models/14_hybrid_pd.pth',map_location=torch.device('cuda')))
-
 else:
     raise ValueError("mode must be ann or hybrid")
 
-output_val_list = []
-for batch in tqdm(test_set_dataloader):
-    inputs = batch[0].permute(1, 0, 2, 3, 4).to(device='cuda') # dataloader supplies batch,timestep,*; model expects timestep,batch,*
-    with torch.no_grad():
-        feature = model(inputs)
-        loc_preds_val, cls_preds_val = head(feature)
-        scores = head.get_scores(cls_preds_val)
-        scores = scores.to('cpu')
-        for i, feat in enumerate(feature):
-            feature[i] = feature[i].to('cpu')
-        inputs = inputs.to('cpu')
-        loc_preds_val = loc_preds_val.to('cpu')
-        preds = box_coder.decode(feature, inputs, loc_preds_val, scores, batch_size=inputs.shape[1], score_thresh=0.05,
-                    nms_thresh=0.5, max_boxes_per_input=500)
-        # print(preds)
-        dt_dic, gt_dic = accumulate_predictions(preds, batch[1], batch[2]["video_infos"], batch[2]["frame_is_labeled"], 500000)
-        output_val_list.append({'dt': dt_dic, 'gt': gt_dic})
-coco_val_result = inference_epoch_end(output_val_list)
-print(coco_val_result)
+model = ObjDetectionModel(model, box_coder, head)
+
+# Evaluation
+
+preprocessors = []
+postprocessors = []
+
+static_metrics = ["model_size"]
+data_metrics = ["COCO_mAP"]
+
+benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, data_metrics])
+results = benchmark.run()
+print(results)
 
 # batch size of inference slightly affects the results.
 
@@ -175,14 +105,3 @@ print(coco_val_result)
 # {'mean_ap': 0.304865042405996, 'mean_ap50': 0.5919837857864657, 'mean_ap75': 0.27190113054105747, 'mean_ap_small': -1.0, 'mean_ap_medium': 0.3177476098097795, 
 # 'mean_ap_big': 0.2957906269855653, 'mean_ar': 0.4663488181685545, 'mean_ar_small': -1.0, 'mean_ar_medium': 0.4791990086164158, 'mean_ar_big': 0.4415985913719789}
 
-### TODO: connect to the Benchmark harness by wrapping the above model / metrics. 
-### --> requires that the metrics can be aggregated and calculated at the end of all batches. also requires Benchmark cuda support.
-# preprocessors = []
-# postprocessors = []
-
-# static_metrics = ["model_size"]
-# data_metrics = ["COCO_mAP"]
-
-# benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, data_metrics])
-# results = benchmark.run()
-# print(results)

@@ -42,7 +42,7 @@ def parse_arguments():
     parser.add_argument("--eval_iter", type=int, default=5, help="Number of evaluation iterations")
     parser.add_argument("--mt_sessions", type=int, default=8, help="Number of meta-training sessions")
     
-    parser.add_argument("--mt_ways", type=int, default=5, help="Number of ways for meta-training")
+    parser.add_argument("--mt_ways", type=int, default=10, help="Number of ways for meta-training")
     parser.add_argument("--mt_shots", type=int, default=5, help="Number of shots for meta-training")
     parser.add_argument("--mt_query_shots", type=int, default=50, help="Number of query samples for meta-training")
     parser.add_argument("--mt_pseudo_ways", type=int, default=20, help="Number of ways for pseudo-base session in meta-training")
@@ -57,6 +57,8 @@ def parse_arguments():
     parser.add_argument("--eval_shots", type=int, default=5, help="Number of shots for evaluation")
     parser.add_argument("--eval_lr", type=float, default=0.001, help="Learning rate for evaluation learning")
     parser.add_argument("--eval_deep_update", action="store_true", help="Update on all layers during evaluation")
+    parser.add_argument("--inner_sgd", action="store_true", help="Use SGD (instead of cross-entropy) for inner loop")
+    parser.add_argument("--data_init", action="store_true", help="Use data init trick")
 
 
     parser.add_argument("--save_pre_train", action="store_true", help="Save pre trained model")
@@ -109,11 +111,14 @@ EVAL_SHOTS = args.eval_shots
 EVAL_LR = args.eval_lr
 
 LOSS_FUNCTION = F.cross_entropy
-FEW_SHOT_LOSS_FUNCTION = lambda x,y : F.mse_loss(x, F.one_hot(y, x.shape[-1]).float())
-
+if args.inner_sgd:
+    FEW_SHOT_LOSS_FUNCTION = lambda x,y : F.mse_loss(x, F.one_hot(y, x.shape[-1]).float())
+else:
+    FEW_SHOT_LOSS_FUNCTION = F.cross_entropy
 ANIL = args.anil
 MASKED = args.masked
 EVAL_OUT_ADAPT = not args.eval_deep_update
+DATA_INIT = args.data_init
 
 new_sample_rate = 8000
 resample = torchaudio.transforms.Resample(orig_freq=48000, new_freq=new_sample_rate).to(device)
@@ -334,11 +339,12 @@ if __name__ == '__main__':
     del base_train_set
 
     if MASKED:
-        new_model = M5(n_input=1, n_output=200).to(device)
-        new_model.features = model.features
-        new_model.fc1.weight.data[:100,:] = model.fc1.weight.data.clone()
-        new_model.fc1.bias.data[:100] = model.fc1.bias.data.clone()
-        model = new_model
+        with torch.no_grad():
+            new_model = M5(n_input=1, n_output=200).to(device)
+            new_model.features = model.features
+            new_model.fc1.weight.data[:100,:] = model.fc1.weight.data.clone()
+            new_model.fc1.bias.data[:100] = model.fc1.bias.data.clone()
+            model = new_model
 
     ### Evaluation phase ###
     print("EVALUATION")
@@ -392,6 +398,29 @@ if __name__ == '__main__':
 
             # support_set = TensorDataset(X_train, y_train)
             # support_loader = DataLoader(support_set, batch_size=10, pin_memory=True)
+            
+
+            if DATA_INIT:
+                with torch.no_grad():
+                    # upper_bound = torch.mean(torch.max(eval_model.fc1.weight.data[:100], dim=-1)[0])
+                    # lower_bound = torch.mean(torch.min(eval_model.fc1.weight.data[:100], dim=-1)[0])
+                    upper_bound = 0.5
+                    lower_bund = -0.5
+
+                    new_classes = support[0][1].tolist()
+                    for i, new_class in enumerate(new_classes):
+                        class_data = torch.stack([shot[0][i] for shot in support])
+                        class_data = resample(class_data.to(device))
+                        class_representation = eval_model.features(class_data)
+                        weight_vector = torch.mean(class_representation, dim=0)
+                        min_class = torch.min(weight_vector)
+                        max_class = torch.max(weight_vector)
+                        weight_vector = weight_vector - min_class
+                        gain = (upper_bound - lower_bund)/(max_class - min_class)
+                        weight_vector = gain *(weight_vector) + lower_bund
+                        eval_model.fc1.weight.data[new_class] = weight_vector.squeeze()
+
+
 
             for X_shot, y_shot in support:
                 data = X_shot.to(device)

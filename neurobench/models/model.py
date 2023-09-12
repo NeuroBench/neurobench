@@ -1,3 +1,6 @@
+from torch import nn
+
+
 class NeuroBenchModel:
     """ Abstract class for NeuroBench models. Individual model frameworks are
     responsible for defining model inference.
@@ -23,3 +26,17 @@ class NeuroBenchModel:
         """ Returns the underlying network
         """
         raise NotImplementedError("Subclasses of NeuroBenchModel should implement __net__")
+    
+    def __neuro_layers__(self):
+        """ Returns all the neuro layers
+        """
+        raise NotImplementedError("Subclasses of NeuroBenchModel should implement __neuro_layers__")
+
+
+class NeuroBenchNetwork(nn.Module):
+    """ Abstract class for the trained network in NeuroBenchModel.
+    """
+    def __neuro_layers__(self):
+        """ Returns all the neuro layers
+        """
+        raise NotImplementedError("Subclasses of NeuroBenchNetwork should implement __neuro_layers__")

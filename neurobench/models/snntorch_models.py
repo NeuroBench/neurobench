@@ -12,7 +12,7 @@ class SNNTorchModel(NeuroBenchModel):
         """ Init using a trained network.
 
         Args:
-            net: A trained SNNTorch network.
+            net: A trained NeuroBenchNetwork.
         """
         self.net = net
         self.net.eval()
@@ -44,3 +44,8 @@ class SNNTorchModel(NeuroBenchModel):
         """ Returns the underlying network.
         """
         return self.net
+    
+    def __neuro_layers__(self):
+        """
+        """
+        return self.net.__neuro_layers__()

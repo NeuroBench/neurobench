@@ -8,13 +8,13 @@ from snntorch import surrogate
 
 # datasets
 from neurobench.datasets.DVSGesture_loader import DVSGesture
-from neurobench.models import SNNTorchModel
+from neurobench.models import NeuroBenchNetwork, SNNTorchModel
 from neurobench.accumulators.accumulator import choose_max_count
 
 from tqdm import tqdm
 
 
-class Conv_SNN(nn.Module):
+class Conv_SNN(NeuroBenchNetwork):
 	def __init__(self):
 		super(Conv_SNN,self).__init__()
 		beta = .9
@@ -101,6 +101,9 @@ class Conv_SNN(nn.Module):
 				loss.backward()
 				optimizer.step()
 			print(loss.item())
+	
+	def __neuro_layers__(self):
+		return [self.syn1, self.syn2, self.syn3]
 
             
 

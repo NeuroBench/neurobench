@@ -46,7 +46,7 @@ def connection_sparsity(model):
     Args:
         model: A NeuroBenchModel.
     Returns:
-        float: Connection sparsity.
+        float: Connection sparsity, rounded to 3 decimals.
     """
 
     def get_nr_zeros_weights(module):
@@ -60,7 +60,7 @@ def connection_sparsity(model):
         children = list(module.children())
         
         if len(children) == 0: # it is a leaf
-            print(module)
+            # print(module)
             if isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.Conv1d) or isinstance(module, torch.nn.Conv3d):
                 count_zeros = torch.sum(module.weight == 0)
                 count_weights = module.weight.numel()
@@ -97,6 +97,6 @@ def connection_sparsity(model):
         count_zeros += zeros
         count_weights += weights
 
-    # Return the ratio of zeros to weights
-    return count_zeros / count_weights
+    # Return the ratio of zeros to weights, rounded to 3 decimals
+    return round((count_zeros / count_weights).item(), 3)
 

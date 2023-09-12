@@ -82,17 +82,7 @@ model = ObjDetectionModel(model, box_coder, head)
 preprocessors = []
 postprocessors = []
 
-'''
-TODO:
-Currently seems to be a bug in connection sparsity where the iteration
-isn't fine grained enough to examine the conv2d layers (iterates over
-modules composed of many layers)
-
 static_metrics = ["model_size", "connection_sparsity"]
-
-'''
-
-static_metrics = ["model_size"]
 data_metrics = ["COCO_mAP"]
 
 benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, data_metrics])
@@ -102,6 +92,6 @@ print(results)
 # batch size of inference slightly affects the results.
 
 # Results - ANN, batch = 12
-# {'model_size': 91314912, 'COCO_mAP': 0.43047329135339685}
+# {'model_size': 91314912, 'connection_sparsity': 0.0, 'COCO_mAP': 0.43047329135339685}
 # Results - Hybrid, batch = 12
-# {'model_size': 12133872, 'COCO_mAP': 0.2711162430904825}
+# {'model_size': 12133872, 'connection_sparsity': 0.0, 'COCO_mAP': 0.2711162430904825}

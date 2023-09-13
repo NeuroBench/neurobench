@@ -27,6 +27,7 @@ from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
 from neurobench.examples.model_data.M5 import M5
 
 from neurobench.benchmarks import Benchmark
+from cl_utils import *
 
 import numpy as np
 import argparse
@@ -127,6 +128,203 @@ out2pred = lambda x: torch.argmax(x, dim=-1)
 to_device = lambda x: (x[0].to(device), x[1].to(device))
 
 test_loader = None
+reg_lambda = 0
+LATENT_REPLAY = False
+BATCH_RENORM = False
+freeze_below_layer = "output"
+LATENT_NUMBER = 100
+
+def prepare_training(model):
+    rm=None
+
+    model.saved_weights = {}
+
+    if BATCH_RENORM:
+        replace_bn_with_brn(
+            model, momentum=init_update_rate, r_d_max_inc_step=inc_step,
+            max_r_max=max_r_max, max_d_max=max_d_max
+        )
+
+    ### Latent Replay ###
+
+    model.past_j = {i:0 for i in range(200)}
+    model.cur_j = {i:0 for i in range(200)}
+    if reg_lambda != 0:
+        # the regularization is based on Synaptic Intelligence as described in the
+        # paper. ewcData is a list of two elements (best parametes, importance)
+        # while synData is a dictionary with all the trajectory data needed by SI
+        ewcData, synData = create_syn_data(model)
+
+def data_init():
+    with torch.no_grad():
+        # upper_bound = torch.mean(torch.max(eval_model.fc1.weight.data[:100], dim=-1)[0])
+        # lower_bound = torch.mean(torch.min(eval_model.fc1.weight.data[:100], dim=-1)[0])
+        upper_bound = 0.5
+        lower_bund = -0.5
+
+        new_classes = support[0][1].tolist()
+        for i, new_class in enumerate(new_classes):
+            class_data = torch.stack([shot[0][i] for shot in support])
+            class_data = resample(class_data.to(device))
+            class_representation = eval_model.features(class_data)
+            weight_vector = torch.mean(class_representation, dim=0)
+            min_class = torch.min(weight_vector)
+            max_class = torch.max(weight_vector)
+            weight_vector = weight_vector - min_class
+            gain = (upper_bound - lower_bund)/(max_class - min_class)
+            weight_vector = gain *(weight_vector) + lower_bund
+            eval_model.fc1.weight.data[new_class] = weight_vector.squeeze()
+
+
+def inner_loop(eval_model, support, optimizer):
+    eval_model.train()
+    eval_model.lat_features.eval()
+
+    
+
+    train_ep = 1
+
+    if DATA_INIT:
+        data_init()
+
+    if reg_lambda != 0:
+        init_batch(model, ewcData, synData)
+
+    # we freeze the layer below the replay layer since the first batch
+    freeze_up_to(model, freeze_below_layer, only_conv=False)
+
+
+    if BATCH_RENORM:
+        change_brn_pars(
+            model, momentum=inc_update_rate, r_d_max_inc_step=0,
+            r_max=max_r_max, d_max=max_d_max)
+
+
+
+    if LATENT_REPLAY:
+        # @TODO : CORRECT
+        cur_class = [int(o) for o in set(train_y).union(set(rm[1]))]
+        model.cur_j = examples_per_class(list(train_y) + list(rm[1]))
+    else:
+        cur_class = support[0][1].tolist()
+        model.cur_j = examples_per_class(cur_class, 200, EVAL_SHOTS)
+    
+
+    reset_weights(model, cur_class)
+    cur_ep = 0
+
+    for ep in range(train_ep):
+
+
+        print("training ep: ", ep)
+        correct_cnt, ave_loss = 0, 0
+
+        # computing how many patterns to inject in the latent replay layer
+        if LATENT_REPLAY:
+            cur_sz = train_x.size(0) // ((train_x.size(0) + rm_sz) // mb_size)
+            it_x_ep = train_x.size(0) // cur_sz
+            n2inject = max(0, mb_size - cur_sz)
+        else:
+            n2inject = 0
+
+        print("n2inject", n2inject)
+        print("it x ep: ", it_x_ep)
+
+        # @TODO : CHange data for replay case
+
+        for X_shot, y_shot in support:
+
+            if reg_lambda !=0:
+                pre_update(model, synData)
+
+            start = it * (mb_size - n2inject)
+            end = (it + 1) * (mb_size - n2inject)
+
+            optimizer.zero_grad()
+
+            data = X_shot.to(device)
+
+            if LATENT_REPLAY:
+                lat_mb_x = rm[0][it*n2inject: (it + 1)*n2inject]
+                lat_mb_y = rm[1][it*n2inject: (it + 1)*n2inject]
+                y_mb = maybe_cuda(
+                    torch.cat((train_y[start:end], lat_mb_y), 0),
+                    use_cuda=use_cuda)
+                lat_mb_x = maybe_cuda(lat_mb_x, use_cuda=use_cuda)
+            else:
+                lat_mb_x = None
+                target = y_shot.to(device)
+
+
+            # if lat_mb_x is not None, this tensor will be concatenated in
+            # the forward pass on-the-fly in the latent replay layer
+            data = resample(data)
+
+            if LATENT_REPLAY:
+                logits, lat_acts = eval_model(
+                data, latent_input=lat_mb_x, return_lat_acts=True)
+            else:
+                output = eval_model(data)
+                lat_acts = None
+            
+
+            # collect latent volumes only for the first ep
+            # we need to store them to eventually add them into the external
+            # replay memory
+            if LATENT_REPLAY:
+                if ep == 0:
+                    lat_acts = lat_acts.cpu().detach()
+                    if it == 0:
+                        cur_acts = copy.deepcopy(lat_acts)
+                    else:
+                        cur_acts = torch.cat((cur_acts, lat_acts), 0)
+
+
+            loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
+
+            if reg_lambda !=0:
+                loss += compute_ewc_loss(eval_model, ewcData, lambd=reg_lambda)
+
+            loss.backward()
+            optimizer.step()
+
+            if reg_lambda !=0:
+                post_update(eval_model, synData)
+
+
+    consolidate_weights(eval_model, cur_class)
+    if reg_lambda != 0:
+        update_ewc_data(eval_model, ewcData, synData, 0.001, 1)
+
+    # how many patterns to save for next iter
+    if LATENT_REPLAY:
+        h = min(rm_sz // (i + 1), cur_acts.size(0))
+        print("h", h)
+
+        print("cur_acts sz:", cur_acts.size(0))
+        idxs_cur = np.random.choice(
+            cur_acts.size(0), h, replace=False
+        )
+        rm_add = [cur_acts[idxs_cur], train_y[idxs_cur]]
+        print("rm_add size", rm_add[0].size(0))
+
+        # replace patterns in random memory
+        if i == 0:
+            rm = copy.deepcopy(rm_add)
+        else:
+            idxs_2_replace = np.random.choice(
+                rm[0].size(0), h, replace=False
+            )
+            for j, idx in enumerate(idxs_2_replace):
+                rm[0][idx] = copy.deepcopy(rm_add[0][j])
+                rm[1][idx] = copy.deepcopy(rm_add[1][j])
+
+    set_consolidate_weights(eval_model)
+
+    for c, n in eval_model.cur_j.items():
+        eval_model.past_j[c] += n
+
+
 
 # @TODO: Improve for test_loader recreatiom
 def test(test_model, mask, set=None, wandb_log="accuracy"):
@@ -221,7 +419,8 @@ if __name__ == '__main__':
 
 
     if args.load_pre_train:
-        model = torch.load(os.path.join(ROOT, args.load_pre_train))
+        load_model = torch.load(os.path.join(ROOT, args.load_pre_train), map_location=device)
+        model = M5(n_input=1, n_output=200, seq_model=load_model.features, output=load_model.fc1, latent_layer_num=LATENT_NUMBER).to(device)
     else:
         pre_train(model)
 
@@ -378,9 +577,12 @@ if __name__ == '__main__':
                                     samples_per_class=200)
 
         if EVAL_OUT_ADAPT:
-            few_shot_optimizer = optim.SGD(eval_model.fc1.parameters(), lr=EVAL_LR)
+            few_shot_optimizer = optim.SGD(eval_model.fc1.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
         else:
-            few_shot_optimizer = optim.SGD(eval_model.parameters(), lr=EVAL_LR)
+            few_shot_optimizer = optim.SGD(eval_model.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
+
+
+        prepare_training(eval_model)
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
@@ -388,50 +590,42 @@ if __name__ == '__main__':
 
             eval_model.train()
 
-            # X_train, y_train = support
-
             ### Few Shot Learning phase ###
-            # data = X_train.to(device)
-            # target = y_train.to(device)
-
-            # data = resample(data)
-
-            # support_set = TensorDataset(X_train, y_train)
-            # support_loader = DataLoader(support_set, batch_size=10, pin_memory=True)
+            inner_loop(eval_model, support, few_shot_optimizer)
             
 
-            if DATA_INIT:
-                with torch.no_grad():
-                    # upper_bound = torch.mean(torch.max(eval_model.fc1.weight.data[:100], dim=-1)[0])
-                    # lower_bound = torch.mean(torch.min(eval_model.fc1.weight.data[:100], dim=-1)[0])
-                    upper_bound = 0.5
-                    lower_bund = -0.5
+            # if DATA_INIT:
+            #     with torch.no_grad():
+            #         # upper_bound = torch.mean(torch.max(eval_model.fc1.weight.data[:100], dim=-1)[0])
+            #         # lower_bound = torch.mean(torch.min(eval_model.fc1.weight.data[:100], dim=-1)[0])
+            #         upper_bound = 0.5
+            #         lower_bund = -0.5
 
-                    new_classes = support[0][1].tolist()
-                    for i, new_class in enumerate(new_classes):
-                        class_data = torch.stack([shot[0][i] for shot in support])
-                        class_data = resample(class_data.to(device))
-                        class_representation = eval_model.features(class_data)
-                        weight_vector = torch.mean(class_representation, dim=0)
-                        min_class = torch.min(weight_vector)
-                        max_class = torch.max(weight_vector)
-                        weight_vector = weight_vector - min_class
-                        gain = (upper_bound - lower_bund)/(max_class - min_class)
-                        weight_vector = gain *(weight_vector) + lower_bund
-                        eval_model.fc1.weight.data[new_class] = weight_vector.squeeze()
+            #         new_classes = support[0][1].tolist()
+            #         for i, new_class in enumerate(new_classes):
+            #             class_data = torch.stack([shot[0][i] for shot in support])
+            #             class_data = resample(class_data.to(device))
+            #             class_representation = eval_model.features(class_data)
+            #             weight_vector = torch.mean(class_representation, dim=0)
+            #             min_class = torch.min(weight_vector)
+            #             max_class = torch.max(weight_vector)
+            #             weight_vector = weight_vector - min_class
+            #             gain = (upper_bound - lower_bund)/(max_class - min_class)
+            #             weight_vector = gain *(weight_vector) + lower_bund
+            #             eval_model.fc1.weight.data[new_class] = weight_vector.squeeze()
 
 
 
-            for X_shot, y_shot in support:
-                data = X_shot.to(device)
-                data = resample(data)
-                target = y_shot.to(device)
-                output = eval_model(data)
-                loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
+            # for X_shot, y_shot in support:
+            #     data = X_shot.to(device)
+            #     data = resample(data)
+            #     target = y_shot.to(device)
+            #     output = eval_model(data)
+            #     loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
 
-                few_shot_optimizer.zero_grad()
-                loss.backward()
-                few_shot_optimizer.step()
+            #     few_shot_optimizer.zero_grad()
+            #     loss.backward()
+            #     few_shot_optimizer.step()
 
             ### Testing phase ###
 
@@ -464,3 +658,4 @@ if __name__ == '__main__':
         few_shot_dataloader.reset()
 
 
+# @TODO: Change model to have latent, end features + output layer

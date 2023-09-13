@@ -8,13 +8,13 @@ from snntorch import surrogate
 
 # datasets
 from neurobench.datasets.DVSGesture_loader import DVSGesture
-from neurobench.models import NeuroBenchNetwork, SNNTorchModel
+from neurobench.models import SNNTorchModel
 from neurobench.accumulators.accumulator import choose_max_count
 
 from tqdm import tqdm
 
 
-class Conv_SNN(NeuroBenchNetwork):
+class Conv_SNN(nn.Module):
 	def __init__(self):
 		super(Conv_SNN,self).__init__()
 		beta = .9
@@ -40,6 +40,7 @@ class Conv_SNN(NeuroBenchNetwork):
 		self.mem2, self.cur2 = self.syn2.init_synaptic()
 		self.mem3, self.cur3 = self.syn3.init_synaptic()
 
+		self.neuro_layers = [self.syn1, self.syn2, self.syn3]
 
 	def forward(self, frame, warmup_frames = 0):
 		out_spk = 0
@@ -101,11 +102,8 @@ class Conv_SNN(NeuroBenchNetwork):
 				loss.backward()
 				optimizer.step()
 			print(loss.item())
-	
-	def __neuro_layers__(self):
-		return [self.syn1, self.syn2, self.syn3]
 
-            
+
 
 if __name__ =='__main__':
 	data = DVSGesture('data/dvs_gesture/', split='testing', preprocessing='stack')

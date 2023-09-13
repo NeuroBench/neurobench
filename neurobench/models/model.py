@@ -27,16 +27,7 @@ class NeuroBenchModel:
         """
         raise NotImplementedError("Subclasses of NeuroBenchModel should implement __net__")
     
-    def __neuro_layers__(self):
+    def neuro_layers(self):
         """ Returns all the neuro layers
         """
-        raise NotImplementedError("Subclasses of NeuroBenchModel should implement __neuro_layers__")
-
-
-class NeuroBenchNetwork(nn.Module):
-    """ Abstract class for the trained network in NeuroBenchModel.
-    """
-    def __neuro_layers__(self):
-        """ Returns all the neuro layers
-        """
-        raise NotImplementedError("Subclasses of NeuroBenchNetwork should implement __neuro_layers__")
+        return getattr(self.__net__(), 'neuro_layers', [])

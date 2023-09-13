@@ -37,15 +37,9 @@ class SNNTorchModel(NeuroBenchModel):
             spk_out, _ = self.net(data[:, step, ...])
             spikes.append(spk_out)
         spikes = torch.stack(spikes).transpose(0, 1)
-        
         return spikes
 
     def __net__(self):
         """ Returns the underlying network.
         """
         return self.net
-    
-    def __neuro_layers__(self):
-        """
-        """
-        return self.net.__neuro_layers__()

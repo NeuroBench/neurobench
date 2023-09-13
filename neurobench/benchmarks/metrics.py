@@ -1,6 +1,8 @@
 import torch
 
 from .utils.metric_utils import check_shape
+from . import hooks
+
 
 # TODO: separate out the static and data metrics into different modules
 
@@ -60,8 +62,7 @@ def connection_sparsity(model):
     # Return the ratio of zeros to weights
     return count_zeros / count_weights
 
-# dynamic metrics, require model, model predictions, and labels
-def activation_sparsity(model, preds, data):
+def activation_sparsity(model, preds, data, **hook_dict):
     """ Sparsity of model activations.
     
     Calculated as the number of zero activations over the total number
@@ -71,21 +72,32 @@ def activation_sparsity(model, preds, data):
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        **hook_dict: A dictionary with keys the hook type and values list of hooks.
     Returns:
         float: Activation sparsity.
     """
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
     #       Standard FF ANN should be zero (no activation sparsity)
-    check_shape(preds, data[1])
-    return model.activation_sparsity()
+    
+    total_spike_num, total_neuro_num = 0, 0
+    for hook in hook_dict["spike_hooks"]:
+        for spikes in hook.spike_outputs:  # do we need a function rather than a member
+            spike_num, neuro_num = len(torch.zero(spikes)), torch.numel(spikes)
 
-def multiply_accumulates(model, preds, data):
+            total_spike_num += spike_num
+            total_neuro_num += neuro_num
+    
+    sparsity = total_spike_num / total_neuro_num
+    return sparsity
+
+def multiply_accumulates(model, preds, data, **hook_dict):
     """ Multiply-accumulates (MACs) of the model forward.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        **hook_dict: A dictionary with keys the hook type and values list of hooks.
     Returns:
         float: Multiply-accumulates.
     """
@@ -97,13 +109,14 @@ def multiply_accumulates(model, preds, data):
     macs = 0.0
     return macs
 
-def classification_accuracy(model, preds, data):
+def classification_accuracy(model, preds, data, **hook_dict):
     """ Classification accuracy of the model predictions.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        **hook_dict: A dictionary with keys the hook type and values list of hooks.
     Returns:
         float: Classification accuracy.
     """
@@ -111,20 +124,21 @@ def classification_accuracy(model, preds, data):
     equal = torch.eq(preds, data[1])
     return torch.mean(equal.float()).item()
 
-def MSE(model, preds, data):
+def MSE(model, preds, data, **hook_dict):
     """ Mean squared error of the model predictions.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        **hook_dict: A dictionary with keys the hook type and values list of hooks.
     Returns:
         float: Mean squared error.
     """
     check_shape(preds, data[1])
     return torch.mean((preds - data[1])**2).item()
 
-def r2(model, preds, data):
+def r2(model, preds, data, **hook_dict):
     """ R2 Score of the model predictions.
 
     Currently implemented for 2D output only.
@@ -136,6 +150,7 @@ def r2(model, preds, data):
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        **hook_dict: A dictionary with keys the hook type and values list of hooks.
     Returns:
         float: R2 Score.
     """
@@ -150,15 +165,3 @@ def r2(model, preds, data):
     r2 = (X_r2 + Y_r2)/2
 
     return r2.item()
-
-
-
-
-
-
-
-
-
-
-
-    

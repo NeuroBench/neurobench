@@ -27,7 +27,13 @@ poetry run python neurobench/examples/mackey_glass/benchmark.py
 poetry run python neurobench/examples/primate_reaching/benchmark.py
 ```
 The examples may not yet have trained models or a full set of metrics.
-
+Step-by-step notebooks are available at
+```
+neurobench/examples/dvs_gesture/DVS_gesture_tutorial.ipynb
+neurobench/examples/gsc/GSC_tutorial.ipynb
+poetry run python neurobench/examples/mackey_glass/benchmark.py
+poetry run python neurobench/examples/primate_reaching/benchmark.py
+```
 
 ## Getting started
 Example benchmark scripts can be found under the `neurobench/examples` folder. 

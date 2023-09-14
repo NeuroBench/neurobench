@@ -2,7 +2,7 @@ from neurobench.datasets import PrimateReaching
 from neurobench.models.torch_model import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.examples.primate_reaching.ANN import ANNModel
+from neurobench.tasks.primate_reaching.ANN import ANNModel
 # Download data to /data/primate_reaching/PrimateReachingDataset. See PrimateReaching
 # class for download instructions.
 
@@ -17,7 +17,7 @@ net = ANNModel(input_dim=primate_reaching_dataset.input_feature_size*primate_rea
                layer1=32, layer2=48, output_dim=2, dropout_rate=0.5)
 
 # Give the user the option to load their pretrained weights
-# net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/model_parameters.pth"))
+# net.load_state_dict(torch.load("neurobench/tasks/primate_reaching/model_data/model_parameters.pth"))
 
 model = TorchModel(net)
 

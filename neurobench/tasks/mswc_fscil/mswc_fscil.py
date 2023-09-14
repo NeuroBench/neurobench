@@ -10,8 +10,8 @@ from neurobench.datasets import MSWC_FSCIL
 from neurobench.models import NeuroBenchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.examples.mswc_fscil.SNN_NAML import SNN_MAML
-from neurobench.examples.mswc_fscil.training import train
+from neurobench.tasks.mswc_fscil.SNN_NAML import SNN_MAML
+from neurobench.tasks.mswc_fscil.training import train
 
 # seed run
 torch.manual_seed(0)

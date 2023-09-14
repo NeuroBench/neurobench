@@ -1,6 +1,6 @@
 from tqdm import tqdm
 from . import metrics
-from ..benchmarks.hooks import SpikeHook
+from ..benchmarks.hooks import ActivationHook
 
 
 class Benchmark():
@@ -36,7 +36,7 @@ class Benchmark():
         print("Running benchmark")
 
         # Registered hooks
-        hook_dict = {"spike_hooks": [SpikeHook(l) for l in self.model.neuro_layers()]}
+        hook_dict = {"activation_hooks": [ActivationHook(l) for l in self.model.neuro_layers()]}
 
         # Static metrics
         results = {}

@@ -1,6 +1,7 @@
 import numpy as np
 import os
 import torch
+import gdown
 
 
 def convert_to_tensor(x, y):
@@ -65,6 +66,10 @@ class DataLoader:
 
     @staticmethod
     def load_wisdm2_data(file_path):
+
+        if not os.path.isfile(file_path):
+            url = "https://drive.google.com/drive/folders/1WCN-XwLM_D2nOTZLY00iGwEJLwDQaUCv"
+            gdown.download_folder(url, quiet=True, use_cookies=False)
 
         filepath = os.path.join(file_path)
         data = np.load(filepath)

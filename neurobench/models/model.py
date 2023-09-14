@@ -1,5 +1,7 @@
 from torch import nn
 
+from .utils import activation_modules
+
 
 class NeuroBenchModel:
     """ Abstract class for NeuroBench models. Individual model frameworks are
@@ -12,7 +14,8 @@ class NeuroBenchModel:
         Args:
             net: A trained network
         """
-        raise NotImplementedError("Subclasses of NeuroBenchModel should implement __init__")
+        self.activation_modules = activation_modules()
+        self.activation_hooks = []
 
     def __call__(self, batch):
         """ Includes the whole pipeline from data to inference (output should be same format as targets).
@@ -27,7 +30,21 @@ class NeuroBenchModel:
         """
         raise NotImplementedError("Subclasses of NeuroBenchModel should implement __net__")
     
-    def neuro_layers(self):
+    def add_activation_module(self, activaton_module):
+        """Add a cutomized activaton_module
+        """
+        self.activation_modules.append(activaton_module)
+    
+    def activation_layers(self):
         """ Returns all the neuro layers
         """
-        return getattr(self.__net__(), 'neuro_layers', [])
+        layers = []
+
+        children_layers = self.__net__().children()
+        for layer in children_layers:
+            for activaton_module in self.activation_modules:
+                if isinstance(layer, activaton_module):
+                    layers.append(layer)
+        
+        return layers
+

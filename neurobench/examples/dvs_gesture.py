@@ -20,6 +20,7 @@ net.load_state_dict(torch.load('neurobench/examples/model_data/DVS_SNN_untrained
 
 ## Define model ##
 model = SNNTorchModel(net)
+model.add_activation_module(snn.Synaptic)
 
 # postprocessors
 postprocessors = [choose_max_count]

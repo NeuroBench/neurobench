@@ -12,8 +12,10 @@ class SNNTorchModel(NeuroBenchModel):
         """ Init using a trained network.
 
         Args:
-            net: A trained NeuroBenchNetwork.
+            net: A trained SNNTorch network.
         """
+        super().__init__(net)
+        
         self.net = net
         self.net.eval()
 

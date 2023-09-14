@@ -1,7 +1,7 @@
 import torch
 
 from .utils.metric_utils import check_shape
-from . import hooks
+from ..benchmarks.hooks import ActivationHook
 
 
 # TODO: separate out the static and data metrics into different modules
@@ -62,7 +62,15 @@ def connection_sparsity(model):
     # Return the ratio of zeros to weights
     return count_zeros / count_weights
 
-def activation_sparsity(model, preds, data, **hook_dict):
+def preprocess(model):
+    """Register hooks or other operations that should be called before running a benchmark.
+    """
+
+    # Registered activation hooks
+    for layer in model.activation_layers():
+        model.activation_hooks.append(ActivationHook(layer))
+
+def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
     
     Calculated as the number of zero activations over the total number
@@ -78,16 +86,15 @@ def activation_sparsity(model, preds, data, **hook_dict):
     """
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
     #       Standard FF ANN should be zero (no activation sparsity)
-    
     total_spike_num, total_neuro_num = 0, 0
-    for hook in hook_dict["spike_hooks"]:
-        for spikes in hook.spike_outputs:  # do we need a function rather than a member
-            spike_num, neuro_num = len(torch.zero(spikes)), torch.numel(spikes)
+    for hook in model.activation_hooks:
+        for spikes in hook.activation_outputs:  # do we need a function rather than a member
+            spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
 
             total_spike_num += spike_num
             total_neuro_num += neuro_num
     
-    sparsity = total_spike_num / total_neuro_num
+    sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
 
 def multiply_accumulates(model, preds, data, **hook_dict):

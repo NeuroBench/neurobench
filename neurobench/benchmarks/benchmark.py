@@ -1,6 +1,5 @@
 from tqdm import tqdm
 from . import metrics
-from ..benchmarks.hooks import ActivationHook
 
 
 class Benchmark():
@@ -34,9 +33,8 @@ class Benchmark():
             results: A dictionary of results.
         """
         print("Running benchmark")
-
-        # Registered hooks
-        hook_dict = {"activation_hooks": [ActivationHook(l) for l in self.model.neuro_layers()]}
+        
+        metrics.preprocess(self.model)
 
         # Static metrics
         results = {}
@@ -65,7 +63,7 @@ class Benchmark():
             # Data metrics
             batch_results = {}
             for m in self.data_metrics.keys():
-                batch_results[m] = self.data_metrics[m](self.model, preds, data, **hook_dict)
+                batch_results[m] = self.data_metrics[m](self.model, preds, data)
 
             # Accumulate data metrics via mean
             for m, v in batch_results.items():

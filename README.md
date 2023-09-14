@@ -46,6 +46,9 @@ NeuroBench is a collaboration between industry and academic engineers and resear
 ## Contributing
 If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md).
 
+## Proposing new tasks
+Anyone is welcome to use the NeuroBench framework for their own datasets and tasks. Do you want to include your task in the official NeuroBench framework? You can find more information on how to stage your tasks [here](https://github.com/NeuroBench/neurobench/blob/prototype_task_staging/neurobench/staged_tasks/README.md)!
+
 ## Citation
 If you use this framework in your research, please cite the following whitepaper:
 

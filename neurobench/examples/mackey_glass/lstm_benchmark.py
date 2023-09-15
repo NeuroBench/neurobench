@@ -25,7 +25,6 @@ parser.add_argument('--n_layers', type=int, default=2)
 parser.add_argument('--hidden_size', type=int, default=50)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
-parser.add_argument('--params_idx', type=int, default=0)
 parser.add_argument('--dropout_rate', type=float, default=0.)
 parser.add_argument('--lr', type=float, default=0.05)
 parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
@@ -52,6 +51,7 @@ params['n_layers'] = args.n_layers
 params['output_dim'] = 1
 params['dropout_rate'] = args.dropout_rate
 params['dtype'] = torch.float64
+params['mode'] = 'single_step'
 
 # benchmark run over 14 different series
 sMAPE_scores = []
@@ -96,7 +96,7 @@ for epoch in range(args.n_epochs):
     opt.step()
 
     print(f"Epoch {epoch}: loss = {loss_val.item()}")
-    wandb.log({"loss": loss_val})
+    wandb.log({"loss": loss_val.item()})
 
 if args.debug:
     import matplotlib.pyplot as plt        
@@ -129,6 +129,12 @@ benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metr
 results = benchmark.run()
 print(results)
 sMAPE_score = results["sMAPE"]
+connection_sparsity = results["connection_sparsity"]
+model_size = results["model_size"]
+
+wandb.log({"sMAPE_score": sMAPE_score})
+wandb.log({"connection_sparsity": connection_sparsity})
+wandb.log({"model_size": model_size})
 
 print(f"sMAPE score {sMAPE_score} on time series id {args.series_id}")
 

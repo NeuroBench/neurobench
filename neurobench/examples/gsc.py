@@ -42,7 +42,7 @@ postprocessors = [choose_max_count]
 # data_metrics=["activation_sparsity", "multiply_accumulates", "classification_accuracy"]
 
 static_metrics = ["model_size"]
-data_metrics = ["classification_accuracy"]
+data_metrics = ["classification_accuracy", "activation_sparsity"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()

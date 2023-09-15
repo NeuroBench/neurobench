@@ -29,22 +29,33 @@ class NeuroBenchModel:
         """ Returns the underlying network
         """
         raise NotImplementedError("Subclasses of NeuroBenchModel should implement __net__")
-    
+
     def add_activation_module(self, activaton_module):
-        """Add a cutomized activaton_module
+        """ Add a cutomized activaton_module
         """
         self.activation_modules.append(activaton_module)
-    
+
     def activation_layers(self):
-        """ Returns all the neuro layers
+        """ Retrieve all the activaton layers of the underlying network
         """
-        layers = []
+        def get_activation_layers(parent):
+            """ Returns all the neuro layers
+            """
+            layers = []
 
-        children_layers = self.__net__().children()
-        for layer in children_layers:
-            for activaton_module in self.activation_modules:
-                if isinstance(layer, activaton_module):
-                    layers.append(layer)
+            children = parent.children()
+            for child in children:
+                grand_children = list(child.children())
+                if len(grand_children) == 0:  # leaf child
+                    for activaton_module in self.activation_modules:
+                        if isinstance(child, activaton_module):
+                            layers.append(child)
+                else:
+                    children_layers = get_activation_layers(child)
+                    layers.extend(children_layers)
+            
+            return layers
         
+        root = self.__net__()
+        layers = get_activation_layers(root)
         return layers
-

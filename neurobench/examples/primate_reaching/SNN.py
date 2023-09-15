@@ -25,22 +25,17 @@ class SNN(nn.Module):
                               learn_threshold=False, reset_mechanism='none')
 
         self.dropout = nn.Dropout(p)
+        self.mem1, self.mem2 = None, None
+
+    def reset(self):
+        self.mem1 = self.lif1.init_leaky()
+        self.mem2 = self.lif2.init_leaky()
 
     def forward(self, x):
-        mem1 = self.lif1.init_leaky()
-        mem2 = self.lif2.init_leaky()
+        cur1 = self.dropout(self.fc1(x))
+        spk1, mem1 = self.lif1(cur1, self.mem1)
 
-        mem_rec = []
+        cur2 = self.fc2(spk1)
+        spk2, mem2 = self.lif2(cur2, self.mem2)
 
-        for step in range(self.num_step):
-            cur1 = self.dropout(self.fc1(x[:, :, step]))
-            spk1, mem1 = self.lif1(cur1, mem1)
-
-            cur2 = self.fc2(spk1)
-            _, mem2 = self.lif2(cur2, mem2)
-
-            mem_rec.append(mem2)
-
-        if self.training:
-            return torch.stack(mem_rec, dim=2)
-        return mem2
+        return mem2, None

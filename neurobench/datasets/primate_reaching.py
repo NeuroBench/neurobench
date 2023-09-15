@@ -106,12 +106,11 @@ class PrimateReaching(NeuroBenchDataset):
             Getter method of the dataloader
         """
         if self.mode == "3D":
-            sample = self.get_history(idx)
-            label = self.labels[:, idx]
+            sample, label = self.get_history(idx)
         else:
             sample = self.samples[:, idx]
             label = self.labels[:, idx]
-        return sample, label
+        return sample.transpose(0, 1), label.transpose(0, 1)
 
     def load_data(self):
         """
@@ -227,7 +226,7 @@ class PrimateReaching(NeuroBenchDataset):
 
         # compute indices of congruent binning windows
         mask = idx - np.arange(self.num_steps) * ratio
-        return self.samples[:, mask]
+        return self.samples[:, mask], self.labels[:, mask]
 
     def remove_segments_by_length(self):
         """

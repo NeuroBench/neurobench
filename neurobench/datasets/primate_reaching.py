@@ -32,7 +32,7 @@ class PrimateReaching(NeuroBenchDataset):
         Once these .mat files are downloaded, store them in the same directory.
     """
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
-                 mode="3D", model_type="ANN", biological_delay=0,
+                 mode="3D", biological_delay=0,
                  spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000):
         """
             Initialises the Dataset for the Primate Reaching Task.
@@ -45,8 +45,6 @@ class PrimateReaching(NeuroBenchDataset):
                                      Default is 0.8 (80% of data is training).
                 mode (str): The data processed will be either "2D" (data_points, input_features) or 
                             "3D" (data_points, num_steps, input_features). Default is "3D".
-                model_type (str): The type of model that will be using the dataset. Currently expects "ANN",
-                                  "SNN" or "LSTM" (LSTM to be added later). Default is "ANN"
                 biological_delay (int): How many steps of delay is to be applied to the dataset. Default is 0
                                         i.e. no delay applied.
                 spike_sorting (bool): Apply spike sorting for processing raw spike data. Default is False.
@@ -79,7 +77,6 @@ class PrimateReaching(NeuroBenchDataset):
 
         # Dataset use mode
         self.mode = mode
-        self.model_type = model_type
 
         # These lists store the index of segments that belongs to training/validation/test set
         self.ind_train, self.ind_val, self.ind_test = [], [], []

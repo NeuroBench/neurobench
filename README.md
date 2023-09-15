@@ -44,10 +44,10 @@ Documentation for the framework interfaces can found in [API.md](API.md).
 NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, Biyan Zhou, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang, Anurag Kumar Mishra, Soikat Hasan Ahmed.
 
 ## Contributing
-If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md).
+If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md). If you want to know how to implement your own datasets, metrics, pre- or post-processing functions etc. please refer [to this guide](neurobench/staged_tasks/README.md)!
 
-## Proposing new tasks
-Anyone is welcome to use the NeuroBench framework for their own datasets and tasks. Do you want to include your task in the official NeuroBench framework? You can find more information on how to stage your tasks [here](https://github.com/NeuroBench/neurobench/blob/prototype_task_staging/neurobench/staged_tasks/README.md)!
+## Staging new tasks, 
+Anyone is welcome to use the NeuroBench framework for their own datasets and tasks. Do you want to include your task in the official NeuroBench framework? You can find more information on how to stage your tasks [here](neurobench/staged_tasks/README.md)!
 
 ## Citation
 If you use this framework in your research, please cite the following whitepaper:

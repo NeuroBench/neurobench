@@ -26,6 +26,7 @@ parser.add_argument('--hidden_size', type=int, default=50)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
 parser.add_argument('--dropout_rate', type=float, default=0.)
+parser.add_argument('--seed', type=int, default=41)
 parser.add_argument('--lr', type=float, default=0.05)
 parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
 parser.add_argument('--debug', type=bool, default=False)
@@ -42,6 +43,10 @@ else:
     wandb.init(project=args.project,
                name=args.name,
                mode=args.wandb_state)
+
+# set seed for RG for reproducible results
+torch.manual_seed(args.seed)
+torch.cuda.manual_seed_all(args.seed)
 
 # LSTM parameters
 params = {}
@@ -112,14 +117,14 @@ if args.debug:
     print("saved training fit to ./fit_train.pdf")
     plt.savefig("fit_train.pdf")
 
-torch.save(lstm, 'neurobench/examples/mackey_glass/model_data/lstm.pth')
+#torch.save(lstm, 'neurobench/examples/mackey_glass/model_data/lstm.pth')
  
 ## Load Model ##
-net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
+#net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
 test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
+lstm.mode = 'autonomous'
 
-model = TorchModel(net)
-
+model = TorchModel(lstm)
 # data_metrics = ["activation_sparsity", "multiply_accumulates", "sMAPE"]
 
 static_metrics = ["model_size", "connection_sparsity"]

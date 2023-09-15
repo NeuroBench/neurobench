@@ -22,12 +22,13 @@ parser.add_argument('--wb', dest='wandb_state', type=str, default="offline", hel
 parser.add_argument('--name', type=str, default='LSTM_MG', help='wandb run name')
 parser.add_argument('--project', type=str, default='Neurobench', help='wandb project name')
 parser.add_argument('--n_layers', type=int, default=2)
-parser.add_argument('--hidden_size', type=int, default=50)
+parser.add_argument('--hidden_size', type=int, default=100)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
-parser.add_argument('--dropout_rate', type=float, default=0.)
+parser.add_argument('--dropout_rate', type=float, default=0.5)
 parser.add_argument('--seed', type=int, default=41)
-parser.add_argument('--lr', type=float, default=0.05)
+parser.add_argument('--lr', type=float, default=0.01)
+parser.add_argument('--weight_decay', type=float, default=0.001)
 parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
 parser.add_argument('--debug', type=bool, default=False)
 
@@ -47,6 +48,13 @@ else:
 # set seed for RG for reproducible results
 torch.manual_seed(args.seed)
 torch.cuda.manual_seed_all(args.seed)
+
+if torch.cuda.is_available():
+    device = torch.device("cuda")
+    print("\nCUDA enabled")
+else:
+    device = torch.device("cpu")
+    print("\nCUDA not available")
 
 # LSTM parameters
 params = {}
@@ -69,17 +77,15 @@ mg = MackeyGlass(tau = mg_parameters.tau[args.series_id],
 train_set = Subset(mg, mg.ind_train)
 test_set = Subset(mg, mg.ind_test)
 
-## Fitting Model ##
-seed_id = 0
-
 # Initialize an LSTM model
 lstm = LSTMModel(**params)
+lstm.to(device)
 
 # LSTM training phase
 lstm.train()
 
 criterion = nn.MSELoss()
-opt = torch.optim.Adam(lstm.parameters(), lr=args.lr)
+opt = torch.optim.Adam(lstm.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
 train_data, train_labels = train_set[:]
 
@@ -91,6 +97,10 @@ train_labels = train_labels[warmup_pts:]
 # training loop
 for epoch in range(args.n_epochs):
 
+    train_data = train_data.to(device)
+    train_labels = train_labels.to(device)
+
+    #break
     pre = lstm(train_data)
 
     loss_val = criterion(pre[warmup_pts:,:],
@@ -121,10 +131,11 @@ if args.debug:
  
 ## Load Model ##
 #net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
-test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
+test_set_loader = DataLoader(train_set, batch_size=mg.testtime_pts, shuffle=False)
 lstm.mode = 'autonomous'
-
+#net.mode = 'autonomous'
 model = TorchModel(lstm)
+#model = TorchModel(net)
 # data_metrics = ["activation_sparsity", "multiply_accumulates", "sMAPE"]
 
 static_metrics = ["model_size", "connection_sparsity"]

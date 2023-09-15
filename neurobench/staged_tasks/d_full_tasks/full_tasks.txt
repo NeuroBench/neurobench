@@ -1,0 +1,1 @@
+This folder contains proposed full tasks to be added to the official harness. A full tasks contains novel datasets, metrics and processors.

@@ -133,6 +133,7 @@ if args.debug:
 #net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
 test_set_loader = DataLoader(train_set, batch_size=mg.testtime_pts, shuffle=False)
 lstm.mode = 'autonomous'
+lstm.to(torch.device("cpu"))
 #net.mode = 'autonomous'
 model = TorchModel(lstm)
 #model = TorchModel(net)

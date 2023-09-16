@@ -48,16 +48,17 @@ class LSTMModel(nn.Module):
         assert self.mode in ['autonomous', 'single_step']
         #assert n_layers == 1, 'multi-layer LSTM is not supported yet'
         self.prior_prediction = None
-    
+ 
         # LSTM model
         self.rnns = nn.ModuleList()
         self.rnns.append(nn.LSTMCell(
-            self.input_dim, self.hidden_size).type(dtype))
+            self.input_dim, self.hidden_size).type(dtype)
+        )
         self.rnns.extend(
             [nn.LSTMCell(self.hidden_size, self.hidden_size).type(dtype)
              for _ in range(1, self.n_layers)])
 
-        #self.drop = nn.Dropout(dropout_rate)
+        self.drop = nn.Dropout(self.dropout_rate).type(dtype)
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
 
@@ -67,7 +68,7 @@ class LSTMModel(nn.Module):
         for i in range(1, self.n_layers):
             x, _ = self.rnns[i](x)
         x = self.activation(x)
-        #x = self.drop(x)
+        x = self.drop(x)
         out = self.fc(x)
 
         return out
@@ -77,6 +78,7 @@ class LSTMModel(nn.Module):
         for sample in x:
             if self.mode == 'autonomous' and self.prior_prediction is not None:
                 sample = self.prior_prediction
+
             prediction = self.single_forward(sample)
             predictions.append(prediction)
             self.prior_prediction = prediction

@@ -23,6 +23,7 @@ sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
 
 
 from neurobench.datasets import MSWC
+from neurobench.preprocessing.speech2spikes import S2SProcessor
 from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
 from neurobench.examples.model_data.M5 import M5
 
@@ -39,6 +40,9 @@ def parse_arguments():
     parser.add_argument("--num_workers", type=int, default=8, help="Number of workers for dataloader")
     parser.add_argument("--batch_size", type=int, default=256, help="Batch size")
     parser.add_argument("--epochs", type=int, default=100, help="Number of pre-train epochs")
+    parser.add_argument("--pt_lr", type=float, default=0.01, help="Learning rate for pre-training")
+
+    
     parser.add_argument("--mt_iter", type=int, default=20, help="Number of meta iterations")
     parser.add_argument("--eval_iter", type=int, default=5, help="Number of evaluation iterations")
     parser.add_argument("--mt_sessions", type=int, default=8, help="Number of meta-training sessions")
@@ -58,8 +62,13 @@ def parse_arguments():
     parser.add_argument("--eval_shots", type=int, default=5, help="Number of shots for evaluation")
     parser.add_argument("--eval_lr", type=float, default=0.001, help="Learning rate for evaluation learning")
     parser.add_argument("--eval_deep_update", action="store_true", help="Update on all layers during evaluation")
-    parser.add_argument("--inner_sgd", action="store_true", help="Use SGD (instead of cross-entropy) for inner loop")
+    parser.add_argument("--inner_mse", action="store_true", help="Use MSE (instead of cross-entropy) for inner loop")
     parser.add_argument("--data_init", action="store_true", help="Use data init trick")
+
+    parser.add_argument("--latent_number", type=int, default=100, help="Number of last layer defining the latent features of the network")
+    parser.add_argument("--freeze_below", type=str, default="output", help="Name of the last layer to freeze for inner loop")
+    parser.add_argument("--reg_lambda", type=float, default=0, help="Regularization parameter for synaptic intelligence")
+    parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
 
 
     parser.add_argument("--save_pre_train", action="store_true", help="Save pre trained model")
@@ -96,6 +105,7 @@ ROOT = args.root
 NUM_WORKERS = args.num_workers
 BATCH_SIZE = args.batch_size
 PRE_TRAIN_EPOCHS = args.epochs
+PRE_TRAIN_LR = args.pt_lr
 META_ITERATIONS = args.mt_iter
 N_SESSIONS = args.mt_sessions
 META_WAYS = args.mt_ways
@@ -112,7 +122,7 @@ EVAL_SHOTS = args.eval_shots
 EVAL_LR = args.eval_lr
 
 LOSS_FUNCTION = F.cross_entropy
-if args.inner_sgd:
+if args.inner_mse:
     FEW_SHOT_LOSS_FUNCTION = lambda x,y : F.mse_loss(x, F.one_hot(y, x.shape[-1]).float())
 else:
     FEW_SHOT_LOSS_FUNCTION = F.cross_entropy
@@ -121,23 +131,52 @@ MASKED = args.masked
 EVAL_OUT_ADAPT = not args.eval_deep_update
 DATA_INIT = args.data_init
 
+MFCC = True
+
 new_sample_rate = 8000
-resample = torchaudio.transforms.Resample(orig_freq=48000, new_freq=new_sample_rate).to(device)
-pre_proc_resample = lambda x: (resample(x[0]), x[1])
+if MFCC:
+
+    import torchaudio.transforms as T
+
+    n_fft = 2048
+    win_length = None
+    hop_length = 240
+    n_mels = 256
+    n_mfcc = 256
+
+    mfcc_transform = T.MFCC(
+        sample_rate=48000,
+        n_mfcc=n_mfcc,
+        melkwargs={
+            "n_fft": n_fft,
+            "n_mels": n_mels,
+            "hop_length": hop_length,
+            "mel_scale": "htk",
+        },
+    ).to(device)
+
+    pre_proc = lambda  x : mfcc_transform(x).squeeze()
+else:
+    pre_proc = torchaudio.transforms.Resample(orig_freq=48000, new_freq=new_sample_rate).to(device)
+
+pre_proc_function = lambda x: (pre_proc(x[0]), x[1])
 out2pred = lambda x: torch.argmax(x, dim=-1)
 to_device = lambda x: (x[0].to(device), x[1].to(device))
 
 test_loader = None
-reg_lambda = 0
+reg_lambda = args.reg_lambda
 LATENT_REPLAY = False
 BATCH_RENORM = False
-freeze_below_layer = "output"
-LATENT_NUMBER = 100
+freeze_below_layer = args.freeze_below
+LATENT_NUMBER = args.latent_number
 
-def prepare_training(model):
+def prepare_training(model, meta=False):
     rm=None
 
     model.saved_weights = {}
+    if not meta:
+        pre_train_class = range(100)
+        consolidate_weights(model, pre_train_class)
 
     if BATCH_RENORM:
         replace_bn_with_brn(
@@ -154,6 +193,9 @@ def prepare_training(model):
         # paper. ewcData is a list of two elements (best parametes, importance)
         # while synData is a dictionary with all the trajectory data needed by SI
         ewcData, synData = create_syn_data(model)
+        model.ewcData = ewcData
+        model.synData = synData
+
 
 def data_init():
     with torch.no_grad():
@@ -165,7 +207,7 @@ def data_init():
         new_classes = support[0][1].tolist()
         for i, new_class in enumerate(new_classes):
             class_data = torch.stack([shot[0][i] for shot in support])
-            class_data = resample(class_data.to(device))
+            class_data = pre_proc(class_data.to(device))
             class_representation = eval_model.features(class_data)
             weight_vector = torch.mean(class_representation, dim=0)
             min_class = torch.min(weight_vector)
@@ -173,12 +215,13 @@ def data_init():
             weight_vector = weight_vector - min_class
             gain = (upper_bound - lower_bund)/(max_class - min_class)
             weight_vector = gain *(weight_vector) + lower_bund
-            eval_model.fc1.weight.data[new_class] = weight_vector.squeeze()
+            eval_model.output.weight.data[new_class] = weight_vector.squeeze()
 
 
-def inner_loop(eval_model, support, optimizer):
-    eval_model.train()
-    eval_model.lat_features.eval()
+def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Identity()):
+    model.train()
+    if not meta:
+        model.lat_features.eval()
 
     
 
@@ -188,11 +231,12 @@ def inner_loop(eval_model, support, optimizer):
         data_init()
 
     if reg_lambda != 0:
-        init_batch(model, ewcData, synData)
+        init_batch(model, model.ewcData, model.synData)
 
     # we freeze the layer below the replay layer since the first batch
-    freeze_up_to(model, freeze_below_layer, only_conv=False)
-
+    if not meta:
+        freeze_up_to(model.lat_features, "none", only_conv=False)
+    # freeze_up_to(model.end_features, freeze_below_layer, only_conv=False)
 
     if BATCH_RENORM:
         change_brn_pars(
@@ -210,7 +254,10 @@ def inner_loop(eval_model, support, optimizer):
         model.cur_j = examples_per_class(cur_class, 200, EVAL_SHOTS)
     
 
-    reset_weights(model, cur_class)
+    if args.reset=="zero":
+        reset_weights(model, cur_class)
+    elif args.reset=="random":
+        torch.nn.init.xavier_normal_(model.output.weight)
     cur_ep = 0
 
     for ep in range(train_ep):
@@ -222,25 +269,24 @@ def inner_loop(eval_model, support, optimizer):
         # computing how many patterns to inject in the latent replay layer
         if LATENT_REPLAY:
             cur_sz = train_x.size(0) // ((train_x.size(0) + rm_sz) // mb_size)
-            it_x_ep = train_x.size(0) // cur_sz
+            # it_x_ep = train_x.size(0) // cur_sz
             n2inject = max(0, mb_size - cur_sz)
         else:
             n2inject = 0
 
         print("n2inject", n2inject)
-        print("it x ep: ", it_x_ep)
-
         # @TODO : CHange data for replay case
-
+        # it = 0
         for X_shot, y_shot in support:
 
             if reg_lambda !=0:
-                pre_update(model, synData)
+                pre_update(model, model.synData)
 
-            start = it * (mb_size - n2inject)
-            end = (it + 1) * (mb_size - n2inject)
+            # start = it * (mb_size - n2inject)
+            # end = (it + 1) * (mb_size - n2inject)
 
-            optimizer.zero_grad()
+            if not meta:
+                optimizer.zero_grad()
 
             data = X_shot.to(device)
 
@@ -258,13 +304,13 @@ def inner_loop(eval_model, support, optimizer):
 
             # if lat_mb_x is not None, this tensor will be concatenated in
             # the forward pass on-the-fly in the latent replay layer
-            data = resample(data)
+            data = pre_proc(data)
 
             if LATENT_REPLAY:
-                logits, lat_acts = eval_model(
+                logits, lat_acts = model(
                 data, latent_input=lat_mb_x, return_lat_acts=True)
             else:
-                output = eval_model(data)
+                output = model(features(data))
                 lat_acts = None
             
 
@@ -283,18 +329,23 @@ def inner_loop(eval_model, support, optimizer):
             loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
 
             if reg_lambda !=0:
-                loss += compute_ewc_loss(eval_model, ewcData, lambd=reg_lambda)
+                loss += compute_ewc_loss(model, model.ewcData, lambd=reg_lambda)
 
-            loss.backward()
-            optimizer.step()
+            if meta:
+                grads = meta.adapt(loss)
+            else:
+                loss.backward()
+                optimizer.step()
+                grads = None
 
             if reg_lambda !=0:
-                post_update(eval_model, synData)
+                post_update(model, model.synData, grads)
 
 
-    consolidate_weights(eval_model, cur_class)
+
+    consolidate_weights(model, cur_class)
     if reg_lambda != 0:
-        update_ewc_data(eval_model, ewcData, synData, 0.001, 1)
+        update_ewc_data(model, model.ewcData, model.synData, 0.001, 1)
 
     # how many patterns to save for next iter
     if LATENT_REPLAY:
@@ -319,15 +370,15 @@ def inner_loop(eval_model, support, optimizer):
                 rm[0][idx] = copy.deepcopy(rm_add[0][j])
                 rm[1][idx] = copy.deepcopy(rm_add[1][j])
 
-    set_consolidate_weights(eval_model)
+    set_consolidate_weights(model)
 
-    for c, n in eval_model.cur_j.items():
-        eval_model.past_j[c] += n
+    for c, n in model.cur_j.items():
+        model.past_j[c] += n
 
 
 
 # @TODO: Improve for test_loader recreatiom
-def test(test_model, mask, set=None, wandb_log="accuracy"):
+def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
     test_model.eval()
     if set is not None:
         test_loader = DataLoader(set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
@@ -339,12 +390,12 @@ def test(test_model, mask, set=None, wandb_log="accuracy"):
 
 
     benchmark = Benchmark(test_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
-                          preprocessors=[to_device, pre_proc_resample], postprocessors=[out_mask, out2pred, torch.squeeze])
+                          preprocessors=[to_device, pre_proc_function], postprocessors=[out_mask, out2pred, torch.squeeze])
 
     pre_train_results = benchmark.run()
     test_accuracy = pre_train_results['classification_accuracy']
     if not args.no_wandb:
-        wandb.log({wandb_log:test_accuracy})
+        wandb.log({wandb_log:test_accuracy}, commit=wandb_commit)
     return test_accuracy
 
 
@@ -354,7 +405,7 @@ def pre_train(model):
 
     pre_train_loader = DataLoader(base_train_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True, pin_memory=PIN_MEMORY)
 
-    optimizer = optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
+    optimizer = optim.Adam(model.parameters(), lr=PRE_TRAIN_LR, weight_decay=0.0001)
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
 
     if MASKED:
@@ -374,7 +425,7 @@ def pre_train(model):
             target = target.to(device)
 
             # apply transform and model on whole batch directly on device
-            data = resample(data)
+            data = pre_proc(data)
             output = model(data)
 
             # negative log-likelihood for a tensor of size (batch x 1 x n_output)
@@ -393,7 +444,7 @@ def pre_train(model):
         if MASKED:
             name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_masked"
         else:
-            name = "model_ep"+str(PRE_TRAIN_EPOCHS)
+            name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)
         torch.save(model, os.path.join(ROOT,name))
 
 
@@ -411,16 +462,15 @@ if __name__ == '__main__':
         config=args.__dict__)
 
 
-    if MASKED:
-        model = M5(n_input=1, n_output=100).to(device)
+    if MFCC:
+        model = M5(n_input=256, stride=1, n_channel=256, n_output=200, input_kernel=8, pool_kernel=2, latent_layer_num=LATENT_NUMBER).to(device)
     else:
-        model = M5(n_input=1, n_output=200).to(device)
-
-
+        model = M5(n_input=1, n_output=200, latent_layer_num=LATENT_NUMBER).to(device)
 
     if args.load_pre_train:
         load_model = torch.load(os.path.join(ROOT, args.load_pre_train), map_location=device)
-        model = M5(n_input=1, n_output=200, seq_model=load_model.features, output=load_model.fc1, latent_layer_num=LATENT_NUMBER).to(device)
+        model = M5(n_input=1, n_output=200, load_model= load_model, latent_layer_num=LATENT_NUMBER).to(device)
+        # model = M5(n_input=1, n_output=200, seq_model=load_model.features, output=load_model.fc1, latent_layer_num=LATENT_NUMBER).to(device)
     else:
         pre_train(model)
 
@@ -433,6 +483,9 @@ if __name__ == '__main__':
         pre_train_acc = test(model, mask)
         print(f"The test accuracy at the end of pre-training is {pre_train_acc*100}%")
 
+
+
+
     ### Meta-training phase ###
 
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training", incremental=True)
@@ -444,13 +497,26 @@ if __name__ == '__main__':
                                 support_query_split=META_SPLITS,
                                 samples_per_class=500)
 
-    if ANIL:
-        features = model.features
-        head = model.fc1
-        maml = l2l.algorithms.MAML(head, lr=EVAL_LR)
-    else:
-        maml = l2l.algorithms.MAML(model, lr=EVAL_LR)
-        
+    # if ANIL:
+
+    # else:
+    #     maml = l2l.algorithms.MAML(model, lr=EVAL_LR)
+    class Head(nn.Module):
+        def __init__(self,end_features, output):
+            super(Head, self).__init__()
+            self.end_features = end_features
+            self.output = output
+
+        def forward(self, x):
+            x = self.end_features(x)
+            x = F.avg_pool1d(x, x.shape[-1])
+            x = self.output(x.permute(0, 2, 1))
+            return x
+
+    features = model.lat_features
+    head = Head(model.end_features, model.output)
+    maml = l2l.algorithms.MAML(head, lr=EVAL_LR)
+
     meta_opt = optim.Adam(maml.parameters())
 
 
@@ -466,40 +532,17 @@ if __name__ == '__main__':
     for iteration in range(META_ITERATIONS):
         print(f"Iteration: {iteration+1}")
         model.train()
+
+        prepare_training(maml.module, meta=True)
         for session, (support, query, query_classes) in tqdm(enumerate(few_shot_dataloader), total=N_SESSIONS+1):
             # print(f"Session: {session+1}")
-            
-
-            # X_support, y_support = support
-            # X_support = X_support.to(device)
-            # y_support = y_support.to(device)
-
-
-            # @TODO: THink if mask is needed
-            
 
             ### Inner loop ###
             # Adaptation: Instanciate a copy of model
             learner = maml.clone()
+            
+            inner_loop(learner.module, support, meta=learner, features=features)
 
-            # support_set = TensorDataset(X_support, y_support)
-            # support_loader = DataLoader(support_set, batch_size=META_WAYS, pin_memory=True)
-
-            if ANIL:
-                for X_shot, y_shot in support:
-                    data = X_shot.to(device)
-                    target = y_shot.to(device)
-                    data = features(resample(data))
-                    support_log = learner(data)
-                    support_loss = FEW_SHOT_LOSS_FUNCTION(support_log.squeeze(), target) # Works with log_softmax to create crossentropy
-                    learner.adapt(support_loss)
-            else:
-                for X_shot, y_shot in support:
-                    data = X_shot.to(device)
-                    target = y_shot.to(device)
-                    support_log = learner(resample(data))
-                    support_loss = FEW_SHOT_LOSS_FUNCTION(support_log.squeeze(), target) # Works with log_softmax to create crossentropy
-                    learner.adapt(support_loss)
 
 
             ### Outer loop ###
@@ -511,11 +554,8 @@ if __name__ == '__main__':
             for X_query, y_query in full_session_test_loader:
                 X_query = X_query.to(device)
                 y_query = y_query.to(device)
-                if ANIL:
-                    data = features(resample(X_query))
-                    query_log = learner(data)
-                else:
-                    query_log = learner(resample(X_query))
+                data = features(pre_proc(X_query))
+                query_log = learner(data)
                 query_loss = LOSS_FUNCTION(query_log.squeeze(), y_query)
                 meta_loss += query_loss/X_query.shape[0]
 
@@ -541,8 +581,8 @@ if __name__ == '__main__':
         with torch.no_grad():
             new_model = M5(n_input=1, n_output=200).to(device)
             new_model.features = model.features
-            new_model.fc1.weight.data[:100,:] = model.fc1.weight.data.clone()
-            new_model.fc1.bias.data[:100] = model.fc1.bias.data.clone()
+            new_model.output.weight.data[:100,:] = model.output.weight.data.clone()
+            new_model.output.bias.data[:100] = model.output.bias.data.clone()
             model = new_model
 
     ### Evaluation phase ###
@@ -553,11 +593,15 @@ if __name__ == '__main__':
     base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
 
     all_results = []
+    new_class_results = []
 
 
     for eval_iter in range(EVAL_ITERATIONS):
         print(f"Evaluation Iteration: 0")
         # Base Accuracy measurement
+
+        eval_results = []
+        eval_query_results = []
 
         mask = torch.full((200,), float('inf')).to(device)
         mask[torch.arange(0,100, dtype=int)] = 0
@@ -566,8 +610,8 @@ if __name__ == '__main__':
 
         print(f"Session: 0")
         pre_train_acc = test(eval_model, mask, wandb_log="eval_accuracy")
-        all_results.append(pre_train_acc)
-        print(f"The base accuracy is {all_results[-1]*100}%")
+        eval_results.append(pre_train_acc)
+        print(f"The base accuracy is {eval_results[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
         few_shot_dataloader = IncrementalFewShot(eval_set, n_way=10, k_shot=EVAL_SHOTS, query_shots=100,
@@ -577,7 +621,7 @@ if __name__ == '__main__':
                                     samples_per_class=200)
 
         if EVAL_OUT_ADAPT:
-            few_shot_optimizer = optim.SGD(eval_model.fc1.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
+            few_shot_optimizer = optim.SGD(eval_model.output.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
         else:
             few_shot_optimizer = optim.SGD(eval_model.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
 
@@ -594,39 +638,6 @@ if __name__ == '__main__':
             inner_loop(eval_model, support, few_shot_optimizer)
             
 
-            # if DATA_INIT:
-            #     with torch.no_grad():
-            #         # upper_bound = torch.mean(torch.max(eval_model.fc1.weight.data[:100], dim=-1)[0])
-            #         # lower_bound = torch.mean(torch.min(eval_model.fc1.weight.data[:100], dim=-1)[0])
-            #         upper_bound = 0.5
-            #         lower_bund = -0.5
-
-            #         new_classes = support[0][1].tolist()
-            #         for i, new_class in enumerate(new_classes):
-            #             class_data = torch.stack([shot[0][i] for shot in support])
-            #             class_data = resample(class_data.to(device))
-            #             class_representation = eval_model.features(class_data)
-            #             weight_vector = torch.mean(class_representation, dim=0)
-            #             min_class = torch.min(weight_vector)
-            #             max_class = torch.max(weight_vector)
-            #             weight_vector = weight_vector - min_class
-            #             gain = (upper_bound - lower_bund)/(max_class - min_class)
-            #             weight_vector = gain *(weight_vector) + lower_bund
-            #             eval_model.fc1.weight.data[new_class] = weight_vector.squeeze()
-
-
-
-            # for X_shot, y_shot in support:
-            #     data = X_shot.to(device)
-            #     data = resample(data)
-            #     target = y_shot.to(device)
-            #     output = eval_model(data)
-            #     loss = FEW_SHOT_LOSS_FUNCTION(output.squeeze(), target)
-
-            #     few_shot_optimizer.zero_grad()
-            #     loss.backward()
-            #     few_shot_optimizer.step()
-
             ### Testing phase ###
 
             # Define session specific dataloader with query + base_test samples
@@ -641,21 +652,39 @@ if __name__ == '__main__':
             new_mask = torch.full((200,), float('inf')).to(device)
             new_mask[session_classes] = 0
 
-            new_class_acc = test(eval_model, new_mask, set=query, wandb_log="query_accuracy")
+            new_class_acc = test(eval_model, mask, set=query, wandb_log="query_accuracy", wandb_commit=False)
+            eval_query_results.append(new_class_acc)
             print(f"The accuracy on new classes is {new_class_acc*100}%")
             # Run benchmark to evaluate accuracy of this specific session
             session_acc = test(eval_model, mask, set=full_session_test_set, wandb_log="eval_accuracy")
-            all_results.append(session_acc)
+            eval_results.append(session_acc)
             
-            print(f"The session accuracy is {all_results[-1]*100}%")
+            print(f"The session accuracy is {eval_results[-1]*100}%")
 
-        mean_accuracy = np.mean(all_results)
+        mean_accuracy = np.mean(eval_results)
         if not args.no_wandb:
             wandb.log({"eval_accuracy":mean_accuracy})
         print(f"The total mean accuracy is {mean_accuracy*100}%")
 
+        mean_accuracy = np.mean(eval_query_results)
+        if not args.no_wandb:
+            wandb.log({"query_accuracy":mean_accuracy})
+        print(f"The mean query accuracy is {mean_accuracy*100}%")
+
+
+        all_results.append(eval_results)
+        new_class_results.append(eval_query_results)
+
 
         few_shot_dataloader.reset()
+
+    results = {"all": all_results, "query": new_class_results}
+    import json
+    with open(os.path.join(ROOT,"eval_noreset_"+str(META_ITERATIONS)+"mt_"+str(EVAL_LR)+"lr.json"), "w") as f:
+        json.dump(results, f)
+
+    print('DONE')
+
 
 
 # @TODO: Change model to have latent, end features + output layer

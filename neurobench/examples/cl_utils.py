@@ -308,6 +308,16 @@ def reset_weights(model, cur_clas):
                     torch.from_numpy(model.saved_weights[c])
                 )
 
+def random_reset_weights(model, cur_clas):
+    """ reset weights"""
+
+    with torch.no_grad():
+        # model.output.weight.fill_(0.0)
+        for c in cur_clas:
+            torch.nn.init.xavier_normal_(model.output.weight)[c].copy_(
+                torch.from_numpy(model.saved_weights[c])
+            )
+
 
 def examples_per_class(train_y, Nmax_classes, shots):
     count = {i:0 for i in range(Nmax_classes)}
@@ -350,10 +360,10 @@ def freeze_up_to(model, freeze_below_layer, only_conv=False):
         if only_conv:
             if "conv" in name:
                 param.requires_grad = False
-                print("Freezing parameter " + name)
+                # print("Freezing parameter " + name)
         else:
             param.requires_grad = False
-            print("Freezing parameter " + name)
+            # print("Freezing parameter " + name)
 
         if name == freeze_below_layer:
             break
@@ -397,6 +407,23 @@ def extract_weights(model, target):
         target[...] = weights_vector.cpu()
 
 
+def extract_given_grad(model, target, gradients):
+    # Store the gradients into target
+    with torch.no_grad():
+        grad_counter = 0
+        grad_vector= None
+        for name, param in model.end_features.named_parameters():
+            if "bn" not in name and "output" not in name:
+                # print(name, param.flatten())
+                if grad_vector is None:
+                    grad_vector = gradients[grad_counter].flatten()
+                else:
+                    grad_vector = torch.cat(
+                        (grad_vector, gradients[grad_counter].flatten()), 0)
+            grad_counter += 1
+
+        target[...] = grad_vector.cpu()
+
 def extract_grad(model, target):
     # Store the gradients into target
     with torch.no_grad():
@@ -423,9 +450,12 @@ def pre_update(net, synData):
     extract_weights(net, synData['old_theta'])
 
 
-def post_update(net, synData):
+def post_update(net, synData, gradients=None):
     extract_weights(net, synData['new_theta'])
-    extract_grad(net, synData['grad'])
+    if gradients:
+        extract_given_grad(net, synData['grad'], gradients)
+    else:
+        extract_grad(net, synData['grad'])
 
     synData['trajectory'] += synData['grad'] * (
                     synData['new_theta'] - synData['old_theta'])

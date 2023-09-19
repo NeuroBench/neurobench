@@ -34,6 +34,7 @@ class Benchmark():
         """
         print("Running benchmark")
         
+        # add hooks to the model
         metrics.preprocess(self.model)
 
         # Static metrics

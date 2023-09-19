@@ -12,7 +12,7 @@ from neurobench.models import SNNTorchModel
 from neurobench.accumulators.accumulator import choose_max_count
 
 from tqdm import tqdm
-
+from neurobench.models import NeuroBenchModel
 
 class Conv_SNN(nn.Module):
 	def __init__(self):
@@ -40,7 +40,7 @@ class Conv_SNN(nn.Module):
 		self.mem2, self.cur2 = self.syn2.init_synaptic()
 		self.mem3, self.cur3 = self.syn3.init_synaptic()
 
-		self.neuro_layers = [self.syn1, self.syn2, self.syn3]
+		# self.neuro_layers = [self.syn1, self.syn2, self.syn3]
 
 	def forward(self, frame, warmup_frames = 0):
 		out_spk = 0
@@ -103,7 +103,26 @@ class Conv_SNN(nn.Module):
 				optimizer.step()
 			print(loss.item())
 
+class simple_ANN(nn.Module):
+	def __init__(self):
+		super(simple_ANN,self).__init__()
 
+		self.net1 = nn.Sequential(nn.Linear(3*128*128, 1280), nn.Sigmoid(), nn.Linear(1280, 128))
+		self.net2 = nn.Sequential(nn.Linear(128,128), nn.Sigmoid(), nn.Linear(128,11))
+
+	def forward(self, frame):
+		
+		frame = nn.Flatten()(frame).to(dtype=torch.float32)
+
+		x = self.net1(frame)
+		x = self.net2(x)
+		
+		
+
+		prediction = x.reshape(-1,11)
+		
+		return prediction, self.net1
+	
 
 if __name__ =='__main__':
 	data = DVSGesture('data/dvs_gesture/', split='testing', preprocessing='stack')

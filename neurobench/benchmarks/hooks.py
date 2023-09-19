@@ -1,3 +1,4 @@
+import snntorch as snn
 class ActivationHook():
     """ Hook class for an activation layer in a NeuroBenchModel.
 
@@ -14,7 +15,10 @@ class ActivationHook():
         """
         self.activation_outputs = []
         self.hook = layer.register_forward_hook(self.hook_fn)
-    
+
+        # Check if the layer is a spiking layer (SpikingNeuron is the superclass of all snnTorch spiking layers)
+        self.spiking = isinstance(layer, snn.SpikingNeuron)
+
     def hook_fn(self, layer, input, output):
         """Hook function that will be called after each forward pass of 
         the activation layer.
@@ -26,7 +30,11 @@ class ActivationHook():
             input: Input of the registered layer
             output: Output of the registered layer
         """
-        self.activation_outputs.append(output[0])
+        if self.spiking:
+            self.activation_outputs.append(output[0])
+
+        else:
+            self.activation_outputs.append(output)
 
     def close(self):
         """ Remove the registered hook.

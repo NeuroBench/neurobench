@@ -1,4 +1,5 @@
 from torch import nn
+import snntorch as snn
 
 from .utils import activation_modules
 
@@ -48,7 +49,8 @@ class NeuroBenchModel:
                 grand_children = list(child.children())
                 if len(grand_children) == 0:  # leaf child
                     for activaton_module in self.activation_modules:
-                        if isinstance(child, activaton_module):
+                        # add all the activation layers and spiking neuron layers
+                        if isinstance(child, activaton_module) or isinstance(child, snn.SpikingNeuron):
                             layers.append(child)
                 else:
                     children_layers = get_activation_layers(child)

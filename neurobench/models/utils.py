@@ -7,6 +7,6 @@ def activation_modules():
     The activation layers that can be auto-deteced.
     """
     return [nn.ReLU,
-            # snn.Synaptic,
-            snn.Leaky
+            nn.Sigmoid,
+
            ]

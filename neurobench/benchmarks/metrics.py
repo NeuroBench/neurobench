@@ -84,15 +84,15 @@ def activation_sparsity(model, preds, data):
         float: Activation sparsity.
     """
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
-    #       Standard FF ANN should be zero (no activation sparsity)
+    #       Standard FF ANN depends on activation function, ReLU can introduce sparsity.
     total_spike_num, total_neuro_num = 0, 0
     for hook in model.activation_hooks:
         for spikes in hook.activation_outputs:  # do we need a function rather than a member
             spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
-
+            # print('spikes:', str(hook.activation_outputs))
             total_spike_num += spike_num
             total_neuro_num += neuro_num
-    
+    # print(total_neuro_num, total_spike_num)    
     sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
 

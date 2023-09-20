@@ -33,7 +33,7 @@ class TestMFCCProcessor(unittest.TestCase):
 
     def test_mfcc_tuple_wrong_shape(self):
         mfcc = MFCCProcessor(**self.init_args)
-        audio = (self.sample_audio, 2, 3)
+        audio = (self.sample_audio, 2, 3, 4)
         with self.assertRaises(ValueError):
             mfcc(audio)
 

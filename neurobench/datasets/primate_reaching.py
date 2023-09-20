@@ -98,6 +98,7 @@ class PrimateReaching(NeuroBenchDataset):
         
         self.split_data()
 
+
     def __len__(self):
         return len(self.ind_train) + len(self.ind_test) + len(self.ind_val)
     
@@ -235,25 +236,6 @@ class PrimateReaching(NeuroBenchDataset):
         """
         self.time_segments = self.time_segments[self.time_segments[:, 1] - self.time_segments[:, 0] <
                                                 self.max_segment_length, :]
-        
-    def create_dataloader(self, indices, batch_size=256, shuffle=True, drop_last=False):
-        """
-            Helper method for creating a PyTorch DataLoader based on the split_type.
-            Args:
-                split_type (str): Defines the split type that will be loaded into the DataLoader.
-                                  Can be of the type "Train", "Validation" or "Test".
-            :param indices: (list of int) training, testing or validation indices
-            :param batch_size: (int) size of batch being processed
-            :param shuffle: (boolean) shuffle data
-            :param drop_last: (boolean) drop last batch
-        """
-        current_loader = torch.utils.data.DataLoader(
-            dataset=torch.utils.data.Subset(self, indices),
-            batch_size=batch_size,
-            shuffle=shuffle,
-            drop_last=drop_last)
-
-        return current_loader
 
     @staticmethod
     def split_into_segments(indices):

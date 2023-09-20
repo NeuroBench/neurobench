@@ -1,6 +1,6 @@
 import torch
 
-from .utils.metric_utils import check_shape
+from .utils.metric_utils import check_shape, make_binary_copy
 
 class AccumulatedMetric:
     """ Abstract class for a metric which must save state between batches.
@@ -67,8 +67,8 @@ def multiply_accumulates(model, preds, data):
     #   Spiking model: number of spike activations * fanout (see snnmetrics)
     #   Recurrent layers: each connection is one MAC
     #   ANN: use PyTorch profiler
-    raise NotImplementedError("Multiply-accumulates not yet implemented")
 
+    binary_model = make_binary_copy(model)
     check_shape(preds, data[1])
     macs = 0.0
     return macs

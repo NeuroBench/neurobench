@@ -69,9 +69,9 @@ class Benchmark():
                 batch_results[m] = self.data_metrics[m](self.model, preds, data)
 
             for m, v in batch_results.items():
-                # AccumulatedMetrics are computed with past state
+                # AccumulatedMetrics are computed after all batches complete
                 if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                    results[m] = v
+                    continue
                 # otherwise accumulate via mean
                 else:
                     assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
@@ -79,5 +79,10 @@ class Benchmark():
                         results[m] = v * batch_size / dataset_len
                     else:
                         results[m] += v * batch_size / dataset_len
+
+        # compute AccumulatedMetrics after all batches
+        for m in self.data_metrics.keys():
+            if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                results[m] = self.data_metrics[m].compute()
 
         return results

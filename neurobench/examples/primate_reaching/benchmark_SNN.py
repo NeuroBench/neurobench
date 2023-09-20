@@ -11,7 +11,7 @@ from neurobench.examples.primate_reaching.SNN import SNN
 
 # The dataloader and preprocessor has been combined together into a single class
 dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename="indy_20170131_02.mat",
-                          num_steps=250, train_ratio=0.8, mode="3D", bin_width=0.004,
+                          num_steps=250, train_ratio=0.8, bin_width=0.004,
                           biological_delay=50)
 test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=256, shuffle=False)
 

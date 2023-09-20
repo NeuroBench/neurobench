@@ -37,11 +37,11 @@ def connection_sparsity(model):
     """ Sparsity of model connections between layers. Based on number of zeros 
     in supported layers, other layers are not taken into account in the computation:
     Supported layers:
-        Linear
-        Conv1d, Conv2d, Conv3d
-        RNN, RNNBase, RNNCell
-        LSTM, LSTMBase, LSTMCell
-        GRU, GRUBase, GRUCell
+    Linear
+    Conv1d, Conv2d, Conv3d
+    RNN, RNNBase, RNNCell
+    LSTM, LSTMBase, LSTMCell
+    GRU, GRUBase, GRUCell
 
     Args:
         model: A NeuroBenchModel.

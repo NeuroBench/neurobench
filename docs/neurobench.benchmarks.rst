@@ -9,9 +9,16 @@ Benchmark
     :undoc-members:
     :show-inheritance:
 
-Metrics
-^^^^^^^
-.. automodule:: neurobench.benchmarks.metrics
+Data Metrics
+^^^^^^^^^^^^
+.. automodule:: neurobench.benchmarks.data_metrics
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+Static Metrics
+^^^^^^^^^^^^^^
+.. automodule:: neurobench.benchmarks.static_metrics
     :members:
     :undoc-members:
     :show-inheritance:

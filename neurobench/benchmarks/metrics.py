@@ -112,6 +112,9 @@ def multiply_accumulates(model, preds, data):
     #   ANN: use PyTorch profiler
     check_shape(preds, data[1])
     macs = 0.0
+    for hook in model.activation_hooks:
+        for spikes in hook.activation_outputs:  # do we need a function rather than a member
+            print(hook)
     return macs
 
 def classification_accuracy(model, preds, data):

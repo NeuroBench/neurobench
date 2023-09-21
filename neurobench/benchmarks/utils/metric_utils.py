@@ -2,6 +2,9 @@ import torch
 import torch.profiler as profiler
 
 import copy
+import torch.profiler as profiler
+
+import copy
 
 def check_shape(preds, labels):
 	""" Checks that the shape of the predictions and labels are the same.
@@ -37,12 +40,9 @@ def single_layer_MACs(input, layer):
 			add_bias = torch.count_nonzero(layer.bias.data)
 
 		macs = layer_bin(input).sum() + add_bias # returns total macs
-
+	return macs
 		
 
-		
-
-	print(macs)
 if __name__=='__main__':
 	input = torch.tensor([[1., 0., 1., 0., 1]])
 

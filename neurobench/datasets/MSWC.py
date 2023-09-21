@@ -416,10 +416,10 @@ def generate_mswc_fscil_splits(root: Union[str, Path],
                     if base_train_count[word] <500:
                         writer_base_train.writerow([path, word, valid, speaker, gender])
                         base_train_count[word] +=1
-                    if base_val_count[word] <100:
+                    elif base_val_count[word] <100:
                         writer_base_val.writerow([path, word, valid, speaker, gender])
                         base_val_count[word] +=1
-                    if base_test_count[word] <100:
+                    elif base_test_count[word] <100:
                         writer_base_test.writerow([path, word, valid, speaker, gender])
                         base_test_count[word] +=1
 

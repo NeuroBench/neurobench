@@ -82,7 +82,7 @@ Contributing
 ------------
 
 If you are interested in helping to build this framework, please see the
-`contributing guidelines <CONTRIBUTING.md>`__.
+`contributing guidelines <CONTRIBUTING.rst>`__.
 
 Citation
 --------

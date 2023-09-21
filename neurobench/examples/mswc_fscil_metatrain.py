@@ -41,8 +41,13 @@ def parse_arguments():
     parser.add_argument("--batch_size", type=int, default=256, help="Batch size")
     parser.add_argument("--epochs", type=int, default=100, help="Number of pre-train epochs")
     parser.add_argument("--pt_lr", type=float, default=0.01, help="Learning rate for pre-training")
+    
+    parser.add_argument("--spiking", action="store_true", help="Use SNN")
 
     
+    parser.add_argument("--n_channels", type=int, default=256, help="Number of channels")
+    parser.add_argument("--dropout", action="store_true", help="Use Dropout")
+
     parser.add_argument("--mt_iter", type=int, default=20, help="Number of meta iterations")
     parser.add_argument("--eval_iter", type=int, default=5, help="Number of evaluation iterations")
     parser.add_argument("--mt_sessions", type=int, default=8, help="Number of meta-training sessions")
@@ -60,7 +65,7 @@ def parse_arguments():
     parser.add_argument("--no_mt_split", action="store_true", help="Don't use mt fixed support query splits")
 
     parser.add_argument("--eval_shots", type=int, default=5, help="Number of shots for evaluation")
-    parser.add_argument("--eval_lr", type=float, default=0.001, help="Learning rate for evaluation learning")
+    parser.add_argument("--eval_lr", type=float, default=0.2, help="Learning rate for evaluation learning")
     parser.add_argument("--eval_deep_update", action="store_true", help="Update on all layers during evaluation")
     parser.add_argument("--inner_mse", action="store_true", help="Use MSE (instead of cross-entropy) for inner loop")
     parser.add_argument("--data_init", action="store_true", help="Use data init trick")
@@ -106,6 +111,8 @@ NUM_WORKERS = args.num_workers
 BATCH_SIZE = args.batch_size
 PRE_TRAIN_EPOCHS = args.epochs
 PRE_TRAIN_LR = args.pt_lr
+N_CHANNELS = args.n_channels
+DROPOUT = args.dropout
 META_ITERATIONS = args.mt_iter
 N_SESSIONS = args.mt_sessions
 META_WAYS = args.mt_ways
@@ -381,10 +388,10 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
 def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
     test_model.eval()
     if set is not None:
-        test_loader = DataLoader(set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     else:
         base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
-        test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     
     out_mask = lambda x: x - mask
 
@@ -436,15 +443,17 @@ def pre_train(model):
             optimizer.step()
 
         if epoch%5==0:
+            train_acc = test(model, mask, set=base_train_set, wandb_log="train_accuracy", wandb_commit=False)
             test_acc = test(model, mask)
+            print(f"The train accuracy is {train_acc*100}%")
             print(f"The test accuracy is {test_acc*100}%")
         scheduler.step()
 
     if args.save_pre_train:
-        if MASKED:
-            name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_masked"
+        if DROPOUT:
+            name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_chan"+str(N_CHANNELS)+"_bs"+str(BATCH_SIZE)+"_dp"
         else:
-            name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)
+            name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_chan"+str(N_CHANNELS)+"_bs"+str(BATCH_SIZE)
         torch.save(model, os.path.join(ROOT,name))
 
 
@@ -463,7 +472,7 @@ if __name__ == '__main__':
 
 
     if MFCC:
-        model = M5(n_input=256, stride=1, n_channel=256, n_output=200, input_kernel=8, pool_kernel=2, latent_layer_num=LATENT_NUMBER).to(device)
+        model = M5(n_input=256, stride=2, n_channel=N_CHANNELS, n_output=200, input_kernel=4, pool_kernel=2, latent_layer_num=LATENT_NUMBER, drop=DROPOUT).to(device)
     else:
         model = M5(n_input=1, n_output=200, latent_layer_num=LATENT_NUMBER).to(device)
 
@@ -547,11 +556,11 @@ if __name__ == '__main__':
 
             ### Outer loop ###
 
-            full_session_test_loader = DataLoader(query, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+            query_loader = DataLoader(query, batch_size=32, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
             # Adaptation: Evaluate the effectiveness of adaptation
             meta_loss = 0
-            for X_query, y_query in full_session_test_loader:
+            for X_query, y_query in query_loader:
                 X_query = X_query.to(device)
                 y_query = y_query.to(device)
                 data = features(pre_proc(X_query))
@@ -620,10 +629,10 @@ if __name__ == '__main__':
                                     support_query_split=(100,100),
                                     samples_per_class=200)
 
-        if EVAL_OUT_ADAPT:
-            few_shot_optimizer = optim.SGD(eval_model.output.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
-        else:
-            few_shot_optimizer = optim.SGD(eval_model.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
+        # if EVAL_OUT_ADAPT:
+        #     few_shot_optimizer = optim.SGD(eval_model.output.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
+        # else:
+        few_shot_optimizer = optim.SGD(eval_model.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
 
 
         prepare_training(eval_model)

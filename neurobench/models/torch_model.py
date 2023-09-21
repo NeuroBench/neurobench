@@ -10,6 +10,8 @@ class TorchModel(NeuroBenchModel):
         Args:
             net: A PyTorch nn.Module.
         """
+        super().__init__(net)
+        
         self.net = net
         self.net.eval()
 

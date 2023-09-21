@@ -1,4 +1,6 @@
 from tqdm import tqdm
+from . import metrics
+
 from . import static_metrics, data_metrics
 
 class Benchmark():
@@ -32,6 +34,9 @@ class Benchmark():
             results: A dictionary of results.
         """
         print("Running benchmark")
+        
+        # add hooks to the model
+        metrics.detect_activation_neurons(self.model)
 
         # Static metrics
         results = {}
@@ -48,7 +53,7 @@ class Benchmark():
         dataset_len = len(self.dataloader.dataset)
         for data in tqdm(self.dataloader, total=len(self.dataloader)):
             batch_size = data[0].size(0)
-
+            
             # convert data to tuple
             if type(data) is not tuple:
                 data = tuple(data)
@@ -60,6 +65,7 @@ class Benchmark():
             # Run model on test data
             preds = self.model(data[0])
 
+            # TODO: postprocessors are applied to model output only?
             for alg in self.postprocessors: 
                 preds = alg(preds)
 
@@ -68,7 +74,14 @@ class Benchmark():
             for m in self.data_metrics.keys():
                 batch_results[m] = self.data_metrics[m](self.model, preds, data)
 
+            # Accumulate data metrics via mean
             for m, v in batch_results.items():
+                assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
+                print(f"{m}: {v}")
+                if m not in results:
+                    results[m] = v * batch_size / dataset_len
+                else:
+                    results[m] += v * batch_size / dataset_len
                 # AccumulatedMetrics are computed after all batches complete
                 if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
                     continue

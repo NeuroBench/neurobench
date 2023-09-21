@@ -23,7 +23,7 @@ model = TorchModel(net)
 
 # metrics = ["r_squared", "model_size", "latency", "MACs"]
 static_metrics = ["model_size"]
-data_metrics = ["r2"]
+data_metrics = ["r2", "activation_sparsity"]
 
 # Benchmark expects the following:
 benchmark = Benchmark(model, test_set, [], [], [static_metrics, data_metrics])

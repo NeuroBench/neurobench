@@ -8,5 +8,4 @@ def activation_modules():
     """
     return [nn.ReLU,
             nn.Sigmoid,
-
            ]

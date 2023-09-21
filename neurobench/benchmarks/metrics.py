@@ -62,10 +62,9 @@ def connection_sparsity(model):
     # Return the ratio of zeros to weights
     return count_zeros / count_weights
 
-def preprocess(model):
+def detect_activation_neurons(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
-
     # Registered activation hooks
     for layer in model.activation_layers():
         model.activation_hooks.append(ActivationHook(layer))

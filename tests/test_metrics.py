@@ -85,24 +85,23 @@ def test_connection_sparsity():
 
 def test_activation_sparsity():
     # test spiking model
-    # beta = 0.9
-    # spike_grad = surrogate.fast_sigmoid()
-    # net = nn.Sequential(
-    #     nn.Flatten(),
-    #     nn.Linear(20, 256),
-    #     snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-    #     nn.Linear(256, 256),
-    #     snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-    #     nn.Linear(256, 256),
-    #     snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-    #     nn.Linear(256, 35),
-    #     snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
-    # )
-    # model = SNNTorchModel(net)
-    # inp = torch.ones(20)
+    beta = 0.9
+    spike_grad = surrogate.fast_sigmoid()
+    net = nn.Sequential(
+        nn.Flatten(),
+        nn.Linear(20, 256),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+        nn.Linear(256, 256),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+        nn.Linear(256, 256),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+        nn.Linear(256, 35),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
+    )
+    model = SNNTorchModel(net)
+    metrics.detect_activation_neurons(model)
+    assert len(model.activation_hooks) == 4
 
-    # out = model(inp)
-    # act_sp = activation_sparsity(model, out, inp)
 
     # test ReLU model
     net_relu_0 = nn.Sequential(
@@ -116,8 +115,7 @@ def test_activation_sparsity():
         nn.ReLU(),
     )
     model_relu_0 = TorchModel(net_relu_0)
-    metrics.preprocess(model_relu_0)
-
+    metrics.detect_activation_neurons(model_relu_0)
     inp = torch.ones(20)
 
     out_relu = model_relu_0(inp)
@@ -125,27 +123,30 @@ def test_activation_sparsity():
 
     assert act_sp_relu_0 == 0.0
 
-
+    # test ReLU model with half negative inputs
     inp = torch.ones(20)
     inp[0:10] = -1
 
     model_relu_50 = TorchModel(net_relu_50)
-    metrics.preprocess(model_relu_50)
+    metrics.detect_activation_neurons(model_relu_50)
     out_relu_50 = model_relu_50(inp)
 
     act_sp_relu_50 = activation_sparsity(model_relu_50, out_relu_50, inp)
-    print(act_sp_relu_50,out_relu_50)
 
     assert act_sp_relu_50 == 0.5
+
+
    # test Sigmoid model
     net_sigm = nn.Sequential(
         nn.Identity(),
         nn.Sigmoid(),
     )
     model_sigm = TorchModel(net_sigm)
+    metrics.detect_activation_neurons(model_sigm)
+
     inp = torch.ones(20)
-    print(model_sigm.activation_layers())
     out_sigm = model_sigm(inp)
     act_sp_sigm = activation_sparsity(model_sigm, out_sigm, inp)
+    assert act_sp_sigm == 0.0
 
 test_activation_sparsity()

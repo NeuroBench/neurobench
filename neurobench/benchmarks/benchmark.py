@@ -35,7 +35,7 @@ class Benchmark():
         print("Running benchmark")
         
         # add hooks to the model
-        metrics.preprocess(self.model)
+        metrics.detect_activation_neurons(self.model)
 
         # Static metrics
         results = {}

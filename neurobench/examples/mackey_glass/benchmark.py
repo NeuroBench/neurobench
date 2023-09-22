@@ -21,7 +21,8 @@ for series_id in range(len(mg_parameters)):
     mg = MackeyGlass(tau = mg_parameters.tau[series_id], 
                      lyaptime = mg_parameters.lyapunov_time[series_id],
                      constant_past = mg_parameters.initial_condition[series_id],
-                     start_offset=0.)
+                     start_offset=0.,
+                     bin_window=1)
 
     train_set = Subset(mg, mg.ind_train)
     test_set = Subset(mg, mg.ind_test)
@@ -38,8 +39,7 @@ for series_id in range(len(mg_parameters)):
         ridge_param = 1.e-8, 
         seed_id = seed_id)
     esn.train()
-    train_data, train_labels = train_set[:]
-    train_data = train_data.permute(1,0,2) # (batch, timesteps, features)
+    train_data, train_labels = train_set[:] # outputs (batch, bin_window, 1)
     warmup = 0.6 # in Lyapunov times
     warmup_pts = round(warmup*mg.pts_per_lyaptime)
     train_labels = train_labels[warmup_pts:]

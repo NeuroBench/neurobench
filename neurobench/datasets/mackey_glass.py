@@ -20,6 +20,7 @@ class MackeyGlass(Dataset):
                  testtime = 10.,
                  start_offset=0.,
                  seed_id=0,
+                 bin_window=1,
     ):
         """
         Initializes the Mackey-Glass dataset.
@@ -36,6 +37,7 @@ class MackeyGlass(Dataset):
             testtime (float): number of Lyapunov times to be used for testing a model            
             start_offset (float): added offset of the starting point of the time-series, in case of repeating using same function values
             seed_id (int): seed for generating function solution
+            bin_window (int): number of points forming lookback window for each prediction
         """
 
         super().__init__()
@@ -56,6 +58,8 @@ class MackeyGlass(Dataset):
         
         self.start_offset = start_offset*self.lyaptime
         self.seed_id = seed_id
+
+        self.bin_window = bin_window
 
         # Total time to simulate the system
         self.maxtime = self.traintime + self.testtime + (self.lyaptime/self.pts_per_lyaptime)
@@ -105,6 +109,8 @@ class MackeyGlass(Dataset):
         # Estimate Lyapunov exponent
         self.lyap_exp = ((lyaps.T@lyaps_weights)/lyaps_weights.sum()).item()
 
+        # pad the soln with preceding zeroes for lookback window
+        self.mackeyglass_soln = torch.cat((torch.zeros((self.bin_window-1,1),dtype=torch.float64), self.mackeyglass_soln),0)
 
     def split_data(self):
         """ Generate training and testing indices.
@@ -124,13 +130,22 @@ class MackeyGlass(Dataset):
         """ Getter method for dataset.
 
         Args:
-            idx (int): index of sample to return
+            idx (int or tensor): index(s) of sample(s) to return
 
         Returns:
             sample (tensor): individual data sample, shape=(timestamps, features)=(1,1)
             target (tensor): corresponding next state of the system, shape=(label,)=(1,)
         """
-        sample = torch.unsqueeze(self.mackeyglass_soln[idx, :], dim=0)
-        target = self.mackeyglass_soln[idx+1, :]
+        # using Subset with list of indices
+        if isinstance(idx, list) or (isinstance(idx, torch.Tensor) and idx.ndim > 0):
+            # return in format (batch, bin_window, feature)
+            data = [self.mackeyglass_soln[i:i+self.bin_window, :] for i in idx]
+            sample = torch.stack(data)
+
+        # idx is an integer
+        else:
+            sample = self.mackeyglass_soln[idx:idx+self.bin_window, :]
+        
+        target = self.mackeyglass_soln[idx+self.bin_window, :] # add to account for pre-padding
 
         return sample, target

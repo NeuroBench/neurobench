@@ -52,10 +52,8 @@ for series_id in range(len(mg_parameters)):
 
     model = TorchModel(net)
 
-    # data_metrics = ["activation_sparsity", "multiply_accumulates", "sMAPE"]
-
     static_metrics = ["model_size", "connection_sparsity"]
-    data_metrics = ["sMAPE"]
+    data_metrics = ["sMAPE", "activation_sparsity"]
 
     benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
     results = benchmark.run()

@@ -25,7 +25,7 @@ model = SNNTorchModel(net)
 postprocessors = [choose_max_count]
 
 static_metrics = ["model_size"]
-data_metrics = ["classification_accuracy"]
+data_metrics = ["activation_sparsity"]
 
 benchmark = Benchmark(model, test_set_loader, [], postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()

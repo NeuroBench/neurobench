@@ -35,6 +35,10 @@ class ActivationHook():
 
         else:
             self.activation_outputs.append(output)
+    def empty_hook(self):
+        """Deletes the contents of the hooks, but keeps the hook registered.
+        """
+        self.activation_outputs = []
 
     def close(self):
         """ Remove the registered hook.

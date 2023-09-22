@@ -1,5 +1,4 @@
 from tqdm import tqdm
-from . import metrics
 
 from . import static_metrics, data_metrics
 

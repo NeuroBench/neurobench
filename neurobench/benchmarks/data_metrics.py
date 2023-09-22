@@ -1,6 +1,6 @@
 import torch
 import numpy as np
-from .utils.metric_utils import check_shape, make_binary_copy
+from .utils.metric_utils import check_shape, make_binary_copy, single_layer_MACs
 from ..benchmarks.hooks import ActivationHook
 
 class AccumulatedMetric:
@@ -39,8 +39,24 @@ def detect_activation_neurons(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
     # Registered activation hooks
-    for layer in model.activation_layers():
+    for layer in model.activation_layers()[0]:
         model.activation_hooks.append(ActivationHook(layer))
+
+    for flat_layer in model.activation_layers()[1]:
+        if isinstance(flat_layer, torch.nn.Linear) or isinstance(flat_layer, torch.nn.Conv2d) or isinstance(flat_layer, torch.nn.Conv1d) or isinstance(flat_layer, torch.nn.Conv3d) :
+            print(flat_layer)
+            # look for correct_hook
+            for i, hook in enumerate(model.activation_hooks):
+                if hook.layer is flat_layer:
+                    hook.connection_layer = flat_layer
+                    if i != 0:
+                        hook.prev_act_layer = model.activation_hooks[i-1]
+                    else:
+                        hook.prev_act_layer = None
+                    break
+
+
+    
 
 def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
@@ -61,20 +77,20 @@ def activation_sparsity(model, preds, data):
     for hook in model.activation_hooks:
         for spikes in hook.activation_outputs:  # do we need a function rather than a member
             spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
-            # print('spikes:', str(hook.activation_outputs))
             total_spike_num += spike_num
             total_neuro_num += neuro_num
-    # print(total_neuro_num, total_spike_num)    
+
     sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
 
-def multiply_accumulates(model, preds, data):
+def synaptic_operations(model, preds, data, inputs=None):
     """ Multiply-accumulates (MACs) of the model forward.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        inputs: A tensor of model inputs.
     Returns:
         float: Multiply-accumulates.
     """
@@ -82,10 +98,18 @@ def multiply_accumulates(model, preds, data):
     #   Spiking model: number of spike activations * fanout (see snnmetrics)
     #   Recurrent layers: each connection is one MAC
     #   ANN: use PyTorch profiler
+    # should have automatic handling of inputs for models that process each input x times
 
-    binary_model = make_binary_copy(model)
-    check_shape(preds, data[1])
+    # check_shape(preds, data[1])
     macs = 0.0
+    # if inputs is None:
+    #     raise NotImplementedError("inputs is required for synaptic operation calculation")
+    for hook in model.activation_hooks:
+        print(hook)
+        for spikes in hook.activation_outputs:     
+            macs += single_layer_MACs(spikes, hook.connection_layer)
+            print(hook.connection_layer, macs)
+
     return macs
 
 def classification_accuracy(model, preds, data):

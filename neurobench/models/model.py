@@ -80,30 +80,3 @@ class NeuroBenchModel:
         root = self.__net__()
         layers, child_layers = get_activation_layers(root)
         return layers, child_layers
-'''
-            children = list(module.children())
-            
-            if len(children) == 0: # it is a leaf
-                for activaton_module in self.activation_modules:
-                    # add all the activation layers and spiking neuron layers
-                    if isinstance(module, activaton_module) or isinstance(module, snn.SpikingNeuron):
-                        return module
-            
-            else:
-                layers = []
-                for child in children:
-                    layers.append(get_activation_layers(child))
-                return layers
-        # Pull the layers from the model's network
-        layers = self.__net__().children()
-        print(self.__net__().children())
-        # For each layer, count where the weights are zero
-        layers_act = []
-        for module in layers:
-            print(module)
-            layers_act.extend(get_activation_layers(module))
-
-
-        # Return the ratio of zeros to weights, rounded to 3 decimals
-        return layers_act
-                    '''

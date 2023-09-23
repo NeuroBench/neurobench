@@ -38,22 +38,29 @@ class AccumulatedMetric:
 def detect_activation_neurons(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
+    layers, flattened = model.activation_layers()
     # Registered activation hooks
-    for layer in model.activation_layers()[0]:
+    for layer in layers:
         model.activation_hooks.append(ActivationHook(layer))
 
-    for flat_layer in model.activation_layers()[1]:
+    
+    for i,flat_layer in enumerate(flattened):
         if isinstance(flat_layer, torch.nn.Linear) or isinstance(flat_layer, torch.nn.Conv2d) or isinstance(flat_layer, torch.nn.Conv1d) or isinstance(flat_layer, torch.nn.Conv3d) :
-            print(flat_layer)
             # look for correct_hook
-            for i, hook in enumerate(model.activation_hooks):
-                if hook.layer is flat_layer:
-                    hook.connection_layer = flat_layer
-                    if i != 0:
-                        hook.prev_act_layer = model.activation_hooks[i-1]
-                    else:
-                        hook.prev_act_layer = None
-                    break
+            for j, hook in enumerate(model.activation_hooks):
+                if i < len(flattened) -1:
+                    if id(hook.layer) == id(flattened[i+1]):
+                        # print("found correct hook")
+                        hook.connection_layer = flat_layer
+                        if i != 0:
+                            hook.prev_hook = model.activation_hooks[j-1]
+                        else:
+                            hook.prev_hook = None # it is the first layer
+                        break
+                    # else:
+                        # print("not found correct hook")
+                        # hook.connection_layer = None
+                        # hook.prev_hook = None
 
 
     
@@ -101,14 +108,16 @@ def synaptic_operations(model, preds, data, inputs=None):
     # should have automatic handling of inputs for models that process each input x times
 
     # check_shape(preds, data[1])
-    macs = 0.0
+    macs = 0
     # if inputs is None:
     #     raise NotImplementedError("inputs is required for synaptic operation calculation")
     for hook in model.activation_hooks:
-        print(hook)
-        for spikes in hook.activation_outputs:     
-            macs += single_layer_MACs(spikes, hook.connection_layer)
-            print(hook.connection_layer, macs)
+        if hook.prev_hook is not None:
+            for spikes in hook.prev_hook.activation_outputs:     
+                macs += single_layer_MACs(spikes, hook.connection_layer)
+        # else:
+        #     print('depends on input')
+            # print(hook.connection_layer, macs)
 
     return macs
 

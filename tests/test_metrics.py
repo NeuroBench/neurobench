@@ -230,7 +230,20 @@ def test_activation_sparsity():
     act_sp_relu_50 = activation_sparsity(model_relu_50, out_relu_50, inp)
 
     assert act_sp_relu_50 == 0.5
+    # test torch.ReLU model
+    net_torch_relu_0 = nn.Sequential(
+        # nn.Flatten(),
+        nn.Identity(),
+        torch.relu,
+    )
+    model_torch_relu_0 = TorchModel(net_torch_relu_0)
+    detect_activation_neurons(model_torch_relu_0)
+    inp = torch.ones(20)
 
+    out_relu = model_torch_relu_0(inp)
+    act_sp_torch_relu_0 = activation_sparsity(model_torch_relu_0, out_relu, inp)
+
+    assert act_sp_torch_relu_0 == 0.0
 
    # test Sigmoid model
     net_sigm = nn.Sequential(
@@ -249,7 +262,9 @@ def test_synaptic_ops():
     # test ReLU model
     net_relu_0 = nn.Sequential(
         # nn.Flatten(),
-        nn.Identity(),
+        nn.Linear(20,25,bias=False),
+        nn.Sigmoid(),
+        nn.Linear(25,25,bias=False),
         nn.ReLU(),
     )
     net_relu_50 = nn.Sequential(
@@ -264,7 +279,7 @@ def test_synaptic_ops():
     out_relu = model_relu_0(inp)
     macs = synaptic_operations(model_relu_0, out_relu, inp)
     print(macs)
-    assert macs == 20
+    assert macs == 625
 
     # test ReLU model with half negative inputs
     inp = torch.ones(20)

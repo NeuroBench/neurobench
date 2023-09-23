@@ -17,7 +17,7 @@ def make_binary_copy(layer):
 	"""
 	layer_copy = copy.deepcopy(layer)
 	weights = layer_copy.weight.data
-	weights[weights != 0] = 1
+	weights[weights != 0] = int(1)
 	layer_copy.weight.data = weights	
 	return layer_copy
 
@@ -28,11 +28,11 @@ def single_layer_MACs(input, layer):
 	macs = 0
 	# first create matrix with input entries on diagonal
 	input[input!= 0] = 1
+	# input = input.to(dtype=torch.int8)
 	# diag = torch.diag(input)
 	if isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Conv1d):
 		# then multiply the binary layer with the diagonal matrix to get the MACs
 		layer_bin = make_binary_copy(layer)
-		
 		# how many biases are added
 		# if there is a bias
 		add_bias = 0
@@ -40,7 +40,7 @@ def single_layer_MACs(input, layer):
 			add_bias = torch.count_nonzero(layer.bias.data)
 		
 		macs = layer_bin(input).sum() + add_bias # returns total macs
-	return macs
+	return int(macs)
 		
 
 if __name__=='__main__':

@@ -121,6 +121,41 @@ def synaptic_operations(model, preds, data, inputs=None):
 
     return macs
 
+def number_neuron_updates(model, preds, data, inputs=None):
+    """ Multiply-accumulates (MACs) of the model forward.
+
+    Args:
+        model: A NeuroBenchModel.
+        preds: A tensor of model predictions.
+        data: A tuple of data and labels.
+        inputs: A tensor of model inputs.
+    Returns:
+        float: Multiply-accumulates.
+    """
+    # TODO: 
+    #   Spiking model: number of spike activations * fanout (see snnmetrics)
+    #   Recurrent layers: each connection is one MAC
+    #   ANN: use PyTorch profiler
+    # should have automatic handling of inputs for models that process each input x times
+
+    # check_shape(preds, data[1])
+    macs = 0
+    # if inputs is None:
+    #     raise NotImplementedError("inputs is required for synaptic operation calculation")
+    update_dict = {}
+    for hook in model.activation_hooks:
+        if hook.prev_hook is not None:
+            for spikes in hook.prev_hook.activation_outputs:     
+                _, nr_updates = single_layer_MACs(spikes, hook.connection_layer, return_updates=True)
+                if str(type(hook.layer)) not in update_dict:
+                    update_dict[str(type(hook.layer))] = 0
+                update_dict[str(type(hook.layer))] += int(nr_updates)
+        # else:
+        #     print('depends on input')
+            # print(hook.connection_layer, macs)
+
+    return update_dict
+
 def classification_accuracy(model, preds, data):
     """ Classification accuracy of the model predictions.
 

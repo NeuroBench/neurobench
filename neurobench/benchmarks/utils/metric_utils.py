@@ -22,7 +22,7 @@ def make_binary_copy(layer):
 	return layer_copy
 
 
-def single_layer_MACs(input, layer):
+def single_layer_MACs(input, layer, return_updates=False):
 	""" Computes the MACs for a single layer.
 	"""
 	macs = 0
@@ -39,7 +39,10 @@ def single_layer_MACs(input, layer):
 		if layer.bias is not None:
 			add_bias = torch.count_nonzero(layer.bias.data)
 		
-		macs = layer_bin(input).sum() + add_bias # returns total macs
+		nr_updates = layer_bin(input)
+		macs = nr_updates.sum() + add_bias # returns total macs
+		if return_updates:
+			return int(macs), torch.count_nonzero(nr_updates)
 	return int(macs)
 		
 

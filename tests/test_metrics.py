@@ -7,7 +7,7 @@ from neurobench.models import SNNTorchModel, TorchModel
 # from neurobench.benchmarks.data_metrics import activation_sparsity, classification_accuracy, MSE, sMAPE, r2, 
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity
-from neurobench.benchmarks.data_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activation_neurons, synaptic_operations
+from neurobench.benchmarks.data_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activation_neurons, synaptic_operations, number_neuron_updates
 
 
 # Pytest for model_size from benchmarks/static_metrics
@@ -234,7 +234,7 @@ def test_activation_sparsity():
     net_torch_relu_0 = nn.Sequential(
         # nn.Flatten(),
         nn.Identity(),
-        torch.relu,
+        nn.ReLU(),
     )
     model_torch_relu_0 = TorchModel(net_torch_relu_0)
     detect_activation_neurons(model_torch_relu_0)
@@ -307,5 +307,26 @@ def test_synaptic_ops():
     act_sp_sigm = activation_sparsity(model_sigm, out_sigm, inp)
     assert act_sp_sigm == 0.0
 
+
+def test_neuron_update_metric():
+    net_relu_0 = nn.Sequential(
+        # nn.Flatten(),
+        nn.Linear(20,25,bias=False),
+        nn.Sigmoid(),
+        nn.Linear(25,25,bias=False),
+        nn.ReLU(),
+        nn.Linear(25,25,bias=False),
+        nn.Sigmoid(),
+        nn.Linear(25,25,bias=False),
+        nn.ReLU(),
+    )
+    model_relu_0 = TorchModel(net_relu_0)
+    detect_activation_neurons(model_relu_0)
+    inp = torch.ones(20)
+    out_relu = model_relu_0(inp)
+    neuron_updates = number_neuron_updates(model_relu_0, out_relu, inp)
+    print(neuron_updates)
+
 test_activation_sparsity()
 test_synaptic_ops()
+test_neuron_update_metric()

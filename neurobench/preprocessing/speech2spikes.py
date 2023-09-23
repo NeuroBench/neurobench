@@ -106,14 +106,23 @@ class S2SProcessor(NeuroBenchProcessor):
         TODO:
             Add support for cumulative sum of features
         """
-        tensors, targets = batch
+        tensors = batch[0]
+        targets = batch[1]
+        if len(batch) == 3:
+            kwargs = batch[2]
+        else:
+            kwargs = None
 
         # Tensors will be batch, timestep, channels and need to be transposed
         tensors = self.transform(tensors.transpose(1, 2))
         tensors = torch.log(tensors)
         tensors = tensor_to_events(tensors, device=self.device)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
-        return tensors, targets
+        
+        if kwargs:
+            return tensors, targets, kwargs
+        else:
+            return tensors, targets
 
     def configure(self, threshold=1, **spec_kwargs):
         """ Allows the user to configure parameters of the S2S class and the

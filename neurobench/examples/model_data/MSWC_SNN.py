@@ -38,7 +38,7 @@ class SNN(nn.Module):
 
         else:
             net = nn.Sequential(
-                nn.Flatten(),
+                # nn.Flatten(),
                 nn.Linear(20, 256),
                 snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
                 nn.Linear(256, 256),
@@ -65,13 +65,14 @@ class SNN(nn.Module):
 
         self.output = nn.Linear(256, 200, bias=False)
         self.output_neurons = snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True)
+        self.softmax = nn.Softmax(dim=1)
 
     def forward(self, x, latent_input=None, return_lat_acts=False):
 
         utils.reset(self.lat_features)
         utils.reset(self.end_features)
         utils.reset(self.output_neurons)
-        softmax_output = torch.zeros(x.size(0), 200)
+        softmax_output = torch.zeros(x.size(0), 200).to(x.get_device())
         # mem1 = self.lif1.init_leaky()
         # mem2 = self.lif2.init_leaky()
         # mem3 = self.lif3.init_leaky()
@@ -96,7 +97,7 @@ class SNN(nn.Module):
             _, mem_out = self.output_neurons(outputs)
 
             if step > warmup_steps :
-                softmax_output += F.softmax(mem_out, dim=1)
+                softmax_output += self.softmax(mem_out)
 
         if return_lat_acts:
             return softmax_output, orig_acts

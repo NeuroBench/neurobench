@@ -27,7 +27,9 @@ parser.add_argument('--n_layers', type=int, default=2)
 parser.add_argument('--hidden_size', type=int, default=100)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
-parser.add_argument('--seed', type=int, default=41)
+parser.add_argument('--repeat', type=int, default=1)
+# seed set by the repeat id
+#parser.add_argument('--seed', type=int, default=41)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--weight_decay', type=float, default=0.001)
 parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
@@ -46,10 +48,6 @@ else:
                name=args.name,
                mode=args.wandb_state)
 
-# set seed for RG for reproducible results
-torch.manual_seed(args.seed)
-torch.cuda.manual_seed_all(args.seed)
-
 if torch.cuda.is_available():
     device = torch.device("cuda")
     print("\nCUDA enabled")
@@ -64,95 +62,99 @@ params['hidden_size'] = args.hidden_size
 params['n_layers'] = args.n_layers
 params['output_dim'] = 1
 params['dtype'] = torch.float64
+params['device'] = device
 params['mode'] = 'single_step'
+start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5) 
 
-# benchmark run over 14 different series
+# benchmark run over args.repeat different experiments
 sMAPE_scores = []
 
-mg = MackeyGlass(tau = mg_parameters.tau[args.series_id], 
-                 lyaptime = mg_parameters.lyapunov_time[args.series_id],
-                 constant_past = mg_parameters.initial_condition[args.series_id],
-                 start_offset=0.,
-                 bin_window=1)
+for repeat_id in range(args.repeat):
 
-train_set = Subset(mg, mg.ind_train)
-test_set = Subset(mg, mg.ind_test)
+    # set seed for RG for reproducible results
+    torch.manual_seed(repeat_id)
+    torch.cuda.manual_seed_all(repeat_id)
 
-# Initialize an LSTM model
-lstm = LSTMModel(**params)
-lstm.to(device)
+    mg = MackeyGlass(tau = mg_parameters.tau[args.series_id], 
+                     lyaptime = mg_parameters.lyapunov_time[args.series_id],
+                     constant_past = mg_parameters.initial_condition[args.series_id],
+                     start_offset=start_offset_range[repeat_id].item(),
+                     bin_window=1)
 
-# LSTM training phase
-lstm.train()
+    train_set = Subset(mg, mg.ind_train)
+    test_set = Subset(mg, mg.ind_test)
 
-criterion = nn.MSELoss()
-opt = torch.optim.Adam(lstm.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    # Initialize an LSTM model
+    lstm = LSTMModel(**params)
+    lstm.to(device)
 
-train_data, train_labels = train_set[:]
+    # LSTM training phase
+    lstm.train()
 
-warmup = 0.6 # in Lyapunov times
-warmup_pts = round(warmup*mg.pts_per_lyaptime)
-train_labels = train_labels[warmup_pts:]
+    criterion = nn.MSELoss()
+    opt = torch.optim.Adam(lstm.parameters(), lr=args.lr, weight_decay=args.weight_decay)
 
-# training loop
-for epoch in range(args.n_epochs):
+    train_data, train_labels = train_set[:]
 
-    train_data = train_data.to(device)
-    train_labels = train_labels.to(device)
+    warmup = 0.6 # in Lyapunov times
+    warmup_pts = round(warmup*mg.pts_per_lyaptime)
+    train_labels = train_labels[warmup_pts:]
 
-    #break
-    pre = lstm(train_data)
+    # training loop
+    for epoch in range(args.n_epochs):
 
-    loss_val = criterion(pre[warmup_pts:,:],
-                             train_labels)
+        train_data = train_data.to(device)
+        train_labels = train_labels.to(device)
 
-    opt.zero_grad()
-    loss_val.backward()
-    opt.step()
+        pre = lstm(train_data)
 
-    print(f"Epoch {epoch}: loss = {loss_val.item()}")
-    wandb.log({"loss": loss_val.item()})
+        loss_val = criterion(pre[warmup_pts:,:],
+                                 train_labels)
 
-if args.debug:
-    import matplotlib.pyplot as plt        
+        opt.zero_grad()
+        loss_val.backward()
+        opt.step()
 
-    plt.figure()
+        print(f"Epoch {epoch}: loss = {loss_val.item()}")
+        wandb.log({"loss": loss_val.item()})
 
-    plt.plot(pre[:,0].detach().cpu().numpy(), label='prediction')
-    plt.plot(train_labels[:,0].detach().cpu().numpy(), label='target')
+    if args.debug:
+        import matplotlib.pyplot as plt        
 
-    plt.xlabel('time')
-    plt.legend()
+        fig = plt.figure()
 
-    print("saved training fit to ./fit_train.pdf")
-    plt.savefig("fit_train.pdf")
+        plt.plot(pre[:,0].detach().cpu().numpy(), label='prediction')
+        plt.plot(train_labels[:,0].detach().cpu().numpy(), label='target')
 
-#torch.save(lstm, 'neurobench/examples/mackey_glass/model_data/lstm.pth')
+        plt.xlabel('time')
+        plt.legend()
+
+        print("saved training fit to ./fit_train.pdf")
+        wandb.log({f'fig_train': wandb.Image(fig)})  
+        #plt.savefig("fit_train.pdf")
+        plt.close()
  
-## Load Model ##
-#net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
-test_set_loader = DataLoader(train_set, batch_size=mg.testtime_pts, shuffle=False)
-lstm.mode = 'autonomous'
-lstm.input_dim = 1
-lstm.to(torch.device("cpu"))
-#net.mode = 'autonomous'
-model = TorchModel(lstm)
-#model = TorchModel(net)
-# data_metrics = ["activation_sparsity", "multiply_accumulates", "sMAPE"]
+    ## Testing ##
+    test_set_loader = DataLoader(train_set, batch_size=mg.testtime_pts, shuffle=False)
+    lstm.mode = "autonomous"
+    lstm.device = torch.device("cpu")
+    lstm.to(torch.device("cpu"))
+    model = TorchModel(lstm)
 
-static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["sMAPE"]
+    static_metrics = ["model_size", "connection_sparsity"]
+    data_metrics = ["sMAPE", "activation_sparsity"]
 
-benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
-results = benchmark.run()
-print(results)
-sMAPE_score = results["sMAPE"]
+    benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
+    results = benchmark.run()
+    print(results)
+    sMAPE_scores.append(results["sMAPE"])
+
 connection_sparsity = results["connection_sparsity"]
 model_size = results["model_size"]
 
-wandb.log({"sMAPE_score": sMAPE_score})
+avg_sMAPE_score = sum(sMAPE_scores)/len(sMAPE_scores)
+wandb.log({"sMAPE_score": avg_sMAPE_score})
 wandb.log({"connection_sparsity": connection_sparsity})
 wandb.log({"model_size": model_size})
 
-print(f"sMAPE score {sMAPE_score} on time series id {args.series_id}")
-
+print(f"sMAPE score {avg_sMAPE_score} on time series id {args.series_id}")

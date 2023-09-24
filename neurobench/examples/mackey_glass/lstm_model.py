@@ -82,8 +82,8 @@ class LSTMModel(nn.Module):
 
             if self.mode == 'autonomous' and self.prior_prediction is not None:
                 # push new element
-                self.inp = torch.cat((self.prior_prediction, sample), dim=-1)
-                # pop new element
+                self.inp = torch.cat((self.inp, self.prior_prediction), dim=-1)
+                # pop oldest element
                 self.inp = self.inp[:, 1:]
                 # update register
                 inp = self.inp.clone()

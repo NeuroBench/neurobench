@@ -26,6 +26,7 @@ from neurobench.datasets import MSWC
 from neurobench.preprocessing.speech2spikes import S2SProcessor
 from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
 from neurobench.examples.model_data.M5 import M5
+from neurobench.examples.model_data.MSWC_SNN import SNN
 
 from neurobench.benchmarks import Benchmark
 from cl_utils import *
@@ -109,6 +110,9 @@ args = parse_arguments()
 ROOT = args.root
 NUM_WORKERS = args.num_workers
 BATCH_SIZE = args.batch_size
+
+SPIKING = args.spiking
+
 PRE_TRAIN_EPOCHS = args.epochs
 PRE_TRAIN_LR = args.pt_lr
 N_CHANNELS = args.n_channels
@@ -141,7 +145,15 @@ DATA_INIT = args.data_init
 MFCC = True
 
 new_sample_rate = 8000
-if MFCC:
+if SPIKING:
+    S2S = S2SProcessor(device, transpose=False)
+    config_change = {"sample_rate": 48000,
+                     "hop_length": 240}
+    S2S.configure(threshold=0.274, **config_change)
+    pre_proc_function = S2S
+    pre_proc = lambda x : S2S((x, None))[0]
+
+elif MFCC:
 
     import torchaudio.transforms as T
 
@@ -163,10 +175,11 @@ if MFCC:
     ).to(device)
 
     pre_proc = lambda  x : mfcc_transform(x).squeeze()
+    pre_proc_function = lambda x: (pre_proc(x[0]), x[1])
 else:
     pre_proc = torchaudio.transforms.Resample(orig_freq=48000, new_freq=new_sample_rate).to(device)
+    pre_proc_function = lambda x: (pre_proc(x[0]), x[1])
 
-pre_proc_function = lambda x: (pre_proc(x[0]), x[1])
 out2pred = lambda x: torch.argmax(x, dim=-1)
 to_device = lambda x: (x[0].to(device), x[1].to(device))
 
@@ -450,7 +463,9 @@ def pre_train(model):
         scheduler.step()
 
     if args.save_pre_train:
-        if DROPOUT:
+        if SPIKING:
+            name = "SpikingModel_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_chan"+str(N_CHANNELS)+"_bs"+str(BATCH_SIZE)+"_dp"
+        elif DROPOUT:
             name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_chan"+str(N_CHANNELS)+"_bs"+str(BATCH_SIZE)+"_dp"
         else:
             name = "model_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_chan"+str(N_CHANNELS)+"_bs"+str(BATCH_SIZE)
@@ -471,7 +486,9 @@ if __name__ == '__main__':
         config=args.__dict__)
 
 
-    if MFCC:
+    if SPIKING:
+        model = SNN().to(device)
+    elif MFCC:
         model = M5(n_input=256, stride=2, n_channel=N_CHANNELS, n_output=200, input_kernel=4, pool_kernel=2, latent_layer_num=LATENT_NUMBER, drop=DROPOUT).to(device)
     else:
         model = M5(n_input=1, n_output=200, latent_layer_num=LATENT_NUMBER).to(device)
@@ -689,7 +706,11 @@ if __name__ == '__main__':
 
     results = {"all": all_results, "query": new_class_results}
     import json
-    with open(os.path.join(ROOT,"eval_noreset_"+str(META_ITERATIONS)+"mt_"+str(EVAL_LR)+"lr.json"), "w") as f:
+    if SPIKING:
+        name = "eval_noreset_SPIKING_"+str(META_ITERATIONS)+"mt_"+str(EVAL_LR)+"lr.json"
+    else:
+        name = "eval_noreset_"+str(META_ITERATIONS)+"mt_"+str(EVAL_LR)+"lr.json"
+    with open(os.path.join(ROOT,name), "w") as f:
         json.dump(results, f)
 
     print('DONE')

@@ -33,7 +33,8 @@ class LSTMModel(nn.Module):
         n_layers: int = 2, 
         output_dim: int = 1, 
         mode: str = 'autonomous',
-        dtype=torch.float64
+        dtype = torch.float64,
+        device = torch.device("cpu")
         ):
         super().__init__()
 
@@ -42,6 +43,8 @@ class LSTMModel(nn.Module):
         self.n_layers = n_layers
         self.output_dim = output_dim
         self.mode = mode
+        self.dtype = dtype
+        self.device = device
 
         assert self.mode in ['autonomous', 'single_step']
         #assert n_layers == 1, 'multi-layer LSTM is not supported yet'
@@ -58,8 +61,8 @@ class LSTMModel(nn.Module):
 
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
-
-        #self.inp = torch.zeros(1, self.input_dim).type(dtype).to(torch.device("cuda"))
+    
+        # stores lookback window time steps
         self.register_buffer('inp', torch.zeros(1, self.input_dim).to(dtype))
 
     def single_forward(self, sample): 
@@ -78,10 +81,15 @@ class LSTMModel(nn.Module):
         for i, sample in enumerate(batch):
 
             if self.mode == 'autonomous' and self.prior_prediction is not None:
-                self.inp[:, (i % self.input_dim)] = self.prior_prediction
+                # push new element
+                self.inp = torch.cat((self.prior_prediction, sample), dim=-1)
+                # pop new element
+                self.inp = self.inp[:, 1:]
+                # update register
                 inp = self.inp.clone()
             else:
-                self.inp[:, (i % self.input_dim)] = sample
+                self.inp = torch.cat((self.inp, sample), dim=-1)
+                self.inp = self.inp[:, 1:]
                 inp = self.inp.clone()
        
             prediction = self.single_forward(inp)
@@ -90,5 +98,6 @@ class LSTMModel(nn.Module):
 
         # reset so that next batch will not have prior prediction
         self.prior_prediction = None
+        self.inp[:] = 0.
 
         return torch.stack(predictions).squeeze(-1)

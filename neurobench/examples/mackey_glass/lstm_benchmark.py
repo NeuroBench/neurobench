@@ -13,6 +13,7 @@ from neurobench.benchmarks import Benchmark
 
 from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
 from neurobench.examples.mackey_glass.lstm_model import LSTMModel
+torch.autograd.set_detect_anomaly(True)
 
 mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)
@@ -21,11 +22,11 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('--wb', dest='wandb_state', type=str, default="offline", help="wandb state")
 parser.add_argument('--name', type=str, default='LSTM_MG', help='wandb run name')
 parser.add_argument('--project', type=str, default='Neurobench', help='wandb project name')
+parser.add_argument('--input_dim', type=int, default=1)
 parser.add_argument('--n_layers', type=int, default=2)
 parser.add_argument('--hidden_size', type=int, default=100)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
-parser.add_argument('--dropout_rate', type=float, default=0.5)
 parser.add_argument('--seed', type=int, default=41)
 parser.add_argument('--lr', type=float, default=0.01)
 parser.add_argument('--weight_decay', type=float, default=0.001)
@@ -58,11 +59,10 @@ else:
 
 # LSTM parameters
 params = {}
-params['input_dim'] = 1
+params['input_dim'] = args.input_dim
 params['hidden_size'] = args.hidden_size
 params['n_layers'] = args.n_layers
 params['output_dim'] = 1
-params['dropout_rate'] = args.dropout_rate
 params['dtype'] = torch.float64
 params['mode'] = 'single_step'
 
@@ -72,7 +72,8 @@ sMAPE_scores = []
 mg = MackeyGlass(tau = mg_parameters.tau[args.series_id], 
                  lyaptime = mg_parameters.lyapunov_time[args.series_id],
                  constant_past = mg_parameters.initial_condition[args.series_id],
-                 start_offset=0.)
+                 start_offset=0.,
+                 bin_window=1)
 
 train_set = Subset(mg, mg.ind_train)
 test_set = Subset(mg, mg.ind_test)
@@ -89,7 +90,6 @@ opt = torch.optim.Adam(lstm.parameters(), lr=args.lr, weight_decay=args.weight_d
 
 train_data, train_labels = train_set[:]
 
-train_data = train_data.permute(1,0,2) # (batch, timesteps, features)
 warmup = 0.6 # in Lyapunov times
 warmup_pts = round(warmup*mg.pts_per_lyaptime)
 train_labels = train_labels[warmup_pts:]
@@ -133,6 +133,7 @@ if args.debug:
 #net = torch.load('neurobench/examples/mackey_glass/model_data/lstm.pth')
 test_set_loader = DataLoader(train_set, batch_size=mg.testtime_pts, shuffle=False)
 lstm.mode = 'autonomous'
+lstm.input_dim = 1
 lstm.to(torch.device("cpu"))
 #net.mode = 'autonomous'
 model = TorchModel(lstm)

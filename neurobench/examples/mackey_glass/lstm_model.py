@@ -32,7 +32,6 @@ class LSTMModel(nn.Module):
         hidden_size: int = 50, 
         n_layers: int = 2, 
         output_dim: int = 1, 
-        dropout_rate: float = 0.5, 
         mode: str = 'autonomous',
         dtype=torch.float64
         ):
@@ -42,7 +41,6 @@ class LSTMModel(nn.Module):
         self.hidden_size = hidden_size
         self.n_layers = n_layers
         self.output_dim = output_dim
-        self.dropout_rate = dropout_rate
         self.mode = mode
 
         assert self.mode in ['autonomous', 'single_step']
@@ -58,9 +56,11 @@ class LSTMModel(nn.Module):
             [nn.LSTMCell(self.hidden_size, self.hidden_size).type(dtype)
              for _ in range(1, self.n_layers)])
 
-        self.drop = nn.Dropout(self.dropout_rate).type(dtype)
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
+
+        #self.inp = torch.zeros(1, self.input_dim).type(dtype).to(torch.device("cuda"))
+        self.register_buffer('inp', torch.zeros(1, self.input_dim).to(dtype))
 
     def single_forward(self, sample): 
 
@@ -68,18 +68,23 @@ class LSTMModel(nn.Module):
         for i in range(1, self.n_layers):
             x, _ = self.rnns[i](x)
         x = self.activation(x)
-        x = self.drop(x)
         out = self.fc(x)
 
         return out
 
-    def forward(self, x):
-        predictions = []
-        for sample in x:
-            if self.mode == 'autonomous' and self.prior_prediction is not None:
-                sample = self.prior_prediction
+    def forward(self, batch):
 
-            prediction = self.single_forward(sample)
+        predictions = []
+        for i, sample in enumerate(batch):
+
+            if self.mode == 'autonomous' and self.prior_prediction is not None:
+                self.inp[:, (i % self.input_dim)] = self.prior_prediction
+                inp = self.inp.clone()
+            else:
+                self.inp[:, (i % self.input_dim)] = sample
+                inp = self.inp.clone()
+       
+            prediction = self.single_forward(inp)
             predictions.append(prediction)
             self.prior_prediction = prediction
 

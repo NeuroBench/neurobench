@@ -134,4 +134,4 @@ class S2SProcessor(NeuroBenchProcessor):
         self.threshold = threshold
 
         spec_kwargs = {**self._default_spec_kwargs, **spec_kwargs}
-        self.transform = torchaudio.transforms.MelSpectrogram(spec_kwargs)
+        self.transform = torchaudio.transforms.MelSpectrogram(**spec_kwargs).to(self.device)

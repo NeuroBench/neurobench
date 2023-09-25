@@ -115,7 +115,7 @@ class PrimateReaching(NeuroBenchDataset):
         """
         # compute indices of congruent binning windows
         mask = idx - np.arange(self.num_steps) * self.ratio
-        return self.samples[:, mask].transpose(0, 1), self.labels[:, mask].transpose(0, 1)
+        return self.samples[:, mask].transpose(0, 1), self.labels[:, idx]
 
     def load_data(self):
         """

@@ -45,7 +45,7 @@ def detect_activation_neurons(model):
 
     
     for i,flat_layer in enumerate(flattened):
-        if isinstance(flat_layer, torch.nn.Linear) or isinstance(flat_layer, torch.nn.Conv2d) or isinstance(flat_layer, torch.nn.Conv1d) or isinstance(flat_layer, torch.nn.Conv3d) :
+        if isinstance(flat_layer, torch.nn.Linear) or isinstance(flat_layer, torch.nn.Conv2d) or isinstance(flat_layer, torch.nn.Conv1d) or isinstance(flat_layer, torch.nn.Conv3d) or isinstance(flat_layer, torch.nn.Identity):
             # look for correct_hook
             for j, hook in enumerate(model.activation_hooks):
                 if i < len(flattened) -1:
@@ -119,6 +119,7 @@ def synaptic_operations(model, preds, data, inputs=None):
         for single_in in inp:
             if len (single_in) > 0:
                 macs += single_layer_MACs(single_in, model.first_layer.layer)
+
 
     return macs
 

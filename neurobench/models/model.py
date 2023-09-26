@@ -64,7 +64,7 @@ class NeuroBenchModel:
                         layers.append(child)
                         flattened.append(child)
                         
-                    elif isinstance(child, torch.nn.Linear) or isinstance(child, torch.nn.Conv2d) or isinstance(child, torch.nn.Conv1d) or isinstance(child, torch.nn.Conv3d) :
+                    elif isinstance(child, torch.nn.Linear) or isinstance(child, torch.nn.Conv2d) or isinstance(child, torch.nn.Conv1d) or isinstance(child, torch.nn.Conv3d) or isinstance(child, torch.nn.Identity) :
                             flattened.append(child)
 
                     else:

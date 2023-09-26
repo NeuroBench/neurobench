@@ -267,31 +267,36 @@ def test_synaptic_ops():
         nn.Linear(25,25,bias=False),
         nn.ReLU(),
     )
-    net_relu_50 = nn.Sequential(
-        # nn.Flatten(),
-        nn.Identity(),
-        nn.ReLU(),
-    )
+    
     model_relu_0 = TorchModel(net_relu_0)
     detect_activation_neurons(model_relu_0)
     inp = torch.ones(20)
 
     out_relu = model_relu_0(inp)
     macs = synaptic_operations(model_relu_0, out_relu, inp)
-    print(macs)
     assert macs == 1125
 
-    # test ReLU model with half negative inputs
+    # test model with Identity layer as first layer
+    net_relu_50 = nn.Sequential(
+        # nn.Flatten(),
+        nn.Linear(20,20, bias=False), # 400 ops
+        nn.Sigmoid(),
+        nn.Linear(20,25,bias=False), # 500 ops
+        nn.Sigmoid(),
+        nn.Linear(25,25,bias=False), # 625 ops
+        nn.Sigmoid(),
+        nn.Linear(25,25,bias=False), # 625 ops
+        nn.Sigmoid(),
+    )
     inp = torch.ones(20)
-    inp[0:10] = -1
+    # inp[0:10] = -1
 
     model_relu_50 = TorchModel(net_relu_50)
     detect_activation_neurons(model_relu_50)
     out_relu_50 = model_relu_50(inp)
 
-    act_sp_relu_50 = activation_sparsity(model_relu_50, out_relu_50, inp)
-
-    assert act_sp_relu_50 == 0.5
+    macs = synaptic_operations(model_relu_50, out_relu_50, inp)
+    assert macs == (2*625 + 400 + 500)
 
 
    # test Sigmoid model

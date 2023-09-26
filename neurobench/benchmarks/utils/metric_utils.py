@@ -30,7 +30,7 @@ def single_layer_MACs(input, layer, return_updates=False):
 	input[input!= 0] = 1
 	# input = input.to(dtype=torch.int8)
 	# diag = torch.diag(input)
-	if isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Conv1d):
+	if isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Conv1d) or isinstance(layer, torch.nn.Conv3d):
 		# then multiply the binary layer with the diagonal matrix to get the MACs
 		layer_bin = make_binary_copy(layer)
 		# how many biases are added
@@ -43,6 +43,12 @@ def single_layer_MACs(input, layer, return_updates=False):
 		macs = nr_updates.sum() + add_bias # returns total macs
 		if return_updates:
 			return int(macs), torch.count_nonzero(nr_updates)
+	elif isinstance(layer, torch.nn.Identity):
+		out = layer(input)
+		print(out)
+		macs = out.sum()
+		if return_updates:
+			return int(macs), torch.count_nonzero(out)
 	return int(macs)
 		
 

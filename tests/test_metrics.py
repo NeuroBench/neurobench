@@ -229,11 +229,19 @@ def test_activation_sparsity():
     act_sp_relu_50 = activation_sparsity(model_relu_50, out_relu_50, inp)
 
     assert act_sp_relu_50 == 0.5
-    # test torch.ReLU model
+
+    # test duplicating activation layers in model
+    act = nn.ReLU()
     net_torch_relu_0 = nn.Sequential(
         # nn.Flatten(),
         nn.Identity(),
-        nn.ReLU(),
+        act,
+        nn.Identity(),
+        act,
+        nn.Identity(),
+        act,
+        nn.Identity(),
+        act,
     )
     model_torch_relu_0 = TorchModel(net_torch_relu_0)
     detect_activation_neurons(model_torch_relu_0)
@@ -243,6 +251,14 @@ def test_activation_sparsity():
     act_sp_torch_relu_0 = activation_sparsity(model_torch_relu_0, out_relu, inp)
 
     assert act_sp_torch_relu_0 == 0.0
+    
+    model_torch_relu_0.reset_hooks()
+    inp = torch.ones(20)
+    inp[0:10] = -1
+    out_relu = model_torch_relu_0(inp)
+    act_sp_relu_50 = activation_sparsity(model_torch_relu_0, out_relu, inp)
+
+    assert act_sp_relu_50 == 0.5
 
    # test Sigmoid model
     net_sigm = nn.Sequential(
@@ -256,6 +272,8 @@ def test_activation_sparsity():
     out_sigm = model_sigm(inp)
     act_sp_sigm = activation_sparsity(model_sigm, out_sigm, inp)
     assert act_sp_sigm == 0.0
+    print('Passed activation sparsity')
+
 
 def test_synaptic_ops():
     # test ReLU model
@@ -296,6 +314,8 @@ def test_synaptic_ops():
 
     macs = synaptic_operations(model_relu_50, out_relu_50, inp)
     assert macs == (2*625 + 400 + 500)
+    print('Passed synaptic ops')
+
 
 
 def test_neuron_update_metric():
@@ -318,7 +338,7 @@ def test_neuron_update_metric():
     out_relu = model_relu_0(inp)
     neuron_updates = number_neuron_updates(model_relu_0, out_relu, inp)
     print('Manual check!')
-
+    print('Passed neuron update metric')
 test_activation_sparsity()
 test_synaptic_ops()
 test_neuron_update_metric()

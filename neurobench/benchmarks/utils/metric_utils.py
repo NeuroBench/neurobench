@@ -1,10 +1,19 @@
 import torch
-import torch.profiler as profiler
-
 import copy
 import torch.profiler as profiler
 
 import copy
+import snntorch as snn
+from torch import nn
+
+def activation_modules():
+    """
+    The activation layers that can be auto-deteced. Every activation layer can only be included once.
+    """
+    return list(set([nn.ReLU,
+            nn.Sigmoid, 
+           ]))
+
 
 def check_shape(preds, labels):
 	""" Checks that the shape of the predictions and labels are the same.
@@ -43,12 +52,7 @@ def single_layer_MACs(input, layer, return_updates=False):
 		macs = nr_updates.sum() + add_bias # returns total macs
 		if return_updates:
 			return int(macs), torch.count_nonzero(nr_updates)
-	elif isinstance(layer, torch.nn.Identity):
-		out = layer(input)
-		print(out)
-		macs = out.sum()
-		if return_updates:
-			return int(macs), torch.count_nonzero(out)
+
 	return int(macs)
 		
 

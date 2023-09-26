@@ -38,27 +38,16 @@ class AccumulatedMetric:
 def detect_activation_neurons(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
-    layers, flattened = model.activation_layers()
+    supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
+    act_layers = model.activation_layers()
     # Registered activation hooks
-    for layer in layers:
+    for layer in act_layers:
         model.activation_hooks.append(ActivationHook(layer))
 
-    
-    for i,flat_layer in enumerate(flattened):
-        if isinstance(flat_layer, torch.nn.Linear) or isinstance(flat_layer, torch.nn.Conv2d) or isinstance(flat_layer, torch.nn.Conv1d) or isinstance(flat_layer, torch.nn.Conv3d) or isinstance(flat_layer, torch.nn.Identity):
-            # look for correct_hook
-            for j, hook in enumerate(model.activation_hooks):
-                if i < len(flattened) -1:
-                    if id(hook.layer) == id(flattened[i+1]):
-                        # print("found correct hook")
-                        hook.connection_layer = flat_layer
-                        if i != 0:
-                            hook.prev_hook = model.activation_hooks[j-1]
-                        else:
-                            hook.prev_hook = None # it is the first layer
-                            model.set_first_layer(LayerHook(flat_layer))
-                            model.first_layer.register_hook()
-
+    con_layers = model.connection_layers()
+    for flat_layer in con_layers:
+        if isinstance(flat_layer, supported_layers):
+            model.connection_hooks.append(LayerHook(flat_layer))
 
     
 
@@ -100,17 +89,19 @@ def synaptic_operations(model, preds, data, inputs=None):
     """
     macs = 0
     # first layer:
-    for inp in model.first_layer.inputs:
-        for single_in in inp:
-            if len (single_in) > 0:
-                macs += single_layer_MACs(single_in, model.first_layer.layer)
+    # for inp in model.first_layer.inputs:
+    #     for single_in in inp:
+    #         if len (single_in) > 0:
+    #             macs += single_layer_MACs(single_in, model.first_layer.layer)
 
-    for hook in model.activation_hooks:
-        if hook.prev_hook is not None:
-            for spikes in hook.prev_hook.activation_outputs:     
-                macs += single_layer_MACs(spikes, hook.connection_layer)
+    for hook in model.connection_hooks:
+        print(hook.layer)
+        for spikes in hook.inputs:    
+            for single_in in spikes:     
+                if len (single_in) > 0:
+                    macs += single_layer_MACs(single_in, hook.layer)
 
-    
+        
 
 
     return macs
@@ -129,10 +120,10 @@ def number_neuron_updates(model, preds, data):
     macs = 0
 
     update_dict = {}
-    for hook in model.activation_hooks:
-        if hook.prev_hook is not None:
-            for spikes in hook.prev_hook.activation_outputs:     
-                _, nr_updates = single_layer_MACs(spikes, hook.connection_layer, return_updates=True)
+    for hook in model.activation_hooks: 
+        for spikes_batch in hook.activation_inputs:  
+            for spikes in spikes_batch: 
+                nr_updates = torch.count_nonzero(spikes) 
                 if str(type(hook.layer)) not in update_dict:
                     update_dict[str(type(hook.layer))] = 0
                 update_dict[str(type(hook.layer))] += int(nr_updates)

@@ -58,7 +58,6 @@ def detect_activation_neurons(model):
                             hook.prev_hook = None # it is the first layer
                             model.set_first_layer(LayerHook(flat_layer))
                             model.first_layer.register_hook()
-                            # print("first layer registered")
 
 
     
@@ -99,51 +98,36 @@ def synaptic_operations(model, preds, data, inputs=None):
     Returns:
         float: Multiply-accumulates.
     """
-    # TODO: 
-    #   Spiking model: number of spike activations * fanout (see snnmetrics)
-    #   Recurrent layers: each connection is one MAC
-    #   ANN: use PyTorch profiler
-    # should have automatic handling of inputs for models that process each input x times
-
-    # check_shape(preds, data[1])
     macs = 0
-    # if inputs is None:
-    #     raise NotImplementedError("inputs is required for synaptic operation calculation")
-    for hook in model.activation_hooks:
-        if hook.prev_hook is not None:
-            for spikes in hook.prev_hook.activation_outputs:     
-                macs += single_layer_MACs(spikes, hook.connection_layer)
-
     # first layer:
     for inp in model.first_layer.inputs:
         for single_in in inp:
             if len (single_in) > 0:
                 macs += single_layer_MACs(single_in, model.first_layer.layer)
 
+    for hook in model.activation_hooks:
+        if hook.prev_hook is not None:
+            for spikes in hook.prev_hook.activation_outputs:     
+                macs += single_layer_MACs(spikes, hook.connection_layer)
+
+    
+
 
     return macs
 
-def number_neuron_updates(model, preds, data, inputs=None):
-    """ Multiply-accumulates (MACs) of the model forward.
+def number_neuron_updates(model, preds, data):
+    """ Number of times each neuron type is updated.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
-        inputs: A tensor of model inputs.
     Returns:
-        float: Multiply-accumulates.
+        dict: key is neuron type, value is number of updates.
     """
-    # TODO: 
-    #   Spiking model: number of spike activations * fanout (see snnmetrics)
-    #   Recurrent layers: each connection is one MAC
-    #   ANN: use PyTorch profiler
-    # should have automatic handling of inputs for models that process each input x times
-
     # check_shape(preds, data[1])
     macs = 0
-    # if inputs is None:
-    #     raise NotImplementedError("inputs is required for synaptic operation calculation")
+
     update_dict = {}
     for hook in model.activation_hooks:
         if hook.prev_hook is not None:
@@ -152,9 +136,6 @@ def number_neuron_updates(model, preds, data, inputs=None):
                 if str(type(hook.layer)) not in update_dict:
                     update_dict[str(type(hook.layer))] = 0
                 update_dict[str(type(hook.layer))] += int(nr_updates)
-        # else:
-        #     print('depends on input')
-            # print(hook.connection_layer, macs)
 
     return update_dict
 

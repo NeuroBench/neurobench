@@ -101,8 +101,9 @@ class NeuroBenchModel:
         root = self.__net__()
         connection_layers = get_connection_layers(root)
         return connection_layers
+    
     def reset_hooks(self):
-        """ Resets all the hooks
+        """ Resets all the hooks (activation hooks and connection hooks)
         """
         for hook in self.activation_hooks:
             hook.reset()

@@ -87,6 +87,19 @@ def test_connection_sparsity():
     # Assert the connection sparsity is within 0.001 of 0.5
     assert abs(connection_sparsity(model) - 0.5) < 0.001
 
+    net_rnn = nn.Sequential(
+        nn.Flatten(),
+        nn.RNN(20, 256),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+        nn.Linear(256, 256),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+        nn.Linear(256, 256),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
+        nn.Linear(256, 35),
+        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
+    )
+
+
 #Pytest for classification_accuracy from benchmarks/data_metrics
 def test_classification_accuracy():
     # dummy model

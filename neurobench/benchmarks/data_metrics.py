@@ -98,8 +98,6 @@ def synaptic_operations(model, preds, data, inputs=None):
                     hook.register_hook()
 
     ops_per_sample = ops / data[0].size(0)
-
-    print(ops_per_sample)
     return ops_per_sample
 
 def number_neuron_updates(model, preds, data):

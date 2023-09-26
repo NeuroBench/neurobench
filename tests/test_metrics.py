@@ -7,8 +7,8 @@ from neurobench.models import SNNTorchModel, TorchModel
 # from neurobench.benchmarks.data_metrics import activation_sparsity, classification_accuracy, MSE, sMAPE, r2, 
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity
-from neurobench.benchmarks.data_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activation_neurons, synaptic_operations, number_neuron_updates
-
+from neurobench.benchmarks.data_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activations_connections, synaptic_operations, number_neuron_updates
+from torch.profiler import profile, record_function, ProfilerActivity
 
 # Pytest for model_size from benchmarks/static_metrics
 def test_model_size():
@@ -194,7 +194,7 @@ def test_activation_sparsity():
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
     )
     model = SNNTorchModel(net)
-    detect_activation_neurons(model)
+    detect_activations_connections(model)
     assert len(model.activation_hooks) == 4
 
 
@@ -210,7 +210,7 @@ def test_activation_sparsity():
         nn.ReLU(),
     )
     model_relu_0 = TorchModel(net_relu_0)
-    detect_activation_neurons(model_relu_0)
+    detect_activations_connections(model_relu_0)
     inp = torch.ones(20)
 
     out_relu = model_relu_0(inp)
@@ -223,7 +223,7 @@ def test_activation_sparsity():
     inp[0:10] = -1
 
     model_relu_50 = TorchModel(net_relu_50)
-    detect_activation_neurons(model_relu_50)
+    detect_activations_connections(model_relu_50)
     out_relu_50 = model_relu_50(inp)
 
     act_sp_relu_50 = activation_sparsity(model_relu_50, out_relu_50, inp)
@@ -244,7 +244,7 @@ def test_activation_sparsity():
         act,
     )
     model_torch_relu_0 = TorchModel(net_torch_relu_0)
-    detect_activation_neurons(model_torch_relu_0)
+    detect_activations_connections(model_torch_relu_0)
     inp = torch.ones(20)
 
     out_relu = model_torch_relu_0(inp)
@@ -266,7 +266,7 @@ def test_activation_sparsity():
         nn.Sigmoid(),
     )
     model_sigm = TorchModel(net_sigm)
-    detect_activation_neurons(model_sigm)
+    detect_activations_connections(model_sigm)
 
     inp = torch.ones(20)
     out_sigm = model_sigm(inp)
@@ -286,13 +286,13 @@ def test_synaptic_ops():
     )
     
     model_relu_0 = TorchModel(net_relu_0)
-    detect_activation_neurons(model_relu_0)
+    detect_activations_connections(model_relu_0)
     inp = torch.ones(20)
 
     out_relu = model_relu_0(inp)
-    macs = synaptic_operations(model_relu_0, out_relu, inp)
-    print(macs)
-    assert macs == 1125
+    syn_ops = synaptic_operations(model_relu_0, out_relu, inp)
+    print(syn_ops)
+    assert syn_ops == 1125
 
     # test model with Identity layer as first layer
     net_relu_50 = nn.Sequential(
@@ -310,11 +310,50 @@ def test_synaptic_ops():
     # inp[0:10] = -1
 
     model_relu_50 = TorchModel(net_relu_50)
-    detect_activation_neurons(model_relu_50)
+    detect_activations_connections(model_relu_50)
     out_relu_50 = model_relu_50(inp)
 
-    macs = synaptic_operations(model_relu_50, out_relu_50, inp)
-    assert macs == (2*625 + 400 + 500)
+    syn_ops = synaptic_operations(model_relu_50, out_relu_50, inp)
+    assert syn_ops == (2*625 + 400 + 500)
+
+    # test conv2d layers
+    net_conv = nn.Sequential(
+        nn.Conv2d(1,1,3,bias=False), 
+        nn.ReLU(),
+    )
+
+    inp = torch.ones(1, 1, 3, 3) # 9 syn ops 
+    model = TorchModel(net_conv)
+    detect_activations_connections(model)
+
+
+    out = model(inp)
+    syn_ops = synaptic_operations(model, out, inp)
+    assert syn_ops == 9
+
+    model.reset_hooks()
+    inp = torch.ones(1, 1, 12, 12) # (12-(kernelsize-1))**2 * 9 synops per kernel ops= 100*9 syn ops = 900
+
+    out = model(inp)
+    syn_ops = synaptic_operations(model, out, inp)
+    print(syn_ops)
+    assert syn_ops == 900
+
+    # test conv1d layers
+    net_conv = nn.Sequential(
+        # nn.Flatten(),
+        nn.Conv1d(5,1,5,bias=False), 
+        nn.ReLU(),
+    )
+    inp = torch.ones(1, 5, 10) # 5*5*(10-(5-1)) = 150 syn ops
+    model = TorchModel(net_conv)
+    
+    detect_activations_connections(model)
+
+    out = model(inp)
+    syn_ops = synaptic_operations(model, out, inp)
+
+    assert syn_ops == 150
     print('Passed synaptic ops')
 
 
@@ -334,7 +373,7 @@ def test_neuron_update_metric():
         snn.Lapicque(beta=0.9, spike_grad=surrogate.fast_sigmoid(), init_hidden=True, output=True),
     )
     model_relu_0 = TorchModel(net_relu_0)
-    detect_activation_neurons(model_relu_0)
+    detect_activations_connections(model_relu_0)
     inp = torch.ones(20)
     out_relu = model_relu_0(inp)
     neuron_updates = number_neuron_updates(model_relu_0, out_relu, inp)

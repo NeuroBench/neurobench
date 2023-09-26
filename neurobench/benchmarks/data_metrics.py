@@ -35,7 +35,7 @@ class AccumulatedMetric:
 
 # dynamic metrics, require model, model predictions, and labels
 
-def detect_activation_neurons(model):
+def detect_activations_connections(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
     supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
@@ -93,7 +93,6 @@ def synaptic_operations(model, preds, data, inputs=None):
     #     for single_in in inp:
     #         if len (single_in) > 0:
     #             macs += single_layer_MACs(single_in, model.first_layer.layer)
-    print(model.connection_hooks)
     for hook in model.connection_hooks:
         inputs = hook.inputs # copy of the inputs, delete hooks after
         for spikes in inputs:    

@@ -56,7 +56,6 @@ def single_layer_MACs(input, layer, return_updates=False):
 		macs = nr_updates.sum() + add_bias # returns total macs
 		if return_updates:
 			return int(macs), torch.count_nonzero(nr_updates)
-	print(macs)
 	return int(macs)
 		
 

@@ -64,7 +64,6 @@ class Benchmark():
             # Run model on test data
             preds = self.model(data[0])
 
-            # TODO: postprocessors are applied to model output only?
             for alg in self.postprocessors: 
                 preds = alg(preds)
 

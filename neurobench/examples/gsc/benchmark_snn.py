@@ -22,12 +22,13 @@ model = SNNTorchModel(net)
 preprocessors = [S2SProcessor()]
 postprocessors = [choose_max_count]
 
-# static_metrics=["model_size", "connection_sparsity", "frequency"]
-# data_metrics=["activation_sparsity", "multiply_accumulates", "classification_accuracy"]
-
-static_metrics = ["model_size"]
+static_metrics = ["model_size", "connection_sparsity"]
 data_metrics = ["classification_accuracy", "activation_sparsity"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
 print(results)
+
+# Results:
+# {'model_size': 583900, 'connection_sparsity': 0.0, 'classification_accuracy': 0.8484325244826437, 'activation_sparsity': 0.9676284164970826}
+# --> TODO: should check out the synaptic operations

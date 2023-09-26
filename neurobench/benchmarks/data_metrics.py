@@ -93,13 +93,16 @@ def synaptic_operations(model, preds, data, inputs=None):
     #     for single_in in inp:
     #         if len (single_in) > 0:
     #             macs += single_layer_MACs(single_in, model.first_layer.layer)
-
+    print(model.connection_hooks)
     for hook in model.connection_hooks:
-        print(hook.layer)
-        for spikes in hook.inputs:    
+        inputs = hook.inputs # copy of the inputs, delete hooks after
+        for spikes in inputs:    
             for single_in in spikes:     
                 if len (single_in) > 0:
+                    hook.hook.remove()
                     macs += single_layer_MACs(single_in, hook.layer)
+                    hook.register_hook()
+
 
         
 

@@ -291,6 +291,7 @@ def test_synaptic_ops():
 
     out_relu = model_relu_0(inp)
     macs = synaptic_operations(model_relu_0, out_relu, inp)
+    print(macs)
     assert macs == 1125
 
     # test model with Identity layer as first layer
@@ -339,6 +340,7 @@ def test_neuron_update_metric():
     neuron_updates = number_neuron_updates(model_relu_0, out_relu, inp)
     print('Manual check!')
     print('Passed neuron update metric')
+
 test_activation_sparsity()
 test_synaptic_ops()
 test_neuron_update_metric()

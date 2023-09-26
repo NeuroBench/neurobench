@@ -1,5 +1,6 @@
 import torch
 
+import snntorch as snn
 from snntorch import utils
 
 from .model import NeuroBenchModel
@@ -18,6 +19,9 @@ class SNNTorchModel(NeuroBenchModel):
         
         self.net = net
         self.net.eval()
+
+        # add snntorch neuron layers as activation modules
+        self.add_activation_module(snn.SpikingNeuron)
 
     def __call__(self, data):
         """ Executes the forward pass of SNNTorch models on data that follows the

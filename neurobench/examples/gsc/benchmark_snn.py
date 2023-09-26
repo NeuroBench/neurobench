@@ -30,5 +30,5 @@ results = benchmark.run()
 print(results)
 
 # Results:
-# {'model_size': 583900, 'connection_sparsity': 0.0, 'classification_accuracy': 0.8484325244826437, 'activation_sparsity': 0.9676284164970826}
-# --> TODO: should check out the synaptic operations
+# {'model_size': 583900, 'connection_sparsity': 0.0, 
+# 'classification_accuracy': 0.8484325349357982, 'activation_sparsity': 0.9674168561138308}

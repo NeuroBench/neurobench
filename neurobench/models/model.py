@@ -1,6 +1,5 @@
 from torch import nn
 import torch
-import snntorch as snn
 from neurobench.benchmarks.hooks import ActivationHook
 
 from .utils import activation_modules
@@ -51,6 +50,11 @@ class NeuroBenchModel:
     def activation_layers(self):
         """ Retrieve all the activaton layers of the underlying network
         """
+        def check_if_activation(module):
+            for activation_module in self.activation_modules:
+                if isinstance(module, activation_module):
+                    return True
+
         def get_activation_layers(parent):
             """ Returns all the neuro layers
             """
@@ -58,29 +62,18 @@ class NeuroBenchModel:
             flattened = []
             children = parent.children()
             for child in children:
-                grand_children = list(child.children())
-                if len(grand_children) == 0:  # leaf child
-                    if isinstance(child, snn.SpikingNeuron):
-                        layers.append(child)
-                        flattened.append(child)
-                        
-                    elif isinstance(child, torch.nn.Linear) or isinstance(child, torch.nn.Conv2d) or isinstance(child, torch.nn.Conv1d) or isinstance(child, torch.nn.Conv3d) :
-                            flattened.append(child)
-
-                    else:
-                        for activaton_module in self.activation_modules:
-                            # add all the activation layers and spiking neuron layers
-                            if isinstance(child, activaton_module):
-                                layers.append(child)
-                                flattened.append(child)
-
+                if check_if_activation(child):
+                    # is an activation module
+                    layers.append(child)
                 else:
-                    children_layers = get_activation_layers(child)
-                    print('in model.py line 78 idk if this is necessary i think get_activation_layers(child) works fine')
-                    layers.extend(children_layers)
+                    if len(list(child.children())) != 0:
+                        # not an activation module and has nested submodules
+                        children_layers = get_activation_layers(child)
+                        layers.extend(children_layers)
             
-            return layers, flattened
+            return layers
+
         
         root = self.__net__()
-        layers, child_layers = get_activation_layers(root)
-        return layers, child_layers
+        layers = get_activation_layers(root)
+        return layers

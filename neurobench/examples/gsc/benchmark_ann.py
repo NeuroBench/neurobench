@@ -46,4 +46,5 @@ results = benchmark.run()
 print(results)
 
 # Results:
-# {'model_size': 109228, 'connection_sparsity': 0.0, 'classification_accuracy': 0.8662426155678306, 'activation_sparsity': 0.3521779748240432}
+# {'model_size': 109228, 'connection_sparsity': 0.0, 
+# 'classification_accuracy': 0.8653339412687909, 'activation_sparsity': 0.38544646190195325}

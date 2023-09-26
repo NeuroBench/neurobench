@@ -38,31 +38,11 @@ class AccumulatedMetric:
 def detect_activation_neurons(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
-    layers, flattened = model.activation_layers()
+    layers = model.activation_layers()
     # Registered activation hooks
     for layer in layers:
         model.activation_hooks.append(ActivationHook(layer))
-
     
-    for i,flat_layer in enumerate(flattened):
-        if isinstance(flat_layer, torch.nn.Linear) or isinstance(flat_layer, torch.nn.Conv2d) or isinstance(flat_layer, torch.nn.Conv1d) or isinstance(flat_layer, torch.nn.Conv3d) :
-            # look for correct_hook
-            for j, hook in enumerate(model.activation_hooks):
-                if i < len(flattened) -1:
-                    if id(hook.layer) == id(flattened[i+1]):
-                        # print("found correct hook")
-                        hook.connection_layer = flat_layer
-                        if i != 0:
-                            hook.prev_hook = model.activation_hooks[j-1]
-                        else:
-                            hook.prev_hook = None # it is the first layer
-                            model.set_first_layer(LayerHook(flat_layer))
-                            model.first_layer.register_hook()
-                            # print("first layer registered")
-
-
-    
-
 def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
     

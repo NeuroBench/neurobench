@@ -1,5 +1,4 @@
 from torch import nn
-import snntorch as snn
 from neurobench.benchmarks.hooks import ActivationHook
 
 from .utils import activation_modules

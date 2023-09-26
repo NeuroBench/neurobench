@@ -87,26 +87,18 @@ def synaptic_operations(model, preds, data, inputs=None):
     Returns:
         float: Multiply-accumulates.
     """
-    macs = 0
-    # first layer:
-    # for inp in model.first_layer.inputs:
-    #     for single_in in inp:
-    #         if len (single_in) > 0:
-    #             macs += single_layer_MACs(single_in, model.first_layer.layer)
+    ops = 0
     for hook in model.connection_hooks:
         inputs = hook.inputs # copy of the inputs, delete hooks after
-        for spikes in inputs:    
-            for single_in in spikes:     
+        for spikes in inputs:
+            for single_in in spikes:
                 if len (single_in) > 0:
                     hook.hook.remove()
-                    macs += single_layer_MACs(single_in, hook.layer)
+                    ops += single_layer_MACs(single_in, hook.layer)
                     hook.register_hook()
 
-
-        
-
-
-    return macs
+    ops_per_sample = ops / data[0].size(0)
+    return ops_per_sample
 
 def number_neuron_updates(model, preds, data):
     """ Number of times each neuron type is updated.

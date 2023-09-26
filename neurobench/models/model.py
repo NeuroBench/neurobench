@@ -1,6 +1,5 @@
 from torch import nn
 import torch
-import snntorch as snn
 from neurobench.benchmarks.hooks import ActivationHook
 
 from neurobench.benchmarks.utils.metric_utils import activation_modules
@@ -49,32 +48,32 @@ class NeuroBenchModel:
     def activation_layers(self):
         """ Retrieve all the activaton layers of the underlying network (including spiking neuron layers)
         """
+        def check_if_activation(module):
+            for activation_module in self.activation_modules:
+                if isinstance(module, activation_module):
+                    return True
 
         def get_activation_layers(parent):
             """ Returns all the neuro layers
             """
-            act_layers = []
+            layers = []
             children = parent.children()
             for child in children:
-                grand_children = list(child.children())
-                if len(grand_children) == 0:  # leaf child
-                    if isinstance(child, snn.SpikingNeuron):
-                        act_layers.append(child)
-                    else:
-                        for activaton_module in self.activation_modules:
-                            # add all the activation act_layers and spiking neuron act_layers
-                            if isinstance(child, activaton_module):
-                                act_layers.append(child)
-
+                if check_if_activation(child):
+                    # is an activation module
+                    layers.append(child)
                 else:
-                    children_layers = get_activation_layers(child)
-                    act_layers.extend(children_layers)
+                    if len(list(child.children())) != 0:
+                        # not an activation module and has nested submodules
+                        children_layers = get_activation_layers(child)
+                        layers.extend(children_layers)
             
-            return act_layers
+            return layers
+
         
         root = self.__net__()
-        act_layers = get_activation_layers(root)
-        return act_layers
+        layers = get_activation_layers(root)
+        return layers
 
     def connection_layers(self):
         """ Retrieve all the connection layers of the underlying network (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)

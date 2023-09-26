@@ -136,7 +136,10 @@ def number_neuron_updates(model, preds, data):
                 if str(type(hook.layer)) not in update_dict:
                     update_dict[str(type(hook.layer))] = 0
                 update_dict[str(type(hook.layer))] += int(nr_updates)
-
+    # print formatting
+    print('Number of updates for:')
+    for key in update_dict:
+        print(key, ':',update_dict[key])
     return update_dict
 
 def classification_accuracy(model, preds, data):

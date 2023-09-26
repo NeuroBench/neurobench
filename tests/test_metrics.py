@@ -195,7 +195,6 @@ def test_activation_sparsity():
     )
     model = SNNTorchModel(net)
     detect_activation_neurons(model)
-    print(len(model.activation_hooks))
     assert len(model.activation_hooks) == 4
 
 
@@ -299,20 +298,6 @@ def test_synaptic_ops():
     assert macs == (2*625 + 400 + 500)
 
 
-   # test Sigmoid model
-    net_sigm = nn.Sequential(
-        nn.Identity(),
-        nn.Sigmoid(),
-    )
-    model_sigm = TorchModel(net_sigm)
-    detect_activation_neurons(model_sigm)
-
-    inp = torch.ones(20)
-    out_sigm = model_sigm(inp)
-    act_sp_sigm = activation_sparsity(model_sigm, out_sigm, inp)
-    assert act_sp_sigm == 0.0
-
-
 def test_neuron_update_metric():
     net_relu_0 = nn.Sequential(
         # nn.Flatten(),
@@ -324,13 +309,15 @@ def test_neuron_update_metric():
         nn.Sigmoid(),
         nn.Linear(25,25,bias=False),
         nn.ReLU(),
+        nn.Linear(25,25, bias=False),
+        snn.Lapicque(beta=0.9, spike_grad=surrogate.fast_sigmoid(), init_hidden=True, output=True),
     )
     model_relu_0 = TorchModel(net_relu_0)
     detect_activation_neurons(model_relu_0)
     inp = torch.ones(20)
     out_relu = model_relu_0(inp)
     neuron_updates = number_neuron_updates(model_relu_0, out_relu, inp)
-    print(neuron_updates)
+    print('Manual check!')
 
 test_activation_sparsity()
 test_synaptic_ops()

@@ -56,7 +56,7 @@ class ObjDetectionModel(NeuroBenchModel):
         return self.net
 
 # Loading the model
-mode = "hybrid" # "ann" or "hybrid
+mode = "ann" # "ann" or "hybrid
 if mode == "ann":
     # baseline ANN RED architecture
     model = Vanilla(cin = 6, cout = 256, base = 16)
@@ -97,7 +97,7 @@ print(results)
 
 # batch size of inference slightly affects the results.
 
-# Results - ANN, batch = 12
-# {'model_size': 91314912, 'connection_sparsity': 0.0, 'COCO_mAP': 0.43047329135339685}
+# Results - ANN, batch = 4
+# {'model_size': 91314912, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6339577418819095, 'COCO_mAP': 0.4286601323956029}
 # Results - Hybrid, batch = 4
-# {'model_size': 12133872, 'connection_sparsity': 0.0, 'COCO_mAP': 0.2711162430904825}
+# {'model_size': 12133872, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6130047485397788, 'COCO_mAP': 0.27111120859281557}

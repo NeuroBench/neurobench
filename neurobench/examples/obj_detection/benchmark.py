@@ -1,5 +1,7 @@
 import torch
 
+import spikingjelly
+
 from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.models import NeuroBenchModel
 from neurobench.benchmarks import Benchmark
@@ -13,7 +15,7 @@ from metavision_ml.detection.rpn import BoxHead
 test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi channel",
         split="testing",
         label_map_path="neurobench/datasets/label_map_dictionary.json",
-        batch_size = 12,
+        batch_size = 4,
         num_tbins = 12,
         preprocess_function_name="multi_channel_timesurface",
         delta_t=50000,
@@ -28,6 +30,7 @@ test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi cha
 
 class ObjDetectionModel(NeuroBenchModel):
     def __init__(self, net, box_coder, head):
+        super(ObjDetectionModel, self).__init__(net)
         self.net = net
         self.box_coder = box_coder
         self.head = head
@@ -77,13 +80,16 @@ else:
 
 model = ObjDetectionModel(model, box_coder, head)
 
-# Evaluation
+# add activation modules for hybrid models
+if mode == "hybrid":
+    model.add_activation_module(spikingjelly.activation_based.neuron.BaseNode)
 
+# Evaluation
 preprocessors = []
 postprocessors = []
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["COCO_mAP"]
+data_metrics = ["activation_sparsity", "COCO_mAP"]
 
 benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
@@ -93,5 +99,5 @@ print(results)
 
 # Results - ANN, batch = 12
 # {'model_size': 91314912, 'connection_sparsity': 0.0, 'COCO_mAP': 0.43047329135339685}
-# Results - Hybrid, batch = 12
+# Results - Hybrid, batch = 4
 # {'model_size': 12133872, 'connection_sparsity': 0.0, 'COCO_mAP': 0.2711162430904825}

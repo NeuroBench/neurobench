@@ -3,7 +3,8 @@ import torch
 import torch.nn as nn
 import sys
 
-from metavision_core_ml.core.modules import ConvLayer, PreActBlock,ResBlock
+# from metavision_core_ml.core.modules import ConvLayer, PreActBlock,ResBlock
+from modules import ConvLayer, PreActBlock, ResBlock
 from metavision_core_ml.core.temporal_modules import time_to_batch, SequenceWise, ConvRNN
 
 from spikingjelly.activation_based import neuron, functional, surrogate, layer
@@ -14,6 +15,7 @@ class Conv2dLIF(nn.Module):
         assert out_channels % 4 == 0
         super(Conv2dLIF, self).__init__()
         
+        # note: the spikingjelly.activation_based.layer.Conv2d is an instance of nn.Conv2d and is registered by the connection sparsity metric
         self.conv1 = layer.Conv2d(in_channels, out_channels, kernel_size=3, stride=stride, padding=1, bias=True, step_mode='m')
         self.bn = layer.BatchNorm2d(out_channels, step_mode='m')
         self.lif = neuron.LIFNode(surrogate_function=surrogate.ATan(), step_mode='m')
@@ -75,7 +77,8 @@ class Vanilla(nn.Module):
 
 class Vanilla_lif(nn.Module):
     """
-    Hybrid ANN-SNN of the above architecture, using Conv2dLIF layers instead of the ConvRNNs.
+    Hybrid ANN-SNN of the above architecture, using Conv2dLIF layers instead of the ConvRNNs,
+    and residual conv blocks instead of squeeze-excite blocks.
     """
 
     def __init__(self, cin=1, base=16, cout=256):

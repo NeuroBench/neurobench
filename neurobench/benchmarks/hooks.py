@@ -14,18 +14,30 @@ class ActivationHook():
             layer: The activation layer which is a PyTorch nn.Module.
         """
         self.activation_outputs = []
-        self.inputs = []
+        self.activation_inputs = []
         if layer is not None:
             self.hook = layer.register_forward_hook(self.hook_fn)
+            self.hook_pre = layer.register_forward_pre_hook(self.pre_hook_fn)
         else:
             self.hook = None
-        
-        self.layer = layer # the activation layer
-        self.prev_hook = prev_act_layer_hook
-        self.connection_layer = connection_layer # the next layer after the activation layer for synaptic operation calculation
+            self.hook_pre = None
 
+        self.layer = layer # the activation layer
+  
         # Check if the layer is a spiking layer (SpikingNeuron is the superclass of all snnTorch spiking layers)
         self.spiking = isinstance(layer, snn.SpikingNeuron)
+
+    def pre_hook_fn(self, layer, input):
+        """Hook function that will be called before each forward pass of 
+        the activation layer.
+
+        Each input of the activation layer will be stored. 
+
+        Args:
+            layer: The registered layer 
+            input: Input of the registered layer
+        """
+        self.activation_inputs.append(input)
 
     def hook_fn(self, layer, input, output):
         """Hook function that will be called after each forward pass of 
@@ -40,6 +52,7 @@ class ActivationHook():
         """
         if self.spiking:
             self.activation_outputs.append(output[0])
+            
 
         else:
             self.activation_outputs.append(output)
@@ -48,13 +61,10 @@ class ActivationHook():
         """
         self.activation_outputs = []
 
-    def hook_fn_prehook(self, layer, input, output):
-
-        if self.spiking:
-            self.inputs.append(input[0])
-
-        else:
-            self.inputs.append(input)
+    def reset(self):
+        """ Resets the stored activation outputs.
+        """
+        self.activation_outputs = []
 
     def close(self):
         """ Remove the registered hook.
@@ -65,13 +75,19 @@ class LayerHook():
     def __init__(self, layer) -> None:
         self.layer = layer 
         self.inputs = []
-        self.hook = None
+        if layer is not None:
+            self.hook = layer.register_forward_pre_hook(self.hook_fn)
+        else:
+            self.hook = None
 
     def hook_fn(self, module, input):
         self.inputs.append(input)
 
     def register_hook(self):
         self.hook = self.layer.register_forward_pre_hook(self.hook_fn)
+
+    def reset(self):
+        self.inputs = []
 
     def close(self):
         if self.hook:

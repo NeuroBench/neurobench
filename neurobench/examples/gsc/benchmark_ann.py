@@ -39,7 +39,7 @@ postprocessors = [convert_to_label]
 model = TorchModel(net)
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["classification_accuracy", "activation_sparsity"]
+data_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
@@ -47,4 +47,5 @@ print(results)
 
 # Results:
 # {'model_size': 109228, 'connection_sparsity': 0.0, 
-# 'classification_accuracy': 0.8653339412687909, 'activation_sparsity': 0.38544646190195325}
+# 'classification_accuracy': 0.8653339412687909, 'activation_sparsity': 0.38544646190195325
+# 'synaptic_operations': 1728070.668877783}

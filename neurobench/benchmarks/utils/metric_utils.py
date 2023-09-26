@@ -1,10 +1,19 @@
 import torch
-import torch.profiler as profiler
-
 import copy
 import torch.profiler as profiler
 
 import copy
+import snntorch as snn
+from torch import nn
+
+def activation_modules():
+    """
+    The activation layers that can be auto-deteced. Every activation layer can only be included once.
+    """
+    return list(set([nn.ReLU,
+            nn.Sigmoid, 
+           ]))
+
 
 def check_shape(preds, labels):
 	""" Checks that the shape of the predictions and labels are the same.
@@ -15,10 +24,14 @@ def check_shape(preds, labels):
 def make_binary_copy(layer):
 	""" Makes a binary copy of the layer. All non 0 entries are made 1.
 	"""
+	# try:
+	# except:
+		# print("I cant compute it")
 	layer_copy = copy.deepcopy(layer)
 	weights = layer_copy.weight.data
 	weights[weights != 0] = int(1)
 	layer_copy.weight.data = weights	
+	layer
 	return layer_copy
 
 
@@ -28,11 +41,11 @@ def single_layer_MACs(input, layer, return_updates=False):
 	macs = 0
 	# first create matrix with input entries on diagonal
 	input[input!= 0] = 1
-	# input = input.to(dtype=torch.int8)
-	# diag = torch.diag(input)
-	if isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Conv1d):
+
+	if isinstance(layer, torch.nn.Linear) or isinstance(layer, torch.nn.Conv2d) or isinstance(layer, torch.nn.Conv1d) or isinstance(layer, torch.nn.Conv3d):
 		# then multiply the binary layer with the diagonal matrix to get the MACs
 		layer_bin = make_binary_copy(layer)
+
 		# how many biases are added
 		# if there is a bias
 		add_bias = 0

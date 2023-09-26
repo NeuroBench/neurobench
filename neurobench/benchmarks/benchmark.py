@@ -35,7 +35,7 @@ class Benchmark():
         print("Running benchmark")
         
         # add hooks to the model
-        data_metrics.detect_activation_neurons(self.model)
+        data_metrics.detect_activations_connections(self.model)
 
         # Static metrics
         results = {}
@@ -50,6 +50,8 @@ class Benchmark():
                 self.data_metrics[m] = self.data_metrics[m]()
 
         dataset_len = len(self.dataloader.dataset)
+        
+        batch_num = 0
         for data in tqdm(self.dataloader, total=len(self.dataloader)):
             batch_size = data[0].size(0)
             
@@ -83,9 +85,11 @@ class Benchmark():
                         results[m] = v * batch_size / dataset_len
                     else:
                         results[m] += v * batch_size / dataset_len
+            
             # delete hook contents
-            for hook in self.model.activation_hooks:
-                hook.empty_hook()
+            self.model.reset_hooks()
+
+            batch_num += 1
                 
 
         # compute AccumulatedMetrics after all batches

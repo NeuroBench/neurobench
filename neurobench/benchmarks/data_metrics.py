@@ -35,14 +35,22 @@ class AccumulatedMetric:
 
 # dynamic metrics, require model, model predictions, and labels
 
-def detect_activation_neurons(model):
+def detect_activations_connections(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
-    layers = model.activation_layers()
+    supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
+    act_layers = model.activation_layers()
     # Registered activation hooks
-    for layer in layers:
+    for layer in act_layers:
         model.activation_hooks.append(ActivationHook(layer))
+
+    con_layers = model.connection_layers()
+    for flat_layer in con_layers:
+        if isinstance(flat_layer, supported_layers):
+            model.connection_hooks.append(LayerHook(flat_layer))
+
     
+
 def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
     
@@ -79,62 +87,46 @@ def synaptic_operations(model, preds, data, inputs=None):
     Returns:
         float: Multiply-accumulates.
     """
-    # TODO: 
-    #   Spiking model: number of spike activations * fanout (see snnmetrics)
-    #   Recurrent layers: each connection is one MAC
-    #   ANN: use PyTorch profiler
-    # should have automatic handling of inputs for models that process each input x times
+    ops = 0
+    for hook in model.connection_hooks:
+        inputs = hook.inputs # copy of the inputs, delete hooks after
+        for spikes in inputs:
+            for single_in in spikes:
+                if len (single_in) > 0:
+                    hook.hook.remove()
+                    ops += single_layer_MACs(single_in, hook.layer)
+                    hook.register_hook()
 
-    # check_shape(preds, data[1])
-    macs = 0
-    # if inputs is None:
-    #     raise NotImplementedError("inputs is required for synaptic operation calculation")
-    for hook in model.activation_hooks:
-        if hook.prev_hook is not None:
-            for spikes in hook.prev_hook.activation_outputs:     
-                macs += single_layer_MACs(spikes, hook.connection_layer)
+    ops_per_sample = ops / data[0].size(0)
 
-    # first layer:
-    for inp in model.first_layer.inputs:
-        for single_in in inp:
-            if len (single_in) > 0:
-                macs += single_layer_MACs(single_in, model.first_layer.layer)
+    print(ops_per_sample)
+    return ops_per_sample
 
-    return macs
-
-def number_neuron_updates(model, preds, data, inputs=None):
-    """ Multiply-accumulates (MACs) of the model forward.
+def number_neuron_updates(model, preds, data):
+    """ Number of times each neuron type is updated.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
-        inputs: A tensor of model inputs.
     Returns:
-        float: Multiply-accumulates.
+        dict: key is neuron type, value is number of updates.
     """
-    # TODO: 
-    #   Spiking model: number of spike activations * fanout (see snnmetrics)
-    #   Recurrent layers: each connection is one MAC
-    #   ANN: use PyTorch profiler
-    # should have automatic handling of inputs for models that process each input x times
-
     # check_shape(preds, data[1])
     macs = 0
-    # if inputs is None:
-    #     raise NotImplementedError("inputs is required for synaptic operation calculation")
+
     update_dict = {}
-    for hook in model.activation_hooks:
-        if hook.prev_hook is not None:
-            for spikes in hook.prev_hook.activation_outputs:     
-                _, nr_updates = single_layer_MACs(spikes, hook.connection_layer, return_updates=True)
+    for hook in model.activation_hooks: 
+        for spikes_batch in hook.activation_inputs:  
+            for spikes in spikes_batch: 
+                nr_updates = torch.count_nonzero(spikes) 
                 if str(type(hook.layer)) not in update_dict:
                     update_dict[str(type(hook.layer))] = 0
                 update_dict[str(type(hook.layer))] += int(nr_updates)
-        # else:
-        #     print('depends on input')
-            # print(hook.connection_layer, macs)
-
+    # print formatting
+    print('Number of updates for:')
+    for key in update_dict:
+        print(key, ':',update_dict[key])
     return update_dict
 
 def classification_accuracy(model, preds, data):

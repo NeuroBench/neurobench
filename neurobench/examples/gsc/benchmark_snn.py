@@ -23,7 +23,7 @@ preprocessors = [S2SProcessor()]
 postprocessors = [choose_max_count]
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["classification_accuracy", "activation_sparsity"]
+data_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
@@ -31,4 +31,5 @@ print(results)
 
 # Results:
 # {'model_size': 583900, 'connection_sparsity': 0.0, 
-# 'classification_accuracy': 0.8484325349357982, 'activation_sparsity': 0.9674168561138308}
+# 'classification_accuracy': 0.8484325349357982, 'activation_sparsity': 0.9674168561138308
+# 'synaptic_operations': 3393065.944752385}

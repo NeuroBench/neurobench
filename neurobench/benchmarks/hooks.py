@@ -14,6 +14,7 @@ class ActivationHook():
             layer: The activation layer which is a PyTorch nn.Module.
         """
         self.activation_outputs = []
+        self.inputs = []
         if layer is not None:
             self.hook = layer.register_forward_hook(self.hook_fn)
         else:
@@ -43,7 +44,31 @@ class ActivationHook():
         else:
             self.activation_outputs.append(output)
 
+    def hook_fn_prehook(self, layer, input, output):
+
+        if self.spiking:
+            self.inputs.append(input[0])
+
+        else:
+            self.inputs.append(input)
+
     def close(self):
         """ Remove the registered hook.
         """
         self.hook.remove()
+
+class LayerHook():
+    def __init__(self, layer) -> None:
+        self.layer = layer 
+        self.inputs = []
+        self.hook = None
+
+    def hook_fn(self, module, input):
+        self.inputs.append(input)
+
+    def register_hook(self):
+        self.hook = self.layer.register_forward_pre_hook(self.hook_fn)
+
+    def close(self):
+        if self.hook:
+            self.hook.remove()

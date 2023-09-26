@@ -279,7 +279,7 @@ def test_synaptic_ops():
     out_relu = model_relu_0(inp)
     macs = synaptic_operations(model_relu_0, out_relu, inp)
     print(macs)
-    assert macs == 625
+    assert macs == 1125
 
     # test ReLU model with half negative inputs
     inp = torch.ones(20)

@@ -46,20 +46,20 @@ def single_layer_MACs(input, layer, return_updates=False):
 	return int(macs)
 		
 
-if __name__=='__main__':
-	input = torch.tensor([[1., 0., 1., 0., 1]])
+# if __name__=='__main__':
+# 	input = torch.tensor([[1., 0., 1., 0., 1]])
 
-	layer = torch.nn.Linear(5, 4, bias=False)
-	layer_conv = torch.nn.Conv1d(1, 1, 3, bias=False)
-	net = torch.nn.Sequential(layer)
-	net_conv = torch.nn.Sequential(layer_conv)
-	single_layer_MACs(input, layer)
+# 	layer = torch.nn.Linear(5, 4, bias=False)
+# 	layer_conv = torch.nn.Conv1d(1, 1, 3, bias=False)
+# 	net = torch.nn.Sequential(layer)
+# 	net_conv = torch.nn.Sequential(layer_conv)
+# 	single_layer_MACs(input, layer)
 
-	single_layer_MACs(input, layer_conv)
-	with torch.profiler.profile(
-    activities=[torch.profiler.ProfilerActivity.CPU],
-    on_trace_ready=None,
-	with_flops=True,
-	) as prof:
-		output = net_conv(input)
-	# print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))
+# 	single_layer_MACs(input, layer_conv)
+# 	with torch.profiler.profile(
+#     activities=[torch.profiler.ProfilerActivity.CPU],
+#     on_trace_ready=None,
+# 	with_flops=True,
+# 	) as prof:
+# 		output = net_conv(input)
+# 	# print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))

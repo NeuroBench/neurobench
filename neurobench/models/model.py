@@ -19,6 +19,7 @@ class NeuroBenchModel:
         """
         self.activation_modules = activation_modules()
         self.activation_hooks = []
+        self.first_layer = None
         self.mac_hooks = []
         # for layer in self.activation_layers():
         #     self.activation_hooks.append(ActivationHook(layer))
@@ -37,6 +38,11 @@ class NeuroBenchModel:
         """
         raise NotImplementedError("Subclasses of NeuroBenchModel should implement __net__")
 
+    def set_first_layer(self, layer):
+        """ Sets the first layer of the network
+        """
+        self.first_layer = layer
+        
     def add_activation_module(self, activaton_module):
         """ Add a cutomized activaton_module that can be detected after running the preprocessing pipeline for detecting activation functions
         """
@@ -60,8 +66,6 @@ class NeuroBenchModel:
                         
                     elif isinstance(child, torch.nn.Linear) or isinstance(child, torch.nn.Conv2d) or isinstance(child, torch.nn.Conv1d) or isinstance(child, torch.nn.Conv3d) :
                             flattened.append(child)
-
-                        
 
                     else:
                         for activaton_module in self.activation_modules:

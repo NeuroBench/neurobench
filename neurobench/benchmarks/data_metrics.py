@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from .utils.metric_utils import check_shape, make_binary_copy, single_layer_MACs
-from ..benchmarks.hooks import ActivationHook
+from ..benchmarks.hooks import ActivationHook, LayerHook
 
 class AccumulatedMetric:
     """ Abstract class for a metric which must save state between batches.
@@ -56,11 +56,9 @@ def detect_activation_neurons(model):
                             hook.prev_hook = model.activation_hooks[j-1]
                         else:
                             hook.prev_hook = None # it is the first layer
-                        break
-                    # else:
-                        # print("not found correct hook")
-                        # hook.connection_layer = None
-                        # hook.prev_hook = None
+                            model.set_first_layer(LayerHook(flat_layer))
+                            model.first_layer.register_hook()
+                            # print("first layer registered")
 
 
     
@@ -115,9 +113,12 @@ def synaptic_operations(model, preds, data, inputs=None):
         if hook.prev_hook is not None:
             for spikes in hook.prev_hook.activation_outputs:     
                 macs += single_layer_MACs(spikes, hook.connection_layer)
-        # else:
-        #     print('depends on input')
-            # print(hook.connection_layer, macs)
+
+    # first layer:
+    for inp in model.first_layer.inputs:
+        for single_in in inp:
+            if len (single_in) > 0:
+                macs += single_layer_MACs(single_in, model.first_layer.layer)
 
     return macs
 

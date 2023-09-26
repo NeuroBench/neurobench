@@ -35,7 +35,7 @@ class Benchmark():
         print("Running benchmark")
         
         # add hooks to the model
-        metrics.detect_activation_neurons(self.model)
+        data_metrics.detect_activation_neurons(self.model)
 
         # Static metrics
         results = {}
@@ -73,14 +73,7 @@ class Benchmark():
             for m in self.data_metrics.keys():
                 batch_results[m] = self.data_metrics[m](self.model, preds, data)
 
-            # Accumulate data metrics via mean
             for m, v in batch_results.items():
-                assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
-                print(f"{m}: {v}")
-                if m not in results:
-                    results[m] = v * batch_size / dataset_len
-                else:
-                    results[m] += v * batch_size / dataset_len
                 # AccumulatedMetrics are computed after all batches complete
                 if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
                     continue
@@ -91,6 +84,10 @@ class Benchmark():
                         results[m] = v * batch_size / dataset_len
                     else:
                         results[m] += v * batch_size / dataset_len
+            # delete hook contents
+            for hook in self.model.activation_hooks:
+                hook.empty_hook()
+                
 
         # compute AccumulatedMetrics after all batches
         for m in self.data_metrics.keys():

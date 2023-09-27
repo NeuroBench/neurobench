@@ -61,12 +61,14 @@ class LSTMModel(nn.Module):
 
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
-    
+        self.layer_norm = nn.LayerNorm(self.input_dim).type(dtype) 
+ 
         # stores lookback window time steps
-        self.register_buffer('inp', torch.zeros(1, self.input_dim).to(dtype))
+        self.register_buffer('inp', torch.zeros(1, self.input_dim).type(dtype))
 
     def single_forward(self, sample): 
 
+        sample = self.layer_norm(sample)
         x, _ = self.rnns[0](sample)
         for i in range(1, self.n_layers):
             x, _ = self.rnns[i](x)
@@ -77,6 +79,8 @@ class LSTMModel(nn.Module):
 
     def forward(self, batch):
 
+        #self.inp = torch.zeros(1, self.input_dim).type(self.dtype)
+        #self.inp = self.inp.to(self.device)
         predictions = []
         for i, sample in enumerate(batch):
 

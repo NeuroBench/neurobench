@@ -76,7 +76,7 @@ def activation_sparsity(model, preds, data):
     sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
 
-def synaptic_operations(model, preds, data, inputs=None):
+def synaptic_operations(model, preds, data):
     """ Multiply-accumulates (MACs) of the model forward.
 
     Args:
@@ -90,7 +90,9 @@ def synaptic_operations(model, preds, data, inputs=None):
     ops = 0
     for hook in model.connection_hooks:
         inputs = hook.inputs # copy of the inputs, delete hooks after
+        # print(inputs)
         for spikes in inputs:
+            # spikes is batch, features, see snntorchmodel wrappper
             for single_in in spikes:
                 if len (single_in) > 0:
                     hook.hook.remove()

@@ -89,9 +89,9 @@ def test_connection_sparsity():
 
     net_rnn = nn.Sequential(
         nn.Flatten(),
-        nn.RNN(input_size=20, hidden_size = 20, num_layers=2),
+        nn.RNN(input_size=20, hidden_size = 20, num_layers=2, bidirectional=True),
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-        nn.Linear(256, 256),
+        nn.Linear(20, 256),
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
         nn.Linear(256, 256),
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),

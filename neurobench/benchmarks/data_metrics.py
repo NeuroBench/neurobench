@@ -39,6 +39,8 @@ def detect_activations_connections(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
     supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
+    recurrent_supported_layers = (torch.nn.RNNBase)
+    recurr_cell_supported_layers = (torch.nn.RNNCellBase)
     act_layers = model.activation_layers()
     # Registered activation hooks
     for layer in act_layers:

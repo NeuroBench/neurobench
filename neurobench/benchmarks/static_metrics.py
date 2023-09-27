@@ -60,6 +60,7 @@ def connection_sparsity(model):
         children = list(module.children())
         regular_layers = (torch.nn.Linear, torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d)
         recurr_layers  = (torch.nn.RNNBase)
+        recurr_cells   = (torch.nn.RNNCellBase)
         if len(children) == 0: # it is a leaf
             # print(module)
             if isinstance(module, regular_layers):
@@ -67,19 +68,42 @@ def connection_sparsity(model):
                 count_weights = module.weight.numel()
                 return count_zeros, count_weights
             
-            elif isinstance(module, torch.nn.RNNBase) or isinstance(module, torch.nn.RNNCellBase):
-                for i in range(module.num_layers):
-                    attribute_names = []
+            elif isinstance(module, recurr_layers):
+                attribute_names = []
+                for i in range(module.num_layers): 
                     param_names = ['weight_ih_l{}{}', 'weight_hh_l{}{}']
                     if module.bias:
                         param_names += ['bias_ih_l{}{}', 'bias_hh_l{}{}']
-                    if module.proj_size > 0:
+                    if module.proj_size > 0: # it is lstm
                         param_names += ['weight_hr_l{}{}']
 
-                    # Iterate over param_names and format them with the current layer index (i)
-                    for param_name in param_names:
-                        attribute_name = param_name.format(i, '')
-                        attribute_names.append(attribute_name)
+                    attribute_names += [x.format(i, '') for x in param_names]
+                    if module.bidirectional:
+                        suffix = '_reverse'
+                        attribute_names += [x.format(i, suffix) for x in param_names]
+
+                count_zeros = 0
+                count_weights = 0
+                for attr in attribute_names:
+                    attr_val = getattr(module, attr)
+                    count_zeros += torch.sum(attr_val == 0)
+                    count_weights += attr_val.numel() 
+
+                return count_zeros, count_weights
+            
+            elif isinstance(module, recurr_cells):
+                attribute_names = ['weight_ih', 'weight_hh']
+                if module.bias:
+                    attribute_names += ['bias_ih', 'bias_hh']
+                if module.proj_size > 0: # it is lstm
+                    attribute_names += ['weight_hr']
+
+                if module.bidirectional:
+                    attribute_names = ['weight_ih_reverse', 'weight_hh_reverse']
+                    if module.bias:
+                        attribute_names += ['bias_ih_reverse', 'bias_hh_reverse']
+                    if module.proj_size > 0: # it is lstm
+                        attribute_names += ['weight_hr_reverse']
 
                 count_zeros = 0
                 count_weights = 0

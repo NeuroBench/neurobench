@@ -21,6 +21,9 @@ class NeuroBenchModel:
         self.connection_hooks = []
         self.first_layer = None
 
+        self.supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, 
+                        torch.nn.Conv3d, torch.nn.RNNBase, torch.nn.RNNCellBase,)
+
 
     def __call__(self, batch):
         """ Includes the whole pipeline from data to inference (output should be same format as targets).
@@ -78,8 +81,8 @@ class NeuroBenchModel:
     def connection_layers(self):
         """ Retrieve all the connection layers of the underlying network (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
         """
-        supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
-
+        supported_layers = self.supported_layers
+        
         def get_connection_layers(parent):
             """ Returns all the connection layers
             """

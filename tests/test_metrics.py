@@ -99,7 +99,8 @@ def test_connection_sparsity():
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
     )
     model = SNNTorchModel(net_rnn)
-    connection_sparsity(model)
+    assert connection_sparsity(model) < 0.001
+    print('Passed connection sparsity')
 
 
 #Pytest for classification_accuracy from benchmarks/data_metrics
@@ -303,10 +304,12 @@ def test_synaptic_ops():
     model_relu_0 = TorchModel(net_relu_0)
     detect_activations_connections(model_relu_0)
     inp = torch.ones(1,20)
+    inp[:,0:10] = 5
+
 
     out_relu = model_relu_0(inp)
     syn_ops = synaptic_operations(model_relu_0, out_relu,  (inp,0))
-    print(syn_ops)
+
     assert syn_ops == 1125
 
     # test model with Identity layer as first layer
@@ -322,7 +325,6 @@ def test_synaptic_ops():
         nn.Sigmoid(),
     )
     inp = torch.ones(1,20)
-    # inp[0:10] = -1
 
     model_relu_50 = TorchModel(net_relu_50)
     detect_activations_connections(model_relu_50)
@@ -351,7 +353,7 @@ def test_synaptic_ops():
 
     out = model(inp)
     syn_ops = synaptic_operations(model, out, (inp,0))
-    print(syn_ops)
+
     assert syn_ops == 900
 
     # test conv1d layers
@@ -386,6 +388,19 @@ def test_synaptic_ops():
     syn_ops = synaptic_operations(model, out,  (inp,0))
 
     assert syn_ops == 1000
+    print('Passed synaptic ops UNITL LSTMS')
+    # test lstm network
+    net_lstm = simple_LSTM()
+
+    inp = [torch.ones(1,25), (torch.ones(1,5), torch.ones(1,5))] # input, (hidden, cell)
+    model = TorchModel(net_lstm)
+
+    detect_activations_connections(model)
+
+    out = model(inp)
+
+    syn_ops = synaptic_operations(model, out, inp)
+    assert syn_ops == 650
     print('Passed synaptic ops')
 
 
@@ -413,7 +428,19 @@ def test_neuron_update_metric():
     print('Passed neuron update metric')
 
 
-test_connection_sparsity()
+class simple_LSTM(nn.Module):
+    def __init__(self):
+        super(simple_LSTM, self).__init__()
+        self.lstm = nn.LSTMCell(input_size=25, hidden_size=5, bias=True)
+        self.rel = nn.ReLU()
+    def forward(self, x):
+        x, states = x[0], x[1]
+        x, _ = self.lstm(x, states)
+        x = self.rel(x)
+        return x
+    
+
+# test_connection_sparsity()
 # test_activation_sparsity()
-# test_synaptic_ops()
+test_synaptic_ops()
 # test_neuron_update_metric()

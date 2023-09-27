@@ -38,9 +38,11 @@ class AccumulatedMetric:
 def detect_activations_connections(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
-    supported_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
-    recurrent_supported_layers = (torch.nn.RNNBase)
-    recurr_cell_supported_layers = (torch.nn.RNNCellBase)
+    supported_layers = model.supported_layers
+    
+    # recurrent_supported_layers = (torch.nn.RNNBase)
+    # recurr_cell_supported_layers = (torch.nn.RNNCellBase)
+
     act_layers = model.activation_layers()
     # Registered activation hooks
     for layer in act_layers:
@@ -92,15 +94,14 @@ def synaptic_operations(model, preds, data):
     ops = 0
     for hook in model.connection_hooks:
         inputs = hook.inputs # copy of the inputs, delete hooks after
-        # print(inputs)
         for spikes in inputs:
             # spikes is batch, features, see snntorchmodel wrappper
-            for single_in in spikes:
-                if len (single_in) > 0:
-                    hook.hook.remove()
-                    ops += single_layer_MACs(single_in, hook.layer)
-                    hook.register_hook()
-
+            # for single_in in spikes:
+            if len(spikes) == 1:
+                spikes = spikes[0]
+            hook.hook.remove()
+            ops += single_layer_MACs(spikes, hook.layer)
+            hook.register_hook()
     ops_per_sample = ops / data[0].size(0)
     return ops_per_sample
 

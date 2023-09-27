@@ -1,5 +1,5 @@
 import torch
-
+import snntorch as snn
 # static metrics, only require model
 
 def parameter_count(model):
@@ -58,26 +58,67 @@ def connection_sparsity(model):
             int: Number of zeros in the module's weights.
         """
         children = list(module.children())
-        
+        regular_layers = (torch.nn.Linear, torch.nn.Conv1d, torch.nn.Conv2d, torch.nn.Conv3d)
+        recurr_layers  = (torch.nn.RNNBase)
+        recurr_cells   = (torch.nn.RNNCellBase)
         if len(children) == 0: # it is a leaf
             # print(module)
-            if isinstance(module, torch.nn.Linear) or isinstance(module, torch.nn.Conv2d) or isinstance(module, torch.nn.Conv1d) or isinstance(module, torch.nn.Conv3d):
+            if isinstance(module, regular_layers):
                 count_zeros = torch.sum(module.weight == 0)
                 count_weights = module.weight.numel()
                 return count_zeros, count_weights
             
-            elif isinstance(module, torch.nn.RNN) or isinstance(module, torch.nn.RNNBase)or isinstance(module, torch.nn.RNNCell):
-                count_zeros = torch.sum(module.weight_hh_l0 == 0) + torch.sum(module.weight_ih_l0 == 0)
-                count_weights = module.weight_hh_l0.numel() + module.weight_ih_l0.numel()
+            elif isinstance(module, recurr_layers):
+                attribute_names = []
+                for i in range(module.num_layers): 
+                    param_names = ['weight_ih_l{}{}', 'weight_hh_l{}{}']
+                    if module.bias:
+                        param_names += ['bias_ih_l{}{}', 'bias_hh_l{}{}']
+                    if module.proj_size > 0: # it is lstm
+                        param_names += ['weight_hr_l{}{}']
+
+                    attribute_names += [x.format(i, '') for x in param_names]
+                    if module.bidirectional:
+                        suffix = '_reverse'
+                        attribute_names += [x.format(i, suffix) for x in param_names]
+
+                count_zeros = 0
+                count_weights = 0
+                for attr in attribute_names:
+                    attr_val = getattr(module, attr)
+                    count_zeros += torch.sum(attr_val == 0)
+                    count_weights += attr_val.numel() 
+
                 return count_zeros, count_weights
             
-            elif isinstance(module, torch.nn.LSTM) or isinstance(module, torch.nn.GRU) or isinstance(module, torch.nn.GRUCell) or isinstance(module, torch.nn.LSTMCell):
-                count_zeros = torch.sum(module.weight_hh_l0 == 0) + torch.sum(module.weight_ih_l0 == 0) + torch.sum(module.weight_hh_l0 == 0) + torch.sum(module.weight_ih_l0 == 0)
-                count_weights = module.weight_hh_l0.numel() + module.weight_ih_l0.numel() + module.weight_hh_l0.numel() + module.weight_ih_l0.numel()
+            elif isinstance(module, recurr_cells):
+                attribute_names = ['weight_ih', 'weight_hh']
+                if module.bias:
+                    attribute_names += ['bias_ih', 'bias_hh']
+                if module.proj_size > 0: # it is lstm
+                    attribute_names += ['weight_hr']
+
+                if module.bidirectional:
+                    attribute_names = ['weight_ih_reverse', 'weight_hh_reverse']
+                    if module.bias:
+                        attribute_names += ['bias_ih_reverse', 'bias_hh_reverse']
+                    if module.proj_size > 0: # it is lstm
+                        attribute_names += ['weight_hr_reverse']
+
+                count_zeros = 0
+                count_weights = 0
+                for attr in attribute_names:
+                    attr_val = getattr(module, attr)
+                    count_zeros += torch.sum(attr_val == 0)
+                    count_weights += attr_val.numel() 
+
                 return count_zeros, count_weights
-            
-            else:
+
+            elif isinstance(module, snn.SpikingNeuron):
                 return 0, 0 # it is a neuromorphic neuron layer
+            else:
+                print('Module type: ', module, 'not found.')
+                return 0,0
         
         else:
             count_zeros = 0
@@ -97,6 +138,6 @@ def connection_sparsity(model):
         count_zeros += zeros
         count_weights += weights
 
-    # Return the ratio of zeros to weights, rounded to 3 decimals
-    return round((count_zeros / count_weights).item(), 3)
+    # Return the ratio of zeros to weights, rounded to 4 decimals
+    return round((count_zeros / count_weights).item(), 4)
 

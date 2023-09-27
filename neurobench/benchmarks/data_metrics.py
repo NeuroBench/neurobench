@@ -1,7 +1,7 @@
 import torch
 import numpy as np
-from .utils.metric_utils import check_shape, make_binary_copy
-from ..benchmarks.hooks import ActivationHook
+from .utils.metric_utils import check_shape, make_binary_copy, single_layer_MACs
+from ..benchmarks.hooks import ActivationHook, LayerHook
 
 class AccumulatedMetric:
     """ Abstract class for a metric which must save state between batches.
@@ -35,12 +35,25 @@ class AccumulatedMetric:
 
 # dynamic metrics, require model, model predictions, and labels
 
-def detect_activation_neurons(model):
+def detect_activations_connections(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
+    supported_layers = model.supported_layers
+    
+    # recurrent_supported_layers = (torch.nn.RNNBase)
+    # recurr_cell_supported_layers = (torch.nn.RNNCellBase)
+
+    act_layers = model.activation_layers()
     # Registered activation hooks
-    for layer in model.activation_layers():
+    for layer in act_layers:
         model.activation_hooks.append(ActivationHook(layer))
+
+    con_layers = model.connection_layers()
+    for flat_layer in con_layers:
+        if isinstance(flat_layer, supported_layers):
+            model.connection_hooks.append(LayerHook(flat_layer))
+
+    
 
 def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
@@ -61,32 +74,63 @@ def activation_sparsity(model, preds, data):
     for hook in model.activation_hooks:
         for spikes in hook.activation_outputs:  # do we need a function rather than a member
             spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
-            # print('spikes:', str(hook.activation_outputs))
             total_spike_num += spike_num
             total_neuro_num += neuro_num
-    # print(total_neuro_num, total_spike_num)    
+
     sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
 
-def multiply_accumulates(model, preds, data):
+def synaptic_operations(model, preds, data):
     """ Multiply-accumulates (MACs) of the model forward.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
+        inputs: A tensor of model inputs.
     Returns:
         float: Multiply-accumulates.
     """
-    # TODO: 
-    #   Spiking model: number of spike activations * fanout (see snnmetrics)
-    #   Recurrent layers: each connection is one MAC
-    #   ANN: use PyTorch profiler
+    ops = 0
+    for hook in model.connection_hooks:
+        inputs = hook.inputs # copy of the inputs, delete hooks after
+        for spikes in inputs:
+            # spikes is batch, features, see snntorchmodel wrappper
+            # for single_in in spikes:
+            if len(spikes) == 1:
+                spikes = spikes[0]
+            hook.hook.remove()
+            ops += single_layer_MACs(spikes, hook.layer)
+            hook.register_hook()
+    ops_per_sample = ops / data[0].size(0)
+    return ops_per_sample
 
-    binary_model = make_binary_copy(model)
-    check_shape(preds, data[1])
-    macs = 0.0
-    return macs
+def number_neuron_updates(model, preds, data):
+    """ Number of times each neuron type is updated.
+
+    Args:
+        model: A NeuroBenchModel.
+        preds: A tensor of model predictions.
+        data: A tuple of data and labels.
+    Returns:
+        dict: key is neuron type, value is number of updates.
+    """
+    # check_shape(preds, data[1])
+    macs = 0
+
+    update_dict = {}
+    for hook in model.activation_hooks: 
+        for spikes_batch in hook.activation_inputs:  
+            for spikes in spikes_batch: 
+                nr_updates = torch.count_nonzero(spikes) 
+                if str(type(hook.layer)) not in update_dict:
+                    update_dict[str(type(hook.layer))] = 0
+                update_dict[str(type(hook.layer))] += int(nr_updates)
+    # print formatting
+    print('Number of updates for:')
+    for key in update_dict:
+        print(key, ':',update_dict[key])
+    return update_dict
 
 def classification_accuracy(model, preds, data):
     """ Classification accuracy of the model predictions.

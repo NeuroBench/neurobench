@@ -429,14 +429,18 @@ def test_neuron_update_metric():
 
 
 class simple_LSTM(nn.Module):
+    """Nonsense LSTM/RNN for operations testing
+    """
     def __init__(self):
         super(simple_LSTM, self).__init__()
         self.lstm = nn.LSTMCell(input_size=25, hidden_size=5, bias=True)
+        self.rnn  = nn.RNNCell(input_size=25, hidden_size=5, bias=True)
         self.rel = nn.ReLU()
-    def forward(self, x):
-        x, states = x[0], x[1]
+    def forward(self, inp):
+        x, states = inp[0], inp[1]
         x, _ = self.lstm(x, states)
         x = self.rel(x)
+        x = self.rnn(inp[0], inp[1])
         return x
     
 

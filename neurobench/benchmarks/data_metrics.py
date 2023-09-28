@@ -100,7 +100,8 @@ def synaptic_operations(model, preds, data):
             if len(spikes) == 1:
                 spikes = spikes[0]
             hook.hook.remove()
-            ops += single_layer_MACs(spikes, hook.layer)
+            operations, spiking = single_layer_MACs(spikes, hook.layer)
+            ops += operations
             hook.register_hook()
     ops_per_sample = ops / data[0].size(0)
     return ops_per_sample

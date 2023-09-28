@@ -68,28 +68,34 @@ def single_layer_MACs(inputs, layer):
 	with torch.no_grad():
 		inps = []
 		if isinstance(inputs, tuple):
-				
+				# input is first element, rest is hidden states
+				test_ins = inputs[0]
+
+				if len(test_ins[(test_ins != 0) & (test_ins !=1)])==0:
+					spiking = True
 				for inp in inputs:
 					if inp is not None:
-						if isinstance(inp, tuple):
+						if isinstance(inp, tuple): # these are the states
 							nps = []
 							for np in nps:
 								if np is not None:
-									if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
-										spiking = True
+									# if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
+										# spiking = True 
 									np[np != 0] = 1
 									inps.append(np)
 						else:
 							if inp is not None:
-								if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
-									spiking = True
+								# if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
+								# 	spiking = True
 								inp[inp != 0] = 1
 								inps.append(inp)
 						
 		else:
 			in_states = False
 			if len(inputs[(inputs != 0) & (inputs !=1)])==0 :
+
 				spiking = True
+
 			inputs[inputs != 0] = 1
 			inps.append(inputs)
 
@@ -132,6 +138,7 @@ def single_layer_MACs(inputs, layer):
 		# if no explicit states are passed to recurrent layers, then h and c are initialized to zero (pytorch convention)
 		layer_bin = make_binary_copy(layer)
 		# transpose from batches, timesteps, features to features, batches
+		print(layer_bin.weight_ih.shape)
 		out_ih = torch.matmul(layer_bin.weight_ih, inputs[0].transpose(0,-1)) # accounts for i,f,g,o
 		out_hh = torch.zeros_like(out_ih)
 		
@@ -186,21 +193,31 @@ def single_layer_MACs(inputs, layer):
 			# out is vector with r,z,n
 			out_ih = out_ih + bias_ih
 			out_hh = out_hh + bias_hh
-			out_ih_n = out_ih.reshape(3,-1)[3,:]
-			out_hh_n = out_hh.reshape(3,-1)[3,:]
-			out = out_ih + out_hh
-			rzn = out.reshape(3,-1)
+			
+			out_ih = out_ih.reshape(3,-1)
+			out_hh = out_hh.reshape(3,-1)
+
+			out_ih_n = out_ih[2,:]
+			out_hh_n = out_hh[2,:]
+			rzn = out_ih + out_hh
+
+			macs += out_ih[0:2,:].sum() + out_hh[0:2,:].sum()
+			# rzn = out.reshape(3,-1)
 			r = rzn[0,:]
 			z = rzn[1,:]
-			n = out_ih_n + r*out_hh_n
+			r[r!=0] = 1
+			n = out_ih_n + r*out_hh_n # add 
+			macs += n.sum()
+			print(macs)
 			n[n!=0] = 1
 			z_a = (1-z)
+			macs += torch.tensor(z.size()).sum() # append number of subtractions
 			z_a[z_a!=0] = 1
 			t_1 = z_a * n
 			t_2 = z * inputs[1]
 
-			out = t_1 + t_2
-			macs = out.sum()
+			out_nrs = t_1 + t_2
+			macs += out_nrs.sum()
 
 	return int(macs), spiking
 		

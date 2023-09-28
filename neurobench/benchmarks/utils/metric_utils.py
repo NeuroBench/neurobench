@@ -58,17 +58,67 @@ def make_binary_copy(layer):
 
 	return layer_copy
 
+def make_binary_input(inputs): 
+    """
+    Makes a binary copy of the inputs and handles nested tuples such as (x, (h, c))
+    """
+    inps = []  # List to store modified inputs
+
+    def binary_copy(inp):
+        """
+        Helper function to perform binary copy for a single input element
+        """
+        if inp is not None:
+            print(inp)
+            inp[inp != 0] = 1
+            return inp
+
+    def process_nested_tuple(inp_tuple):
+        """
+        Helper function to process nested tuples
+        """
+        return tuple(map(process_inputs, inp_tuple))
+
+    def process_inputs(inp):
+        """
+        Recursive function to process inputs
+        """
+        if isinstance(inp, tuple):
+            return process_nested_tuple(inp)
+        else:
+            return binary_copy(inp)
+
+    # Process the inputs recursively
+    modified_inputs = process_inputs(inputs)
+    inps.append(modified_inputs)
+
+    return inps
 
 def single_layer_MACs(inputs, layer):
 	""" Computes the MACs for a single layer.
 	"""
 	macs = 0
-
+	in_states = True # assume that input is tuple of inputs and states. If not, then set to False
 	with torch.no_grad():
 		if isinstance(inputs, tuple):
-				print(inputs)
+				inps = []
+				for inp in inputs:
+					if inp is not None:
+						if isinstance(inp, tuple):
+							nps = []
+							for np in nps:
+								if np is not None:
+									np[np != 0] = 1
+									inps.append(np)
+						else:
+							if inp is not None:
+								inp[inp != 0] = 1
+								inps.append(inp)
+						
 		else:
+			in_states = False
 			inputs[inputs != 0] = 1
+
 	stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
 	recurrent_layers = (torch.nn.RNNBase)
 	recurrent_cells  = (torch.nn.RNNCellBase)
@@ -104,10 +154,13 @@ def single_layer_MACs(inputs, layer):
 
 		# NOTE: sigmoid and tanh will never change a non-zero value to zero or vice versa
 		# NOTE: these activation functions are currently NOT included in NeuroBench
+		# if no explicit states are passed to recurrent layers, then h and c are initialized to zero (pytorch convention)
 		layer_bin = make_binary_copy(layer)
-		# transpose from batches, features to features, batches
+		# transpose from batches, timesteps, features to features, batches
 		out_ih = torch.matmul(layer_bin.weight_ih, inputs[0].transpose(0,-1)) # accounts for i,f,g,o
-		out_hh = torch.matmul(layer_bin.weight_hh, inputs[1][0].transpose(0,-1)) # accounts for i,f,g,o
+		out_hh = torch.zeros_like(out_ih)
+		if in_states:
+			out_hh = torch.matmul(layer_bin.weight_hh, inputs[1][0].transpose(0,-1))
 		
 		# out matrices are now features, batches
 		if layer_bin.bias:
@@ -121,7 +174,10 @@ def single_layer_MACs(inputs, layer):
 		# out is vector with i,f,g,o
 		print('Check ordering of ifgo in metric_utils.py!')
 		ifgo = out.reshape(4,-1) # each row is one of i,f,g,o
-		c_1 = ifgo[1,:]*inputs[1][1] + ifgo[0,:]*ifgo[2,:]
+		if in_states:
+			c_1 = ifgo[1,:]*inputs[1][1] + ifgo[0,:]*ifgo[2,:]
+		else:
+			c_1 = ifgo[0,:]*ifgo[2,:]
 		c_1[c_1!=0] = 1
 		ifgoc_macs = ifgo_macs + c_1.sum()
 		output = ifgo[3,:]*c_1 # drop tanh as does not affect 1 vs 0

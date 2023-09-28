@@ -26,7 +26,7 @@ net = ANNModel(input_dim=dataset.input_feature_size*dataset.num_steps,
 model = TorchModel(net)
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["r2"]
+data_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
 
 # Benchmark expects the following:
 benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics])

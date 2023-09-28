@@ -1,4 +1,5 @@
 from tqdm import tqdm
+
 from . import static_metrics, data_metrics
 
 class Benchmark():
@@ -32,6 +33,9 @@ class Benchmark():
             results: A dictionary of results.
         """
         print("Running benchmark")
+        
+        # add hooks to the model
+        data_metrics.detect_activation_neurons(self.model)
 
         # Static metrics
         results = {}
@@ -48,7 +52,7 @@ class Benchmark():
         dataset_len = len(self.dataloader.dataset)
         for data in tqdm(self.dataloader, total=len(self.dataloader)):
             batch_size = data[0].size(0)
-
+            
             # convert data to tuple
             if type(data) is not tuple:
                 data = tuple(data)
@@ -60,6 +64,7 @@ class Benchmark():
             # Run model on test data
             preds = self.model(data[0])
 
+            # TODO: postprocessors are applied to model output only?
             for alg in self.postprocessors: 
                 preds = alg(preds)
 
@@ -69,9 +74,9 @@ class Benchmark():
                 batch_results[m] = self.data_metrics[m](self.model, preds, data)
 
             for m, v in batch_results.items():
-                # AccumulatedMetrics are computed with past state
+                # AccumulatedMetrics are computed after all batches complete
                 if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                    results[m] = v
+                    continue
                 # otherwise accumulate via mean
                 else:
                     assert isinstance(v, float) or isinstance(v, int), "Data metric must return float or int to be accumulated"
@@ -79,5 +84,14 @@ class Benchmark():
                         results[m] = v * batch_size / dataset_len
                     else:
                         results[m] += v * batch_size / dataset_len
+            # delete hook contents
+            for hook in self.model.activation_hooks:
+                hook.empty_hook()
+                
+
+        # compute AccumulatedMetrics after all batches
+        for m in self.data_metrics.keys():
+            if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                results[m] = self.data_metrics[m].compute()
 
         return results

@@ -1,6 +1,7 @@
 import torch
-
-from .utils.metric_utils import check_shape
+import numpy as np
+from .utils.metric_utils import check_shape, make_binary_copy
+from ..benchmarks.hooks import ActivationHook
 
 class AccumulatedMetric:
     """ Abstract class for a metric which must save state between batches.
@@ -33,11 +34,19 @@ class AccumulatedMetric:
 
 
 # dynamic metrics, require model, model predictions, and labels
+
+def detect_activation_neurons(model):
+    """Register hooks or other operations that should be called before running a benchmark.
+    """
+    # Registered activation hooks
+    for layer in model.activation_layers():
+        model.activation_hooks.append(ActivationHook(layer))
+
 def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
     
     Calculated as the number of zero activations over the total number
-    def __init__():
+    of activations, over all layers, timesteps, samples in data.
 
     Args:
         model: A NeuroBenchModel.
@@ -47,11 +56,17 @@ def activation_sparsity(model, preds, data):
         float: Activation sparsity.
     """
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
-    #       Standard FF ANN should be zero (no activation sparsity)
-    raise NotImplementedError("Activation sparsity not yet implemented")
-
-    check_shape(preds, data[1])
-    return model.activation_sparsity()
+    #       Standard FF ANN depends on activation function, ReLU can introduce sparsity.
+    total_spike_num, total_neuro_num = 0, 0
+    for hook in model.activation_hooks:
+        for spikes in hook.activation_outputs:  # do we need a function rather than a member
+            spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
+            # print('spikes:', str(hook.activation_outputs))
+            total_spike_num += spike_num
+            total_neuro_num += neuro_num
+    # print(total_neuro_num, total_spike_num)    
+    sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
+    return sparsity
 
 def multiply_accumulates(model, preds, data):
     """ Multiply-accumulates (MACs) of the model forward.
@@ -67,8 +82,8 @@ def multiply_accumulates(model, preds, data):
     #   Spiking model: number of spike activations * fanout (see snnmetrics)
     #   Recurrent layers: each connection is one MAC
     #   ANN: use PyTorch profiler
-    raise NotImplementedError("Multiply-accumulates not yet implemented")
 
+    binary_model = make_binary_copy(model)
     check_shape(preds, data[1])
     macs = 0.0
     return macs
@@ -161,13 +176,91 @@ class r2(AccumulatedMetric):
 
         return r2.item()
 
+class COCO_mAP(AccumulatedMetric):
+    """ COCO mean average precision.
 
+    Measured for event data based on Perot2020, Supplementary B (https://arxiv.org/abs/2009.13436)
+        - Skips first 0.5s of each sequence
+        - Bounding boxes with diagonal size smaller than 60 pixels are ignored
+    """
 
+    def __init__(self):
+        """ Initalize metric state.
+        """
+        from metavision_ml.metrics.coco_eval import CocoEvaluator
+        from collections import defaultdict
 
+        self.dt_detections = defaultdict(list)
+        self.gt_detections = defaultdict(list)
+        self.evaluator = CocoEvaluator(classes=['background'] + ["pedestrian", "two wheeler", "car"], height=360, width=640)
 
+    def __call__(self, model, preds, data):
+        """ Accumulate predictions and ground truth detections over batches.
 
+        Args:
+            model: A NeuroBenchModel.
+            preds: A tensor of model predictions.
+            data: A tuple of data and labels.
+        Returns:
+            float: COCO mean average precision.
+        """
+        from metavision_ml.data import box_processing as box_api
+        from metavision_sdk_core import EventBbox
 
+        targets = data[1]
+        video_infos = data[2]["video_infos"]
+        frame_is_labeled = data[2]["frame_is_labeled"]
+        skip_us = 500000
 
+        for t in range(len(targets)):
+            for i in range(len(targets[t])):
+                gt_boxes = targets[t][i]
+                
+                pred = preds[t][i]
 
+                video_info, tbin_start, _ = video_infos[i]
 
-    
+                if video_info.padding or frame_is_labeled[t, i] == False:
+                    continue
+
+                name = video_info.path
+                if name not in self.dt_detections:
+                    self.dt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
+                if name not in self.gt_detections:
+                    self.gt_detections[name] = [np.zeros((0), dtype=box_api.EventBbox)]
+                assert video_info.start_ts == 0
+                ts = tbin_start + t * video_info.delta_t
+
+                if ts < skip_us:
+                    continue
+
+                if isinstance(gt_boxes, torch.Tensor):
+                    gt_boxes = gt_boxes.cpu().numpy()
+                if gt_boxes.dtype == np.float32:
+                    gt_boxes = box_api.box_vectors_to_bboxes(gt_boxes[:, :4], gt_boxes[:, 4], ts=ts)
+
+                if pred['boxes'] is not None and len(pred['boxes']) > 0:
+                    boxes = pred['boxes'].cpu().data.numpy()
+                    labels = pred['labels'].cpu().data.numpy()
+                    scores = pred['scores'].cpu().data.numpy()
+                    dt_boxes = box_api.box_vectors_to_bboxes(boxes, labels, scores, ts=ts)
+                    self.dt_detections[name].append(dt_boxes)
+                else:
+                    self.dt_detections[name].append(np.zeros((0), dtype=EventBbox))
+
+                if len(gt_boxes):
+                    gt_boxes["t"] = ts
+                    self.gt_detections[name].append(gt_boxes)
+                else:
+                    self.gt_detections[name].append(np.zeros((0), dtype=EventBbox))
+
+        return 0.0 # too heavy to compute every iteration
+
+    def compute(self):
+        """ Compute COCO mAP using accumulated data.
+        """
+        print("Computing COCO mAP.")
+        for key in self.gt_detections:
+            self.evaluator.partial_eval([np.concatenate(self.gt_detections[key])], [np.concatenate(self.dt_detections[key])])
+        coco_kpi = self.evaluator.accumulate()
+        return coco_kpi['mean_ap']

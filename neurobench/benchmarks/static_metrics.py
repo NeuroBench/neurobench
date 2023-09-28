@@ -95,16 +95,7 @@ def connection_sparsity(model):
                 attribute_names = ['weight_ih', 'weight_hh']
                 if module.bias:
                     attribute_names += ['bias_ih', 'bias_hh']
-                if module.proj_size > 0: # it is lstm
-                    attribute_names += ['weight_hr']
-
-                if module.bidirectional:
-                    attribute_names = ['weight_ih_reverse', 'weight_hh_reverse']
-                    if module.bias:
-                        attribute_names += ['bias_ih_reverse', 'bias_hh_reverse']
-                    if module.proj_size > 0: # it is lstm
-                        attribute_names += ['weight_hr_reverse']
-
+   
                 count_zeros = 0
                 count_weights = 0
                 for attr in attribute_names:

@@ -63,24 +63,33 @@ class LSTMModel(nn.Module):
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
         self.layer_norm = nn.LayerNorm(self.input_dim).type(dtype) 
  
-        # stores lookback window time steps
+        # Stores l`ookback window time steps
         self.register_buffer('inp', torch.zeros(1, self.input_dim).type(dtype))
+
+        # Create the hidden state tensors
+        for i in range(self.n_layers):
+            self.register_buffer(f'h{i}', torch.zeros(1, self.hidden_size).type(self.dtype))
+
+        # Create the c state tensors
+        for i in range(self.n_layers):
+            self.register_buffer(f'c{i}', torch.zeros(1, self.hidden_size).type(self.dtype))
 
     def single_forward(self, sample): 
 
         sample = self.layer_norm(sample)
-        x, _ = self.rnns[0](sample)
+        self.h[0], self.c[0] = self.rnns[0](sample, (self.h[0], self.c[0]))
         for i in range(1, self.n_layers):
-            x, _ = self.rnns[i](x)
-        x = self.activation(x)
+            self.h[i], self.c[i] = self.rnns[i](self.h[i-1], (self.h[i], self.c[i]))
+        x = self.activation(self.h[-1])
         out = self.fc(x)
 
         return out
 
     def forward(self, batch):
 
-        #self.inp = torch.zeros(1, self.input_dim).type(self.dtype)
-        #self.inp = self.inp.to(self.device)
+        self.h = [getattr(self, f'h{i}') for i in range(self.n_layers)]
+        self.c = [getattr(self, f'c{i}') for i in range(self.n_layers)]
+
         predictions = []
         for i, sample in enumerate(batch):
 

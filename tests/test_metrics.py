@@ -311,8 +311,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model_relu_0, out_relu,  (inp,0))
 
-    assert syn_ops[0] == 1125
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 1125
+    assert syn_ops['ACs'] == 0
 
     # test model with Identity layer as first layer
     net_relu_50 = nn.Sequential(
@@ -336,8 +336,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model_relu_50, out_relu_50,  (inp,0))
 
-    assert syn_ops[0] == (2*625 + 400 + 500)
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == (2*625 + 400 + 500)
+    assert syn_ops['ACs'] == 0
 
     # test conv2d layers
     net_conv = nn.Sequential(
@@ -355,8 +355,8 @@ def test_synaptic_ops():
     out = model(inp)
     syn = synaptic_operations()
     syn_ops = syn(model, out, (inp,0))
-    assert syn_ops[0] == 9
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 9
+    assert syn_ops['ACs'] == 0
 
     model.reset_hooks()
     inp = torch.ones(1, 1, 12, 12) # (12-(kernelsize-1))**2 * 9 synops per kernel ops= 100*9 syn ops = 900
@@ -366,8 +366,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model, out, (inp,0))
 
-    assert syn_ops[0] == 900
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 900
+    assert syn_ops['ACs'] == 0
 
     # test conv1d layers
     net_conv = nn.Sequential(
@@ -386,8 +386,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model, out, (inp,0))
 
-    assert syn_ops[0] == 150
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 150
+    assert syn_ops['ACs'] == 0
 
     # test snn layers
     net_snn = nn.Sequential(
@@ -409,8 +409,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model, out,  (inp,0))
 
-    assert syn_ops[0] == 0
-    assert syn_ops[1] == 1000
+    assert syn_ops['MACs'] == 0
+    assert syn_ops['ACs'] == 1000
 
     # test lstm network
     net_lstm = simple_LSTM()
@@ -426,8 +426,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model, out, inp)
 
-    assert syn_ops[0] == 650
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 650
+    assert syn_ops['ACs'] == 0
 
     # test RNN network
     net_RNN = simple_RNN()
@@ -443,8 +443,8 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model, out, inp)
 
-    assert syn_ops[0] == 160
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 160
+    assert syn_ops['ACs'] == 0
 
     # test GRU network
     net_GRU = simple_GRU()
@@ -461,8 +461,8 @@ def test_synaptic_ops():
     syn_ops = syn(model, out, inp)
 
     print(syn_ops)
-    assert syn_ops[0] == 650
-    assert syn_ops[1] == 0
+    assert syn_ops['MACs'] == 650
+    assert syn_ops['ACs'] == 0
 
     
     print('Passed synaptic ops')

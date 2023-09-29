@@ -103,3 +103,32 @@ def test_1mp():
     assert isinstance(data[1], list) # list[list[nparr]]
     assert isinstance(data[2], dict)
 
+def test_primate_reaching():
+    path = dataset_path + "primate_reaching/PrimateReachingDataset"
+    try:
+        assert os.path.exists(path)
+    except AssertionError:
+        raise FileExistsError(f"Can't find {path}")
+
+    dataset = PrimateReaching(file_path=path,
+                              filename="indy_20170131_02.mat",
+                              num_steps=250, train_ratio=0.8, bin_width=0.004,
+                              biological_delay=50)
+
+    # check dataset non-empty
+    assert len(dataset)
+
+    train_set_loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(dataset, dataset.ind_train), batch_size=1, shuffle=False)
+    test_set_loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(dataset, dataset.ind_test), batch_size=1, shuffle=False)
+
+    # correct amount of samples
+    assert len(train_set_loader) == len(dataset.ind_train)
+    assert len(test_set_loader) == len(dataset.ind_test)
+
+    # correct shapes
+    assert next(iter(train_set_loader))[0].shape == (1, 250, 96)
+    assert next(iter(train_set_loader))[1].shape == (1, 250, 2)
+    assert next(iter(test_set_loader))[0].shape == (1, 250, 96)
+    assert next(iter(test_set_loader))[1].shape == (1, 250, 2)

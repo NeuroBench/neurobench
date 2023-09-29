@@ -3,7 +3,11 @@ from torch import nn
 
 from torch.utils.data import Subset, DataLoader
 
-import wandb
+try:
+    import wandb
+    loaded_wandb = True
+except:
+    loaded_wandb = False
 import argparse
 import pandas as pd
 
@@ -13,7 +17,7 @@ from neurobench.benchmarks import Benchmark
 
 from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
 from neurobench.examples.mackey_glass.lstm_model import LSTMModel
-torch.autograd.set_detect_anomaly(True)
+#torch.autograd.set_detect_anomaly(True)
 
 mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)
@@ -27,7 +31,7 @@ parser.add_argument('--n_layers', type=int, default=2)
 parser.add_argument('--hidden_size', type=int, default=100)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
-parser.add_argument('--repeat', type=int, default=1)
+parser.add_argument('--repeat', type=int, default=5)
 # seed set by the repeat id
 #parser.add_argument('--seed', type=int, default=41)
 parser.add_argument('--lr', type=float, default=0.01)
@@ -37,16 +41,17 @@ parser.add_argument('--debug', type=bool, default=False)
 
 args, unparsed = parser.parse_known_args()
 
-if args.sw:
-    wandb.init(name=args.name,
-               mode=args.wandb_state,
-               config=wandb.config)
+if loaded_wandb:
+    if args.sw:
+        wandb.init(name=args.name,
+                   mode=args.wandb_state,
+                   config=wandb.config)
 
-    config_wb = wandb.config
-else:
-    wandb.init(project=args.project,
-               name=args.name,
-               mode=args.wandb_state)
+        config_wb = wandb.config
+    else:
+        wandb.init(project=args.project,
+                   name=args.name,
+                   mode=args.wandb_state)
 
 if torch.cuda.is_available():
     device = torch.device("cuda")
@@ -71,14 +76,28 @@ sMAPE_scores = []
 
 for repeat_id in range(args.repeat):
 
+    tau = mg_parameters.tau[args.series_id]
+    lyaptime = mg_parameters.lyapunov_time[args.series_id]
+    constant_past = mg_parameters.initial_condition[args.series_id]
+    offset = start_offset_range[repeat_id].item()
+
+    print(f"Experiment: repeat-id={repeat_id}, tau={tau}, constant_past={constant_past}, lyaptime={lyaptime}, offset={offset}")
+
+    if repeat_id == 0 and loaded_wandb:
+        wandb.config['tau'] = tau
+        wandb.config['lyaptime'] = lyaptime
+        wandb.config['constant_past'] = constant_past
+        wandb.config['offset'] = offset
+        wandb.config['repeat'] = args.repeat
+
     # set seed for RG for reproducible results
     torch.manual_seed(repeat_id)
     torch.cuda.manual_seed_all(repeat_id)
 
-    mg = MackeyGlass(tau = mg_parameters.tau[args.series_id], 
-                     lyaptime = mg_parameters.lyapunov_time[args.series_id],
-                     constant_past = mg_parameters.initial_condition[args.series_id],
-                     start_offset=start_offset_range[repeat_id].item(),
+    mg = MackeyGlass(tau=tau, 
+                     lyaptime=lyaptime,
+                     constant_past=constant_past,
+                     start_offset=offset,
                      bin_window=1)
 
     train_set = Subset(mg, mg.ind_train)
@@ -116,7 +135,8 @@ for repeat_id in range(args.repeat):
         opt.step()
 
         print(f"Epoch {epoch}: loss = {loss_val.item()}")
-        wandb.log({"loss": loss_val.item()})
+        if loaded_wandb:
+            wandb.log({"loss": loss_val.item()})
 
     if args.debug:
         import matplotlib.pyplot as plt        
@@ -130,7 +150,8 @@ for repeat_id in range(args.repeat):
         plt.legend()
 
         print("saved training fit to ./fit_train.pdf")
-        wandb.log({f'fig_train': wandb.Image(fig)})  
+        if loaded_wandb:
+            wandb.log({f'fig_train': wandb.Image(fig)})  
         #plt.savefig("fit_train.pdf")
         plt.close()
  
@@ -153,8 +174,9 @@ connection_sparsity = results["connection_sparsity"]
 model_size = results["model_size"]
 
 avg_sMAPE_score = sum(sMAPE_scores)/len(sMAPE_scores)
-wandb.log({"sMAPE_score": avg_sMAPE_score})
-wandb.log({"connection_sparsity": connection_sparsity})
-wandb.log({"model_size": model_size})
+if loaded_wandb:
+    wandb.log({"sMAPE_score": avg_sMAPE_score})
+    wandb.log({"connection_sparsity": connection_sparsity})
+    wandb.log({"model_size": model_size})
 
 print(f"sMAPE score {avg_sMAPE_score} on time series id {args.series_id}")

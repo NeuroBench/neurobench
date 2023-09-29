@@ -71,29 +71,24 @@ def single_layer_MACs(inputs, layer):
 				# input is first element, rest is hidden states
 				test_ins = inputs[0]
 
-				if len(test_ins[(test_ins != 0) & (test_ins !=1)])==0:
-					spiking = True
+				if torch.eq(torch.count_nonzero(test_ins), torch.sum(test_ins)):
+					spiking=True
 				for inp in inputs:
 					if inp is not None:
 						if isinstance(inp, tuple): # these are the states
 							nps = []
 							for np in nps:
 								if np is not None:
-									# if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
-										# spiking = True 
 									np[np != 0] = 1
 									inps.append(np)
 						else:
 							if inp is not None:
-								# if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
-								# 	spiking = True
 								inp[inp != 0] = 1
 								inps.append(inp)
 						
 		else:
 			in_states = False
-			if len(inputs[(inputs != 0) & (inputs !=1)])==0 :
-
+			if torch.eq(torch.count_nonzero(inputs), torch.sum(inputs)):
 				spiking = True
 
 			inputs[inputs != 0] = 1

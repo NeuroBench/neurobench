@@ -73,7 +73,7 @@ def activation_sparsity(model, preds, data):
     total_spike_num, total_neuro_num = 0, 0
     for hook in model.activation_hooks:
         for spikes in hook.activation_outputs:  # do we need a function rather than a member
-            spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
+            spike_num, neuro_num = torch.count_nonzero(spikes).item(), torch.numel(spikes)
             total_spike_num += spike_num
             total_neuro_num += neuro_num
 

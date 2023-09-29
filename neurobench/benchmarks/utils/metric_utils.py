@@ -138,7 +138,7 @@ def single_layer_MACs(inputs, layer):
 		# if no explicit states are passed to recurrent layers, then h and c are initialized to zero (pytorch convention)
 		layer_bin = make_binary_copy(layer)
 		# transpose from batches, timesteps, features to features, batches
-		print(layer_bin.weight_ih.shape)
+		# print(layer_bin.weight_ih.shape)
 		out_ih = torch.matmul(layer_bin.weight_ih, inputs[0].transpose(0,-1)) # accounts for i,f,g,o
 		out_hh = torch.zeros_like(out_ih)
 		

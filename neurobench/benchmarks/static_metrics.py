@@ -108,7 +108,7 @@ def connection_sparsity(model):
             elif isinstance(module, snn.SpikingNeuron):
                 return 0, 0 # it is a neuromorphic neuron layer
             else:
-                print('Module type: ', module, 'not found.')
+                # print('Module type: ', module, 'not found.')
                 return 0,0
         
         else:

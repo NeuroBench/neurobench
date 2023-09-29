@@ -72,28 +72,23 @@ def single_layer_MACs(inputs, layer):
 				test_ins = inputs[0]
 
 				if len(test_ins[(test_ins != 0) & (test_ins !=1)])==0:
-					spiking = True
+					spiking=True
 				for inp in inputs:
 					if inp is not None:
 						if isinstance(inp, tuple): # these are the states
 							nps = []
 							for np in nps:
 								if np is not None:
-									# if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
-										# spiking = True 
 									np[np != 0] = 1
 									inps.append(np)
 						else:
 							if inp is not None:
-								# if len(inp[(inp != 0) & (inp !=1)])!=0 : # it was a spiking layer
-								# 	spiking = True
 								inp[inp != 0] = 1
 								inps.append(inp)
 						
 		else:
 			in_states = False
-			if len(inputs[(inputs != 0) & (inputs !=1)])==0 :
-
+			if len(inputs[(inputs != 0) & (inputs !=1)])==0:
 				spiking = True
 
 			inputs[inputs != 0] = 1
@@ -138,7 +133,7 @@ def single_layer_MACs(inputs, layer):
 		# if no explicit states are passed to recurrent layers, then h and c are initialized to zero (pytorch convention)
 		layer_bin = make_binary_copy(layer)
 		# transpose from batches, timesteps, features to features, batches
-		print(layer_bin.weight_ih.shape)
+		# print(layer_bin.weight_ih.shape)
 		out_ih = torch.matmul(layer_bin.weight_ih, inputs[0].transpose(0,-1)) # accounts for i,f,g,o
 		out_hh = torch.zeros_like(out_ih)
 		

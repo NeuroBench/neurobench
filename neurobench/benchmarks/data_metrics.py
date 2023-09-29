@@ -73,7 +73,7 @@ def activation_sparsity(model, preds, data):
     total_spike_num, total_neuro_num = 0, 0
     for hook in model.activation_hooks:
         for spikes in hook.activation_outputs:  # do we need a function rather than a member
-            spike_num, neuro_num = len(torch.nonzero(spikes)), torch.numel(spikes)
+            spike_num, neuro_num = torch.count_nonzero(spikes).item(), torch.numel(spikes)
             total_spike_num += spike_num
             total_neuro_num += neuro_num
 
@@ -214,14 +214,14 @@ class synaptic_operations(AccumulatedMetric):
                 hook.register_hook()
         # ops_per_sample = ops / data[0].size(0)
         self.total_samples += data[0].size(0)
-        return self.compute(data)
+        return self.compute()
     
-    def compute(self, data):
+    def compute(self):
         if self.total_samples == 0:
-            return 0, 0
-        self.AC = self.AC/self.total_samples
-        self.MAC = self.MAC/self.total_samples
-        return {'MACs': self.MAC, 'ACs': self.AC}
+            return {'MACs': 0, 'ACs': 0}
+        ac = self.AC/self.total_samples
+        mac = self.MAC/self.total_samples
+        return {'MACs': mac, 'ACs': ac}
     
 
 class r2(AccumulatedMetric):

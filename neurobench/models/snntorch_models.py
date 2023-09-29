@@ -14,6 +14,8 @@ class SNNTorchModel(NeuroBenchModel):
         Args:
             net: A trained SNNTorch network.
         """
+        super().__init__(net)
+        
         self.net = net
         self.net.eval()
 
@@ -41,7 +43,6 @@ class SNNTorchModel(NeuroBenchModel):
             spk_out, _ = self.net(data[:, step, ...])
             spikes.append(spk_out)
         spikes = torch.stack(spikes).transpose(0, 1)
-        
         return spikes
 
     def __net__(self):

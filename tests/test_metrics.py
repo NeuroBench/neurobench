@@ -308,9 +308,11 @@ def test_synaptic_ops():
 
 
     out_relu = model_relu_0(inp)
-    syn_ops = synaptic_operations(model_relu_0, out_relu,  (inp,0))
+    syn = synaptic_operations()
+    syn_ops = syn(model_relu_0, out_relu,  (inp,0))
 
-    assert syn_ops == 1125
+    assert syn_ops['MACs'] == 1125
+    assert syn_ops['ACs'] == 0
 
     # test model with Identity layer as first layer
     net_relu_50 = nn.Sequential(
@@ -325,13 +327,17 @@ def test_synaptic_ops():
         nn.Sigmoid(),
     )
     inp = torch.ones(1,20)
+    inp[:,0:10] = 5
 
     model_relu_50 = TorchModel(net_relu_50)
     detect_activations_connections(model_relu_50)
     out_relu_50 = model_relu_50(inp)
 
-    syn_ops = synaptic_operations(model_relu_50, out_relu_50,  (inp,0))
-    assert syn_ops == (2*625 + 400 + 500)
+    syn = synaptic_operations()
+    syn_ops = syn(model_relu_50, out_relu_50,  (inp,0))
+
+    assert syn_ops['MACs'] == (2*625 + 400 + 500)
+    assert syn_ops['ACs'] == 0
 
     # test conv2d layers
     net_conv = nn.Sequential(
@@ -340,21 +346,28 @@ def test_synaptic_ops():
     )
 
     inp = torch.ones(1, 1, 3, 3) # 9 syn ops 
+    inp[0,0,0,0] = 4 # avoid getting classified as snn
+
     model = TorchModel(net_conv)
     detect_activations_connections(model)
 
 
     out = model(inp)
-    syn_ops = synaptic_operations(model, out, (inp,0))
-    assert syn_ops == 9
+    syn = synaptic_operations()
+    syn_ops = syn(model, out, (inp,0))
+    assert syn_ops['MACs'] == 9
+    assert syn_ops['ACs'] == 0
 
     model.reset_hooks()
     inp = torch.ones(1, 1, 12, 12) # (12-(kernelsize-1))**2 * 9 synops per kernel ops= 100*9 syn ops = 900
+    inp[0,0,0,0] = 4 # avoid getting classified as snn
 
     out = model(inp)
-    syn_ops = synaptic_operations(model, out, (inp,0))
+    syn = synaptic_operations()
+    syn_ops = syn(model, out, (inp,0))
 
-    assert syn_ops == 900
+    assert syn_ops['MACs'] == 900
+    assert syn_ops['ACs'] == 0
 
     # test conv1d layers
     net_conv = nn.Sequential(
@@ -363,14 +376,18 @@ def test_synaptic_ops():
         nn.ReLU(),
     )
     inp = torch.ones(1, 5, 10) # 5*5*(10-(5-1)) = 150 syn ops
+    inp[0,0,0] = 4 # avoid getting classified as snn
+
     model = TorchModel(net_conv)
     
     detect_activations_connections(model)
 
     out = model(inp)
-    syn_ops = synaptic_operations(model, out, (inp,0))
+    syn = synaptic_operations()
+    syn_ops = syn(model, out, (inp,0))
 
-    assert syn_ops == 150
+    assert syn_ops['MACs'] == 150
+    assert syn_ops['ACs'] == 0
 
     # test snn layers
     net_snn = nn.Sequential(
@@ -379,28 +396,75 @@ def test_synaptic_ops():
         snn.Leaky(beta=0.9, spike_grad=surrogate.fast_sigmoid(), init_hidden=True, output=True),
     )
     # should be 20*5 = 100 syn ops per call, for timesteps (1 sample per batch): 10*100 = 1000 
+
+    # simulate spiking input with only ones
     inp = torch.ones(5, 10, 20) # batch size, time steps, input size 
+    
+
     model = SNNTorchModel(net_snn)
     
     detect_activations_connections(model)
 
     out = model(inp)
-    syn_ops = synaptic_operations(model, out,  (inp,0))
+    syn = synaptic_operations()
+    syn_ops = syn(model, out,  (inp,0))
 
-    assert syn_ops == 1000
-    print('Passed synaptic ops UNITL LSTMS')
+    assert syn_ops['MACs'] == 0
+    assert syn_ops['ACs'] == 1000
+
     # test lstm network
     net_lstm = simple_LSTM()
 
     inp = [torch.ones(1,25), (torch.ones(1,5), torch.ones(1,5))] # input, (hidden, cell)
+    inp[0][0,0] = 4 # avoid getting classified as snn
     model = TorchModel(net_lstm)
 
     detect_activations_connections(model)
 
     out = model(inp)
 
-    syn_ops = synaptic_operations(model, out, inp)
-    assert syn_ops == 650
+    syn = synaptic_operations()
+    syn_ops = syn(model, out, inp)
+
+    assert syn_ops['MACs'] == 650
+    assert syn_ops['ACs'] == 0
+
+    # test RNN network
+    net_RNN = simple_RNN()
+
+    inp = [torch.ones(1,25), torch.ones(1,5)] # input, (hidden, cell)
+    inp[0][0,0] = 4 # avoid getting classified as snn
+    model = TorchModel(net_RNN)
+
+    detect_activations_connections(model)
+
+    out = model(inp)
+
+    syn = synaptic_operations()
+    syn_ops = syn(model, out, inp)
+
+    assert syn_ops['MACs'] == 160
+    assert syn_ops['ACs'] == 0
+
+    # test GRU network
+    net_GRU = simple_GRU()
+
+    inp = [torch.ones(1,25), torch.ones(1,5)] # input, (hidden, cell)
+    inp[0][0,0] = 4 # avoid getting classified as snn
+    model = TorchModel(net_GRU)
+
+    detect_activations_connections(model)
+
+    out = model(inp)
+
+    syn = synaptic_operations()
+    syn_ops = syn(model, out, inp)
+
+    print(syn_ops)
+    assert syn_ops['MACs'] == 650
+    assert syn_ops['ACs'] == 0
+
+    
     print('Passed synaptic ops')
 
 
@@ -429,18 +493,49 @@ def test_neuron_update_metric():
 
 
 class simple_LSTM(nn.Module):
+    """Nonsense LSTM for operations testing
+    Should be 650 MACs
+    """
     def __init__(self):
         super(simple_LSTM, self).__init__()
         self.lstm = nn.LSTMCell(input_size=25, hidden_size=5, bias=True)
         self.rel = nn.ReLU()
-    def forward(self, x):
-        x, states = x[0], x[1]
+    def forward(self, inp):
+        x, states = inp[0], inp[1]
         x, _ = self.lstm(x, states)
+        x = self.rel(x)
+        return x
+
+class simple_RNN(nn.Module):
+    """Nonsense RNN for operations testing
+    Should be
+    """
+    def __init__(self):
+        super(simple_RNN, self).__init__()
+        self.RNN = nn.RNNCell(input_size=25, hidden_size=5, bias=True)
+        self.rel = nn.ReLU()
+    def forward(self, inp):
+        x, states = inp[0], inp[1]
+        x = self.RNN(x, states)
+        x = self.rel(x)
+        return x
+    
+class simple_GRU(nn.Module):
+    """Nonsense GRU/RNN for operations testing
+    Should be 505
+    """
+    def __init__(self):
+        super(simple_GRU, self).__init__()
+        self.GRU = nn.GRUCell(input_size=25, hidden_size=5, bias=True)
+        self.rel = nn.ReLU()
+    def forward(self, inp):
+        x, states = inp[0], inp[1]
+        x = self.GRU(x, states)
         x = self.rel(x)
         return x
     
 
-# test_connection_sparsity()
-# test_activation_sparsity()
+test_connection_sparsity()
+test_activation_sparsity()
 test_synaptic_ops()
-# test_neuron_update_metric()
+test_neuron_update_metric()

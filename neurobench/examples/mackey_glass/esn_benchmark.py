@@ -14,7 +14,7 @@ mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)
 
 # Load hyperparameters of echo state networks found via the random search
-esn_parameters = pd.read_csv("echo_state_network_hyperparameters.csv")
+esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/echo_state_network_hyperparameters.csv")
 
 # benchmark run over 14 different series
 sMAPE_scores = []
@@ -57,13 +57,13 @@ for repeat_id in range(repeat):
         warmup_pts = round(warmup*mg.pts_per_lyaptime)
         train_labels = train_labels[warmup_pts:]
         esn.fit(train_data, train_labels, warmup_pts)
-        torch.save(esn, 'neurobench/examples/mackey_glass/model_data/esn.pth')
+        # torch.save(esn, 'neurobench/examples/mackey_glass/model_data/esn.pth')
          
         ## Load Model ##
-        net = torch.load('neurobench/examples/mackey_glass/model_data/esn.pth')
+        # net = torch.load('neurobench/examples/mackey_glass/model_data/esn.pth')
         test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
     
-        model = TorchModel(net)
+        model = TorchModel(esn)
     
         static_metrics = ["model_size", "connection_sparsity"]
         data_metrics = ["sMAPE", "activation_sparsity"]

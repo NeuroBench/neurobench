@@ -80,31 +80,33 @@ def activation_sparsity(model, preds, data):
     sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
 
-def synaptic_operations(model, preds, data):
-    """ Multiply-accumulates (MACs) of the model forward.
+# def synaptic_operations(model, preds, data):
+#     """ Multiply-accumulates (MACs) of the model forward.
 
-    Args:
-        model: A NeuroBenchModel.
-        preds: A tensor of model predictions.
-        data: A tuple of data and labels.
-        inputs: A tensor of model inputs.
-    Returns:
-        float: Multiply-accumulates.
-    """
-    ops = 0
-    for hook in model.connection_hooks:
-        inputs = hook.inputs # copy of the inputs, delete hooks after
-        for spikes in inputs:
-            # spikes is batch, features, see snntorchmodel wrappper
-            # for single_in in spikes:
-            if len(spikes) == 1:
-                spikes = spikes[0]
-            hook.hook.remove()
-            ops += single_layer_MACs(spikes, hook.layer)
-            hook.register_hook()
-    ops_per_sample = ops / data[0].size(0)
-    return ops_per_sample
+#     Args:
+#         model: A NeuroBenchModel.
+#         preds: A tensor of model predictions.
+#         data: A tuple of data and labels.
+#         inputs: A tensor of model inputs.
+#     Returns:
+#         float: Multiply-accumulates.
+#     """
+#     ops = 0
+#     for hook in model.connection_hooks:
+#         inputs = hook.inputs # copy of the inputs, delete hooks after
+#         for spikes in inputs:
+#             # spikes is batch, features, see snntorchmodel wrappper
+#             # for single_in in spikes:
+#             if len(spikes) == 1:
+#                 spikes = spikes[0]
+#             hook.hook.remove()
+#             operations, spiking = single_layer_MACs(spikes, hook.layer)
+#             ops += operations
+#             hook.register_hook()
+#     ops_per_sample = ops / data[0].size(0)
+#     return ops_per_sample
 
+    
 def number_neuron_updates(model, preds, data):
     """ Number of times each neuron type is updated.
 
@@ -172,6 +174,55 @@ def sMAPE(model, preds, data):
     check_shape(preds, data[1])
     smape = 200*torch.mean(torch.abs(preds - data[1])/(torch.abs(preds)+torch.abs(data[1])))
     return torch.nan_to_num(smape, nan=200.0).item()
+
+class synaptic_operations(AccumulatedMetric):
+    """ Number of synaptic operations 
+    
+    MACs for ANN
+    ACs for SNN
+    """
+
+    def __init__(self):
+        self.MAC = 0
+        self.AC  = 0
+        self.total_samples = 0
+
+    def __call__(self, model, preds, data):
+        """ Multiply-accumulates (MACs) of the model forward.
+
+        Args:
+            model: A NeuroBenchModel.
+            preds: A tensor of model predictions.
+            data: A tuple of data and labels.
+            inputs: A tensor of model inputs.
+        Returns:
+            float: Multiply-accumulates.
+        """
+        for hook in model.connection_hooks:
+            inputs = hook.inputs # copy of the inputs, delete hooks after
+            for spikes in inputs:
+                # spikes is batch, features, see snntorchmodel wrappper
+                # for single_in in spikes:
+                if len(spikes) == 1:
+                    spikes = spikes[0]
+                hook.hook.remove()
+                operations, spiking = single_layer_MACs(spikes, hook.layer)
+                if spiking:
+                    self.AC += operations
+                else:
+                    self.MAC += operations
+                hook.register_hook()
+        # ops_per_sample = ops / data[0].size(0)
+        self.total_samples += data[0].size(0)
+        return self.compute(data)
+    
+    def compute(self, data):
+        if self.total_samples == 0:
+            return 0, 0
+        self.AC = self.AC/self.total_samples
+        self.MAC = self.MAC/self.total_samples
+        return {'MACs': self.MAC, 'ACs': self.AC}
+    
 
 class r2(AccumulatedMetric):
     """ R2 Score of the model predictions.

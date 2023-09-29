@@ -60,11 +60,13 @@ class ActivationHook():
         """Deletes the contents of the hooks, but keeps the hook registered.
         """
         self.activation_outputs = []
+        self.activation_inputs = []
 
     def reset(self):
-        """ Resets the stored activation outputs.
+        """ Resets the stored activation outputs and inputs
         """
         self.activation_outputs = []
+        self.activation_inputs = []
 
     def close(self):
         """ Remove the registered hook.

@@ -27,15 +27,18 @@ class SNN(nn.Module):
         self.dropout = nn.Dropout(p)
         self.mem1, self.mem2 = None, None
 
+        self.register_buffer('inp', torch.zeros(window, self.input_size))
+
     def reset(self):
         self.mem1 = self.lif1.init_leaky()
         self.mem2 = self.lif2.init_leaky()
 
     def forward(self, x):
+
         cur1 = self.dropout(self.fc1(x))
-        spk1, mem1 = self.lif1(cur1, self.mem1)
+        spk1, self.mem1 = self.lif1(cur1, self.mem1)
 
         cur2 = self.fc2(spk1)
-        spk2, mem2 = self.lif2(cur2, self.mem2)
+        _, self.mem2 = self.lif2(cur2, self.mem2)
 
-        return mem2, None
+        return self.mem2.clone()

@@ -56,7 +56,7 @@ class PrimateReaching(NeuroBenchDataset):
         # used for input data file management
         self.filename = filename
         self.file_path = os.path.join(file_path, self.filename) if '.mat' in self.filename else \
-            os.path.join(self.path, self.filename + ".mat")
+            os.path.join(file_path, self.filename + ".mat")
 
         # test filepath
         assert os.path.exists(self.file_path)

@@ -66,7 +66,7 @@ for repeat_id in range(repeat):
         model = TorchModel(esn)
     
         static_metrics = ["model_size", "connection_sparsity"]
-        data_metrics = ["sMAPE", "activation_sparsity"]
+        data_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
         results = benchmark.run()

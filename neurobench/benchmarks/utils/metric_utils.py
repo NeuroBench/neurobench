@@ -67,7 +67,7 @@ def single_layer_MACs(inputs, layer):
 	spiking = False
 
 	# clone tensor / tuple of tensors since it may be used as input to other layers
-	inputs = copy.deepcopy(inputs)
+	inputs = inputs.detach().clone()
 
 	with torch.no_grad():
 		inps = []

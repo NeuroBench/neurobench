@@ -58,6 +58,21 @@ def make_binary_copy(layer):
 
 	return layer_copy
 
+def cylce_tuple(tup):
+	""" Returns a copy of the tuple with binary elements
+	"""
+	tup_copy = []
+	for t in tup:
+		if isinstance(t, tuple):
+			tup_copy.append(cylce_tuple(t))
+		elif t is not None:
+			t = t.detach().clone()
+			t[t != 0] = 1
+			tup_copy.append(t)
+	return tuple(tup_copy)
+
+# create random tensor of size (1,5)
+# x = torch.randn(1,5)
 
 def single_layer_MACs(inputs, layer):
 	""" Computes the MACs for a single layer.
@@ -66,36 +81,23 @@ def single_layer_MACs(inputs, layer):
 	in_states = True # assume that input is tuple of inputs and states. If not, then set to False
 	spiking = False
 
-	# clone tensor / tuple of tensors since it may be used as input to other layers
-	inputs = inputs.detach().clone()
+
 
 	with torch.no_grad():
-		inps = []
-
 		# TODO: should change this code block so that all inputs get cloned
 		if isinstance(inputs, tuple):
 
 				# input is first element, rest is hidden states
 				test_ins = inputs[0]
 
-				# TODO: this check should continue through the elements of the tuple until it finds a definitive answer, because the inputs may be zeroes.
+				# NOTE: this only checks first input as everything else can be seen as hidden states in rnn block
 				if len(test_ins[(test_ins != 0) & (test_ins !=1) & (test_ins != -1)])==0: 
 					spiking=True
-				for inp in inputs:
-					if inp is not None:
-						if isinstance(inp, tuple): # these are the states
-							# TODO: what is the use of this code block?
-							nps = []
-							for np in nps:
-								if np is not None:
-									np[np != 0] = 1 # TODO: updating this directly will affect if the input tensor is used again
-									inps.append(np)
-						else:
-							if inp is not None:
-								inp[inp != 0] = 1 # TODO: updating this directly will affect if the input tensor is used again
-								inps.append(inp)
+				inputs = cylce_tuple(inputs)
 						
 		else:
+			# clone tensor since it may be used as input to other layers
+			inputs = inputs.detach().clone()
 			in_states = False
 			if len(inputs[(inputs != 0) & (inputs !=1) & (inputs != -1)])==0:
 				spiking = True

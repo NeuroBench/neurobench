@@ -26,16 +26,16 @@ parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('--wb', dest='wandb_state', type=str, default="offline", help="wandb state")
 parser.add_argument('--name', type=str, default='LSTM_MG', help='wandb run name')
 parser.add_argument('--project', type=str, default='Neurobench', help='wandb project name')
-parser.add_argument('--input_dim', type=int, default=1)
-parser.add_argument('--n_layers', type=int, default=2)
-parser.add_argument('--hidden_size', type=int, default=100)
+parser.add_argument('--input_dim', type=int, default=30)
+parser.add_argument('--n_layers', type=int, default=1)
+parser.add_argument('--hidden_size', type=int, default=10)
 parser.add_argument('--n_epochs', type=int, default=200)
 parser.add_argument('--series_id', type=int, default=0)
 parser.add_argument('--repeat', type=int, default=5)
 # seed set by the repeat id
 #parser.add_argument('--seed', type=int, default=41)
-parser.add_argument('--lr', type=float, default=0.01)
-parser.add_argument('--weight_decay', type=float, default=0.001)
+parser.add_argument('--lr', type=float, default=0.005)
+parser.add_argument('--weight_decay', type=float, default=0.005)
 parser.add_argument('--sw', type=bool, default=False, help="activate wb sweep run")
 parser.add_argument('--debug', type=bool, default=False)
 
@@ -43,8 +43,8 @@ args, unparsed = parser.parse_known_args()
 
 if loaded_wandb:
     if args.sw:
-        wandb.init(name=args.name,
-                   mode=args.wandb_state,
+        #wandb.init(name=args.name,
+        wandb.init(mode=args.wandb_state,
                    config=wandb.config)
 
         config_wb = wandb.config
@@ -111,13 +111,15 @@ for repeat_id in range(args.repeat):
     lstm.train()
 
     criterion = nn.MSELoss()
-    opt = torch.optim.Adam(lstm.parameters(), lr=args.lr, weight_decay=args.weight_decay)
+    opt = torch.optim.Adam(lstm.parameters(), 
+                           lr=args.lr, 
+                           weight_decay=args.weight_decay)
 
     train_data, train_labels = train_set[:]
 
-    warmup = 0.6 # in Lyapunov times
-    warmup_pts = round(warmup*mg.pts_per_lyaptime)
-    train_labels = train_labels[warmup_pts:]
+    #warmup = 0.6 # in Lyapunov times
+    #warmup_pts = round(warmup*mg.pts_per_lyaptime)
+    #train_labels = train_labels[warmup_pts:]
 
     # training loop
     for epoch in range(args.n_epochs):
@@ -127,8 +129,8 @@ for repeat_id in range(args.repeat):
 
         pre = lstm(train_data)
 
-        loss_val = criterion(pre[warmup_pts:,:],
-                                 train_labels)
+        loss_val = criterion(pre,
+                             train_labels)
 
         opt.zero_grad()
         loss_val.backward()
@@ -169,6 +171,8 @@ for repeat_id in range(args.repeat):
     results = benchmark.run()
     print(results)
     sMAPE_scores.append(results["sMAPE"])
+    if loaded_wandb:
+        wandb.log({"sMAPE_score_val": results["sMAPE"]}) 
 
 connection_sparsity = results["connection_sparsity"]
 model_size = results["model_size"]

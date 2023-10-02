@@ -47,7 +47,6 @@ class LSTMModel(nn.Module):
         self.device = device
 
         assert self.mode in ['autonomous', 'single_step']
-        #assert n_layers == 1, 'multi-layer LSTM is not supported yet'
         self.prior_prediction = None
  
         # LSTM model
@@ -62,18 +61,26 @@ class LSTMModel(nn.Module):
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
         self.layer_norm = nn.LayerNorm(self.input_dim).type(dtype) 
- 
-        # Stores l`ookback window time steps
+
+        # Create register buffers to store lookback window as well as for the LSTM states
+        # This allows assessment of model memory footprint
+
+        # Stores time steps of lookback window
         self.register_buffer('inp', torch.zeros(1, self.input_dim).type(dtype))
 
-        # Create the hidden state tensors
+        # Stores hidden hi states
         for i in range(self.n_layers):
             self.register_buffer(f'h{i}', torch.zeros(1, self.hidden_size).type(self.dtype))
 
-        # Create the c state tensors
+        # Stores ci states
         for i in range(self.n_layers):
             self.register_buffer(f'c{i}', torch.zeros(1, self.hidden_size).type(self.dtype))
 
+        #TODO h and c are defined in forward pass to ensure they are in the correct device,
+        # see if there is a cleaner way
+        self.h = []
+        self.c = []
+        
     def single_forward(self, sample): 
 
         sample = self.layer_norm(sample)
@@ -86,6 +93,13 @@ class LSTMModel(nn.Module):
         return out
 
     def forward(self, batch):
+
+        # Reset register buffers 
+        for i in range(self.n_layers):
+            getattr(self, f'h{i}')[:] = 0.
+        for i in range(self.n_layers):
+            getattr(self, f'c{i}')[:] = 0.
+        self.inp[:] = 0.
 
         self.h = [getattr(self, f'h{i}') for i in range(self.n_layers)]
         self.c = [getattr(self, f'c{i}') for i in range(self.n_layers)]
@@ -111,6 +125,5 @@ class LSTMModel(nn.Module):
 
         # reset so that next batch will not have prior prediction
         self.prior_prediction = None
-        self.inp[:] = 0.
 
         return torch.stack(predictions).squeeze(-1)

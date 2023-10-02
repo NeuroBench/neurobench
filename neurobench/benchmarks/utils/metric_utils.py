@@ -65,25 +65,34 @@ def single_layer_MACs(inputs, layer):
 	macs = 0
 	in_states = True # assume that input is tuple of inputs and states. If not, then set to False
 	spiking = False
+
+	# clone tensor / tuple of tensors since it may be used as input to other layers
+	inputs = copy.deepcopy(inputs)
+
 	with torch.no_grad():
 		inps = []
+
+		# TODO: should change this code block so that all inputs get cloned
 		if isinstance(inputs, tuple):
+
 				# input is first element, rest is hidden states
 				test_ins = inputs[0]
 
-				if len(test_ins[(test_ins != 0) & (test_ins !=1) & (test_ins != -1)])==0:
+				# TODO: this check should continue through the elements of the tuple until it finds a definitive answer, because the inputs may be zeroes.
+				if len(test_ins[(test_ins != 0) & (test_ins !=1) & (test_ins != -1)])==0: 
 					spiking=True
 				for inp in inputs:
 					if inp is not None:
 						if isinstance(inp, tuple): # these are the states
+							# TODO: what is the use of this code block?
 							nps = []
 							for np in nps:
 								if np is not None:
-									np[np != 0] = 1
+									np[np != 0] = 1 # TODO: updating this directly will affect if the input tensor is used again
 									inps.append(np)
 						else:
 							if inp is not None:
-								inp[inp != 0] = 1
+								inp[inp != 0] = 1 # TODO: updating this directly will affect if the input tensor is used again
 								inps.append(inp)
 						
 		else:
@@ -91,8 +100,7 @@ def single_layer_MACs(inputs, layer):
 			if len(inputs[(inputs != 0) & (inputs !=1) & (inputs != -1)])==0:
 				spiking = True
 
-			inputs[inputs != 0] = 1
-			inps.append(inputs)
+			inputs[inputs != 0] = 1 
 
 	stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
 	recurrent_layers = (torch.nn.RNNBase)
@@ -109,7 +117,8 @@ def single_layer_MACs(inputs, layer):
 			add_bias = torch.count_nonzero(layer.bias.data)
 		
 		nr_updates = layer_bin(inputs) # this returns the number of MACs for every output neuron: if spiking neurons only AC
-		macs = nr_updates.sum() + add_bias # returns total macs
+		# macs = nr_updates.sum() + add_bias # returns total macs
+		macs = nr_updates.sum()
 
 	elif isinstance(layer, recurrent_layers):
 		layer_bin = make_binary_copy(layer)
@@ -215,22 +224,3 @@ def single_layer_MACs(inputs, layer):
 			macs += out_nrs.sum()
 
 	return int(macs), spiking
-		
-
-# if __name__=='__main__':
-# 	inputs = torch.tensor([[1., 0., 1., 0., 1]])
-
-# 	layer = torch.nn.Linear(5, 4, bias=False)
-# 	layer_conv = torch.nn.Conv1d(1, 1, 3, bias=False)
-# 	net = torch.nn.Sequential(layer)
-# 	net_conv = torch.nn.Sequential(layer_conv)
-# 	single_layer_MACs(inputs, layer)
-
-# 	single_layer_MACs(inputs, layer_conv)
-# 	with torch.profiler.profile(
-#     activities=[torch.profiler.ProfilerActivity.CPU],
-#     on_trace_ready=None,
-# 	with_flops=True,
-# 	) as prof:
-# 		output = net_conv(inputs)
-# 	# print(prof.key_averages().table(sort_by="cpu_time_total", row_limit=10))

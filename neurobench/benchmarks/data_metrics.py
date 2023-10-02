@@ -79,33 +79,6 @@ def activation_sparsity(model, preds, data):
 
     sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
     return sparsity
-
-# def synaptic_operations(model, preds, data):
-#     """ Multiply-accumulates (MACs) of the model forward.
-
-#     Args:
-#         model: A NeuroBenchModel.
-#         preds: A tensor of model predictions.
-#         data: A tuple of data and labels.
-#         inputs: A tensor of model inputs.
-#     Returns:
-#         float: Multiply-accumulates.
-#     """
-#     ops = 0
-#     for hook in model.connection_hooks:
-#         inputs = hook.inputs # copy of the inputs, delete hooks after
-#         for spikes in inputs:
-#             # spikes is batch, features, see snntorchmodel wrappper
-#             # for single_in in spikes:
-#             if len(spikes) == 1:
-#                 spikes = spikes[0]
-#             hook.hook.remove()
-#             operations, spiking = single_layer_MACs(spikes, hook.layer)
-#             ops += operations
-#             hook.register_hook()
-#     ops_per_sample = ops / data[0].size(0)
-#     return ops_per_sample
-
     
 def number_neuron_updates(model, preds, data):
     """ Number of times each neuron type is updated.

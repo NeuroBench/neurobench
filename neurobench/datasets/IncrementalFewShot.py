@@ -15,45 +15,8 @@ import os
 from torch import Tensor
 from torchaudio.datasets.utils import _load_waveform
 
+from neurobench.datasets.MSWC import MSWC_query
 
-SAMPLE_RATE = 48000
-
-class MSWC_query(Dataset):
-
-    def __init__(self, walker):
-
-        self._walker = walker
-
-    def __getitem__(self, index: int):
-        """ Getter method to get waveform samples.
-
-        Args:
-            idx (int): Index of the sample.
-
-        Returns:
-            sample (tensor): Individual waveform sample, padded to always match dimension (1, 48000).
-            target (int): Corresponding keyword index based on FSCIL_KEYWORDS order (by decreasing number of samples in original dataset).
-        """
-        item = self._walker[index]
-
-        dirname = item[0]
-        waveform = _load_waveform(dirname, item[1], SAMPLE_RATE)
-
-        if waveform.size()[1] != SAMPLE_RATE:
-            full_size = torch.zeros((1,SAMPLE_RATE))
-            full_size[:, :waveform.size()[1]] = waveform
-            waveform = full_size
-
-
-        return (waveform, item[2])
-
-    def __len__(self):
-        """ Returns the number of samples in the dataset.
-
-        Returns:
-            int: The number of samples in the dataset.
-        """
-        return(len(self._walker))
 
 
 def get_indices_per_class(dataset: Dataset, support_query_split: Optional[Tuple[int, int]] = None, samples_per_class: Optional[int] = None) -> Union[Dict[int, List[int]], Dict[int, Tuple[List[int], List[int]]]]:
@@ -94,9 +57,7 @@ class IncrementalFewShot(IterableDataset):
                  incremental: bool = False,
                  cumulative: bool = False,
                  always_include_classes: Optional[List[int]] = None,
-                 samples_per_class: Optional[int] = None,
-                 transform: Optional[Callable] = None,
-                 per_class_transform: Optional[Callable] = None):
+                 samples_per_class: Optional[int] = None):
         """Dataset for few shot learning.
 
         Example usage:
@@ -123,8 +84,6 @@ class IncrementalFewShot(IterableDataset):
             cumulative (bool, optional): Whether to increase the query set size with each iteration. This flag will only work when incremental is set to True. Defaults to False.
             always_include_classes (Optional[List[int]], optional): List of classes to always include in both in the support and query set. Defaults to None.
             samples_per_class (Optional[int], optional): Number of samples per class to use. Can be used for large datasets where the classes are ordered (class_0_sample_0, c0s1, c0s2, c1s0, c1s1, c1s2, ...) to avoid iterating over the whole dataset for index per class computation. Defaults to None.
-            transform (Optional[Callable], optional): Transform applied to every data sample. Will be reapplied every time a batch is served. Defaults to None.
-            per_class_transform (Optional[Callable], optional): Transform applied to every data sample. Will be applied to every class separately. Defaults to None.
         """
 
         if cumulative and not incremental:

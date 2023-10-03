@@ -352,6 +352,48 @@ class MSWC(Dataset):
         return(len(self._walker))
 
 
+
+class MSWC_query(Dataset):
+    """
+    Simple Dataset object created for incremental queries
+    """
+
+    def __init__(self, walker):
+
+        self._walker = walker
+
+    def __getitem__(self, index: int):
+        """ Getter method to get waveform samples.
+
+        Args:
+            idx (int): Index of the sample.
+
+        Returns:
+            sample (tensor): Individual waveform sample, padded to always match dimension (1, 48000).
+            target (int): Corresponding keyword index based on FSCIL_KEYWORDS order (by decreasing number of samples in original dataset).
+        """
+        item = self._walker[index]
+
+        dirname = item[0]
+        waveform = _load_waveform(dirname, item[1], SAMPLE_RATE)
+
+        if waveform.size()[1] != SAMPLE_RATE:
+            full_size = torch.zeros((1,SAMPLE_RATE))
+            full_size[:, :waveform.size()[1]] = waveform
+            waveform = full_size
+
+
+        return (waveform, item[2])
+
+    def __len__(self):
+        """ Returns the number of samples in the dataset.
+
+        Returns:
+            int: The number of samples in the dataset.
+        """
+        return(len(self._walker))
+
+
 ### Generation code ###
 
 

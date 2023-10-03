@@ -71,9 +71,6 @@ def cylce_tuple(tup):
 			tup_copy.append(t)
 	return tuple(tup_copy)
 
-# create random tensor of size (1,5)
-# x = torch.randn(1,5)
-
 def single_layer_MACs(inputs, layer):
 	""" Computes the MACs for a single layer.
 	"""
@@ -112,6 +109,9 @@ def single_layer_MACs(inputs, layer):
 		# then multiply the binary layer with the diagonal matrix to get the MACs
 		layer_bin = make_binary_copy(layer)
 
+		# bias is not considered as a synaptic operation
+		bias = False
+
 		# how many biases are added
 		# if there is a bias
 		add_bias = 0
@@ -119,8 +119,11 @@ def single_layer_MACs(inputs, layer):
 			add_bias = torch.count_nonzero(layer.bias.data)
 		
 		nr_updates = layer_bin(inputs) # this returns the number of MACs for every output neuron: if spiking neurons only AC
-		# macs = nr_updates.sum() + add_bias # returns total macs
-		macs = nr_updates.sum()
+		
+		if bias:
+			macs = nr_updates.sum() + add_bias
+		else:
+			macs = nr_updates.sum()
 
 	elif isinstance(layer, recurrent_layers):
 		layer_bin = make_binary_copy(layer)

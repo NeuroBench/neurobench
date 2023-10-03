@@ -10,54 +10,63 @@ class MackeyGlass(Dataset):
     """
     def __init__(self, 
                  tau,  
+                 lyaptime,
                  constant_past,
                  nmg = 10, 
                  beta = 0.2, 
                  gamma = 0.1,
-                 dt=1.0, 
-                 splits=(8000., 2000.),
+                 pts_per_lyaptime = 75, 
+                 traintime = 10.,
+                 testtime = 10.,
                  start_offset=0.,
                  seed_id=0,
+                 bin_window=1,
     ):
         """
         Initializes the Mackey-Glass dataset.
 
         Args:
             tau (float): parameter of the Mackey-Glass equation
+            lyaptime (float): Lyapunov time of the time-series
             constant_past (float): initial condition for the solver
             nmg (float): parameter of the Mackey-Glass equation
             beta (float): parameter of the Mackey-Glass equation
             gamma (float): parameter of the Mackey-Glass equation
-            dt (float): time step length for sampling data
-            splits (tuple): data split in time units for training and testing data, respectively
+            pts_per_lyaptime (int): number of points to sample per one Lyapunov time
+            traintime (float): number of Lyapunov times to be used for training a model
+            testtime (float): number of Lyapunov times to be used for testing a model            
             start_offset (float): added offset of the starting point of the time-series, in case of repeating using same function values
             seed_id (int): seed for generating function solution
+            bin_window (int): number of points forming lookback window for each prediction
         """
 
         super().__init__()
 
         # Parameters
         self.tau = tau
+        self.lyaptime = lyaptime
         self.constant_past = constant_past
         self.nmg = nmg
         self.beta = beta
         self.gamma = gamma
-        self.dt = dt
+        self.pts_per_lyaptime = pts_per_lyaptime
         
         # Time units for train (user should split out the warmup or validation)
-        self.traintime = splits[0]
+        self.traintime = traintime*self.lyaptime
         # Time units to forecast
-        self.testtime = splits[1]
+        self.testtime = testtime*self.lyaptime
         
-        self.start_offset = start_offset
+        self.start_offset = start_offset*self.lyaptime
         self.seed_id = seed_id
 
+        self.bin_window = bin_window
+
         # Total time to simulate the system
-        self.maxtime = self.traintime + self.testtime + self.dt
+        self.maxtime = self.traintime + self.testtime + (self.lyaptime/self.pts_per_lyaptime)
 
         # Discrete-time versions of the continuous times specified above
-        self.traintime_pts = round(self.traintime/self.dt)
-        self.testtime_pts = round(self.testtime/self.dt)
+        self.traintime_pts = round(traintime*self.pts_per_lyaptime)
+        self.testtime_pts = round(testtime*self.pts_per_lyaptime)
         self.maxtime_pts = self.traintime_pts + self.testtime_pts + 1 # eval one past the end
 
         # Specify the system using the provided parameters
@@ -87,7 +96,7 @@ class MackeyGlass(Dataset):
         lyaps = torch.zeros((self.maxtime_pts,1),dtype=torch.float64)
         lyaps_weights = torch.zeros((self.maxtime_pts,1),dtype=torch.float64)
         count = 0
-        for time in torch.arange(self.DDE.t+self.start_offset, self.DDE.t+self.start_offset+self.maxtime, self.dt,dtype=torch.float64):
+        for time in torch.linspace(self.DDE.t+self.start_offset, self.DDE.t+self.start_offset+self.maxtime, steps = self.maxtime_pts, dtype=torch.float64):
             value, lyap, weight = self.DDE.integrate(time.item())
             self.mackeyglass_soln[count,0] = value[0] 
             lyaps[count,0] = lyap[0]
@@ -100,6 +109,8 @@ class MackeyGlass(Dataset):
         # Estimate Lyapunov exponent
         self.lyap_exp = ((lyaps.T@lyaps_weights)/lyaps_weights.sum()).item()
 
+        # pad the soln with preceding zeroes for lookback window
+        self.mackeyglass_soln = torch.cat((torch.zeros((self.bin_window-1,1),dtype=torch.float64), self.mackeyglass_soln),0)
 
     def split_data(self):
         """ Generate training and testing indices.
@@ -119,13 +130,22 @@ class MackeyGlass(Dataset):
         """ Getter method for dataset.
 
         Args:
-            idx (int): index of sample to return
+            idx (int or tensor): index(s) of sample(s) to return
 
         Returns:
             sample (tensor): individual data sample, shape=(timestamps, features)=(1,1)
             target (tensor): corresponding next state of the system, shape=(label,)=(1,)
         """
-        sample = torch.unsqueeze(self.mackeyglass_soln[idx, :], dim=0)
-        target = self.mackeyglass_soln[idx+1, :]
+        # using Subset with list of indices
+        if isinstance(idx, list) or (isinstance(idx, torch.Tensor) and idx.ndim > 0):
+            # return in format (batch, bin_window, feature)
+            data = [self.mackeyglass_soln[i:i+self.bin_window, :] for i in idx]
+            sample = torch.stack(data)
+
+        # idx is an integer
+        else:
+            sample = self.mackeyglass_soln[idx:idx+self.bin_window, :]
+        
+        target = self.mackeyglass_soln[idx+self.bin_window, :] # add to account for pre-padding
 
         return sample, target

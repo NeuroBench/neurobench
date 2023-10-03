@@ -21,13 +21,17 @@ poetry run pytest tests/
 
 Currently the end-to-end examples can be run from the root directory via:
 ```
-poetry run python neurobench/examples/dvs_gesture.py
-poetry run python neurobench/examples/gsc.py
-poetry run python neurobench/examples/mackey_glass.py
-poetry run python neurobench/examples/primate_reaching.py
+poetry run python neurobench/examples/dvs_gesture/benchmark.py
+poetry run python neurobench/examples/gsc/benchmark.py
+poetry run python neurobench/examples/mackey_glass/benchmark.py
+poetry run python neurobench/examples/primate_reaching/benchmark.py
 ```
 The examples may not yet have trained models or a full set of metrics.
-
+Step-by-step notebooks are available at
+```
+neurobench/examples/dvs_gesture/DVS_gesture_tutorial.ipynb
+neurobench/examples/gsc/GSC_tutorial.ipynb
+```
 
 ## Getting started
 Example benchmark scripts can be found under the `neurobench/examples` folder. 

@@ -90,8 +90,6 @@ class ANNModel3D(nn.Module):
 
         self.register_buffer("data_buffer", torch.zeros(1, input_dim).type(torch.float32), persistent=False)
 
-        self.checker = 0
-
     def single_forward(self, x):
         x = self.activation(self.fc1(x.view(1, -1)))
         x = self.batchnorm1(x)
@@ -110,7 +108,6 @@ class ANNModel3D(nn.Module):
             self.data_buffer = torch.cat((self.data_buffer, current_seq), dim=0)
 
             if self.data_buffer.shape[0] < self.bin_window_size:
-                self.checker += 1
                 predictions.append(torch.zeros(1, self.output_dim))
             else:
                 if self.data_buffer.shape[0] > self.bin_window_size:

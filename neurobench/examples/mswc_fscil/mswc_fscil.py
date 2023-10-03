@@ -2,6 +2,14 @@
 # NOTE: This task is still under development.
 #
 
+### TO REMOVE ###
+import sys
+sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
+
+import wandb
+###
+
+
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -16,13 +24,15 @@ import torchaudio.transforms as T
 from neurobench.datasets import MSWC
 from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
 from neurobench.examples.mswc_fscil.M5 import M5
+from neurobench.models import TorchModel
 
 from neurobench.benchmarks import Benchmark
 from neurobench.preprocessing import MFCCProcessor
 
 from cl_utils import *
 
-ROOT = "neurobench/data/mswc/"
+ROOT = "//scratch/p306982/data/fscil/mswc/"
+# ROOT = "neurobench/data/mswc/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
 PRE_TRAIN = False
@@ -94,6 +104,7 @@ if __name__ == '__main__':
                 n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
 
         pre_train(model)
+        model = TorchModel(model)
 
     else:
         ### Loading Pre-trained model ###
@@ -102,6 +113,7 @@ if __name__ == '__main__':
                 n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
         load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", map_location=device).state_dict()
         model.load_state_dict(load_dict)
+        model = TorchModel(model)
 
 
     for eval_iter in range(2):
@@ -118,7 +130,7 @@ if __name__ == '__main__':
         test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
         # Define an arbitrary resampling as an example of pre-processor to feed to the Benchmark object
-        eval_model.eval()
+        eval_model.net.eval()
 
         # Define benchmark object
         benchmark = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
@@ -143,24 +155,24 @@ if __name__ == '__main__':
                                     samples_per_class=200)
 
         # Saves shifted versions of 
-        eval_model.saved_weights = {}
+        eval_model.net.saved_weights = {}
         pre_train_class = range(100)
-        consolidate_weights(eval_model, pre_train_class)
+        consolidate_weights(eval_model.net, pre_train_class)
 
-        few_shot_optimizer = torch.optim.SGD(eval_model.parameters(), lr=0.3, momentum=0.9, weight_decay=0.0005)
+        few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=0.3, momentum=0.9, weight_decay=0.0005)
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
             print(f"Session: {session+1}")
 
             ### Few Shot Learning phase ###
-            eval_model.train()
+            eval_model.net.train()
             #eval_model.lat_features.eval()
-            freeze_below(eval_model, "output", only_conv=False)
-            eval_below(eval_model, "output")
+            freeze_below(eval_model.net, "output", only_conv=False)
+            eval_below(eval_model.net, "output")
 
             cur_class = support[0][1].tolist()
-            eval_model.cur_j = examples_per_class(cur_class, 200, 5)
+            eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
 
             # Update weigts over successive shots
             for X_shot, y_shot in support:
@@ -176,12 +188,12 @@ if __name__ == '__main__':
                 few_shot_optimizer.step()
 
             # Mean-shift weights and save them 
-            consolidate_weights(eval_model, cur_class)
-            set_consolidate_weights(eval_model)
+            consolidate_weights(eval_model.net, cur_class)
+            set_consolidate_weights(eval_model.net)
 
 
             ### Testing phase ###
-            eval_model.eval()
+            eval_model.net.eval()
 
             # Define session dataloaders for query and query + base_test samples
             query_loader = DataLoader(query, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS)

@@ -16,6 +16,7 @@ class MFCCProcessor(NeuroBenchProcessor):
         norm: str = "ortho",
         log_mels: bool = False,
         melkwargs: dict = None,
+        device = None,
     ):
         super(NeuroBenchProcessor).__init__()
         """
@@ -42,6 +43,9 @@ class MFCCProcessor(NeuroBenchProcessor):
             log_mels=self.log_mels,
             melkwargs=self.melkwargs,
         )
+
+        if device:
+            self.mfcc = self.mfcc.to(device)
 
     def __call__(self, dataset):
         """ Executes the MFCC computation on the dataset.

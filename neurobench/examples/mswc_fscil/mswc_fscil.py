@@ -2,13 +2,6 @@
 # NOTE: This task is still under development.
 #
 
-### TO REMOVE ###
-import sys
-sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
-
-import wandb
-###
-
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -29,11 +22,10 @@ from neurobench.preprocessing import MFCCProcessor
 
 from cl_utils import *
 
-
-ROOT = "//scratch/p306982/data/fscil/mswc/"
-NUM_WORKERS = 4
+ROOT = "neurobench/data/mswc/"
+NUM_WORKERS = 8
 BATCH_SIZE = 256
-PRE_TRAIN = True
+PRE_TRAIN = False
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == torch.device("cuda"):
     PIN_MEMORY = True
@@ -95,13 +87,6 @@ def pre_train(model):
 
 if __name__ == '__main__':
 
-    wandb.login()
-
-    wandb_run = wandb.init(
-    # Set the project where this run will be logged
-    project="MSWC Cleaned CNN runs",
-    )
-
 
     if PRE_TRAIN:
         ### Pre-training phase ###
@@ -149,7 +134,6 @@ if __name__ == '__main__':
         pre_train_results = benchmark.run(postprocessors=[out_mask, out2pred, torch.squeeze])
         eval_accs.append(pre_train_results['classification_accuracy'])
         print(f"The base accuracy is {eval_accs[-1]*100}%")
-        wandb.log({"accuracy":eval_accs[-1]}, commit=True)
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
         few_shot_dataloader = IncrementalFewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
@@ -215,14 +199,12 @@ if __name__ == '__main__':
             query_results = benchmark.run(dataloader = query_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
             query_acc = query_results['classification_accuracy']
             print(f"The accuracy on new classes is {query_acc*100}%")
-            wandb.log({"query_accuracy":query_acc}, commit=False)
 
             # Run benchmark to evaluate accuracy of this specific session
             session_results = benchmark.run(dataloader = full_session_test_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
             session_acc = session_results['classification_accuracy']
             print(f"The session accuracy is {session_acc*100}%")
             eval_accs.append(session_acc)
-            wandb.log({"accuracy":eval_accs[-1]}, commit=True)
 
         mean_accuracy = np.mean(eval_accs)
         print(f"The total mean accuracy is {mean_accuracy*100}%")

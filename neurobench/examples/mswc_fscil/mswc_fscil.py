@@ -2,14 +2,6 @@
 # NOTE: This task is still under development.
 #
 
-### TO REMOVE ###
-import sys
-sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
-
-import wandb
-###
-
-
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -31,8 +23,7 @@ from neurobench.preprocessing import MFCCProcessor
 
 from cl_utils import *
 
-ROOT = "//scratch/p306982/data/fscil/mswc/"
-# ROOT = "neurobench/data/mswc/"
+ROOT = "neurobench/data/mswc/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
 PRE_TRAIN = False

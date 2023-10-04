@@ -41,7 +41,7 @@ for filename in files:
     model.add_activation_module(snn.SpikingNeuron)
 
     static_metrics = ["model_size", "connection_sparsity"]
-    data_metrics = ["r2", "activation_sparsity"]
+    data_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
 
     # Benchmark expects the following:
     benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics])
@@ -57,7 +57,15 @@ for filename in files:
 
 print("Footprint: {}".format(footprint))
 print("Connection sparsity: {}".format(connection_sparsity))
-print("Activation sparsity: {}".format(activation_sparsity))
-print("MACs: {}".format(macs))
-print("ACs: {}".format(acs))
-print("R2: {}".format(r2))
+print("Activation sparsity: {}".format(activation_sparsity), sum(activation_sparsity)/len(activation_sparsity))
+print("MACs: {}".format(macs), sum(macs)/len(macs))
+print("ACs: {}".format(acs), sum(acs)/len(acs))
+print("R2: {}".format(r2), sum(r2)/len(r2))
+
+
+# Footprint: [19648, 19648, 19648, 38848, 38848, 38848]
+# Connection sparsity: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+# Activation sparsity: [0.9961924636843025, 0.9969413547678524, 0.9959594449776491, 0.9981069082186141, 0.9983204653048084, 0.998037484318719] 0.9972596868786576
+# MACs: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0] 0.0
+# ACs: [403.1955485211198, 264.8624486748787, 186.71439285470785, 554.1524028391901, 616.6698938557346, 654.9125428711416] 446.7512049361288
+# R2: [0.6781846880912781, 0.4955297112464905, 0.6023336052894592, 0.5670332908630371, 0.5581340789794922, 0.6043194532394409] 0.5842558046181997

@@ -27,4 +27,4 @@ torch.save(model.state_dict(), 'neurobench/examples/dvs_gesture/model_data/DVS_S
 optimizer = torch.optim.Adamax(model.parameters(),lr=1.2e-3,betas=[0.9,0.95])
 # model.fit(dataloader_training=dataloader_training,device=device, warmup_frames=70, optimizer=optimizer, nr_episodes=1000)
 # model.fit(dataloader_training=data_2,device=device, warmup_frames=70, optimizer=optimizer, nr_episodes=10)
-torch.save(model.state_dict(), 'neurobench/examples/dvs_gesture/model_data/DVS_SNN_trained.pth')
+# torch.save(model.state_dict(), 'neurobench/examples/dvs_gesture/model_data/DVS_SNN_trained.pth')

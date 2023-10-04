@@ -1,5 +1,5 @@
-NeuroBench Algorithm Benchmarks Harness
-=======================================
+Introduction
+------------
 
 A harness for running evaluations on
 `NeuroBench <https://neurobench.ai>`__ algorithm benchmarks.
@@ -16,6 +16,9 @@ please see the `contributing guidelines <CONTRIBUTING.md>`__.
 
 Installation
 ------------
+
+Typical
+~~~~~~~
 
 Install from PyPI:
 

@@ -5,7 +5,7 @@ from snntorch import surrogate
 
 
 ## Define model ##
-class SNN(nn.Module):
+class SNN2(nn.Module):
 
     def __init__(self, window=50, input_size=96, hidden_size=50, tau=0.96, p=0.3, device='cpu'):
         super().__init__()
@@ -27,14 +27,13 @@ class SNN(nn.Module):
         self.dropout = nn.Dropout(p)
         self.mem1, self.mem2 = None, None
 
-        self.register_buffer('inp', torch.zeros(window, self.input_size))
+        # self.register_buffer('inp', torch.zeros(window, self.input_size))
 
     def reset(self):
         self.mem1 = self.lif1.init_leaky()
         self.mem2 = self.lif_out.init_leaky()
 
-    def forward(self, x):
-
+    def single_forward(self, x):
         cur1 = self.dropout(self.fc1(x))
         spk1, self.mem1 = self.lif1(cur1, self.mem1)
 
@@ -42,3 +41,14 @@ class SNN(nn.Module):
         _, self.mem2 = self.lif_out(cur2, self.mem2)
 
         return self.mem2.clone()
+
+    def forward(self, x):
+        predictions = []
+
+        for sample in range(x.shape[0]):
+            predictions.append(self.single_forward(x[sample, ...]))
+
+        predictions = torch.stack(predictions)
+        return predictions
+
+        

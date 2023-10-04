@@ -32,6 +32,14 @@ class AccumulatedMetric:
         """
         raise NotImplementedError("Subclasses of AccumulatedMetric should implement compute")
 
+    def reset(self):
+        """ Reset the metric state.
+
+        This is called when the benchmark is run again, e.g. on the FSCIL task the benchmark
+            is run at the end of each session.
+        """
+        raise NotImplementedError("Subclasses of AccumulatedMetric should implement reset")
+
 
 # dynamic metrics, require model, model predictions, and labels
 
@@ -160,6 +168,11 @@ class synaptic_operations(AccumulatedMetric):
         self.AC  = 0
         self.total_samples = 0
 
+    def reset(self):
+        self.MAC = 0
+        self.AC  = 0
+        self.total_samples = 0
+
     def __call__(self, model, preds, data):
         """ Multiply-accumulates (MACs) of the model forward.
 
@@ -214,6 +227,15 @@ class r2(AccumulatedMetric):
         self.x_labels = torch.tensor([])
         self.y_labels = torch.tensor([])
 
+    def reset(self):
+        """ Reset metric state.
+        """
+        self.x_sum_squares = 0.0
+        self.y_sum_squares = 0.0
+        
+        self.x_labels = torch.tensor([])
+        self.y_labels = torch.tensor([])
+
     def __call__(self, model, preds, data):
         """
         Args:
@@ -258,6 +280,13 @@ class COCO_mAP(AccumulatedMetric):
         from metavision_ml.metrics.coco_eval import CocoEvaluator
         from collections import defaultdict
 
+        self.dt_detections = defaultdict(list)
+        self.gt_detections = defaultdict(list)
+        self.evaluator = CocoEvaluator(classes=['background'] + ["pedestrian", "two wheeler", "car"], height=360, width=640)
+
+    def reset(self):
+        """ Reset metric state.
+        """
         self.dt_detections = defaultdict(list)
         self.gt_detections = defaultdict(list)
         self.evaluator = CocoEvaluator(classes=['background'] + ["pedestrian", "two wheeler", "car"], height=360, width=640)

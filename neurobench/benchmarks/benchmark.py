@@ -56,8 +56,8 @@ class Benchmark():
         for m in self.data_metrics.keys():
             if isinstance(self.data_metrics[m],type) and issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
                 self.data_metrics[m] = self.data_metrics[m]()
-            elif isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                self.data_metrics[m] = self.data_metrics[m]()
+            elif isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric): # new benchmark run, reset metric state
+                self.data_metrics[m].reset()
 
         dataset_len = len(dataloader.dataset)
         

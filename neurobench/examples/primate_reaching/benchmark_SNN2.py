@@ -27,7 +27,7 @@ r2 = []
 for filename in files:
     print("Processing {}".format(filename))
     dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename=filename,
-                              num_steps=50, train_ratio=0.5, bin_width=0.004,
+                              num_steps=1, train_ratio=0.5, bin_width=0.004,
                               biological_delay=0, split_num=1, remove_segments_inactive=True)
     test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=len(dataset.ind_test), shuffle=False)
 

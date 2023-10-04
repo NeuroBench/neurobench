@@ -10,7 +10,7 @@ class SNN2(nn.Module):
     def __init__(self, window=50, input_size=96, hidden_size=50, tau=0.96, p=0.3, device='cpu'):
         super().__init__()
 
-        self.window = window
+        # self.window = window
         self.input_size = input_size
         self.hidden_size = hidden_size
         self.output_size = 2
@@ -34,6 +34,7 @@ class SNN2(nn.Module):
         self.mem2 = self.lif_out.init_leaky()
 
     def single_forward(self, x):
+        x = x.squeeze() # convert shape (1, input_dim) to (input_dim)
         cur1 = self.dropout(self.fc1(x))
         spk1, self.mem1 = self.lif1(cur1, self.mem1)
 
@@ -43,6 +44,7 @@ class SNN2(nn.Module):
         return self.mem2.clone()
 
     def forward(self, x):
+        # here x is expected to be shape (len_series, 1, input_dim)
         predictions = []
 
         for sample in range(x.shape[0]):

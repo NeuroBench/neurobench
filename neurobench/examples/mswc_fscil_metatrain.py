@@ -22,7 +22,8 @@ import sys
 sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
 
 
-from neurobench.datasets import MSWC
+# from neurobench.datasets import MSWC
+from neurobench.datasets.MSWC_multilingual import MSWC
 from neurobench.preprocessing.speech2spikes import S2SProcessor
 from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
 from neurobench.examples.model_data.M5 import M5
@@ -623,7 +624,7 @@ if __name__ == '__main__':
 
 
     for eval_iter in range(EVAL_ITERATIONS):
-        print(f"Evaluation Iteration: 0")
+        print(f"Evaluation Iteration: eval_iter")
         # Base Accuracy measurement
 
         eval_results = []

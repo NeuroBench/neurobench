@@ -14,7 +14,7 @@ import snntorch as snn
 
 # The dataloader and preprocessor has been combined together into a single class
 files = ["indy_20160622_01", "indy_20160630_01", "indy_20170131_02",
-            "loco_20170210_03", "loco_20170217_02", "loco_20170301_05"]
+            "loco_20170210_03", "loco_20170215_02", "loco_20170301_05"]
 
 footprint = []
 connection_sparsity = []
@@ -28,7 +28,7 @@ for filename in files:
     print("Processing {}".format(filename))
     dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename=filename,
                               num_steps=1, train_ratio=0.5, bin_width=0.004,
-                              biological_delay=0, split_num=1, remove_segments_inactive=True)
+                              biological_delay=0, split_num=1, remove_segments_inactive=False)
     test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=len(dataset.ind_test), shuffle=False)
 
     net = SNN2(input_size=dataset.input_feature_size)
@@ -62,6 +62,7 @@ print("MACs: {}".format(macs), sum(macs)/len(macs))
 print("ACs: {}".format(acs), sum(acs)/len(acs))
 print("R2: {}".format(r2), sum(r2)/len(r2))
 
+# TODO: rerun these results with new trained models where remove_segments is False
 
 # Footprint: [19648, 19648, 19648, 38848, 38848, 38848]
 # Connection sparsity: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]

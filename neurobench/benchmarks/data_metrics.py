@@ -158,6 +158,7 @@ class synaptic_operations(AccumulatedMetric):
     def __init__(self):
         self.MAC = 0
         self.AC  = 0
+        self.total_synops = 0
         self.total_samples = 0
 
     def __call__(self, model, preds, data):
@@ -180,6 +181,8 @@ class synaptic_operations(AccumulatedMetric):
                     spikes = spikes[0]
                 hook.hook.remove()
                 operations, spiking = single_layer_MACs(spikes, hook.layer)
+                total_ops,_ = single_layer_MACs(spikes, hook.layer, total=True)
+                self.total_synops += total_ops
                 if spiking:
                     self.AC += operations
                 else:
@@ -191,10 +194,11 @@ class synaptic_operations(AccumulatedMetric):
     
     def compute(self):
         if self.total_samples == 0:
-            return {'MACs': 0, 'ACs': 0}
+            return {'MACs': 0, 'ACs': 0, 'total synaptic operations': 0}
         ac = self.AC/self.total_samples
         mac = self.MAC/self.total_samples
-        return {'MACs': mac, 'ACs': ac}
+        total_synops = self.total_synops/self.total_samples
+        return {'MACs': mac, 'ACs': ac, 'total synaptic operations': total_synops}
     
 
 class r2(AccumulatedMetric):

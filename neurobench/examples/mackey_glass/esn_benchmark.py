@@ -51,12 +51,12 @@ for repeat_id in range(repeat):
         # generate results for only tau=17
         if single_series:
             esn = EchoStateNetwork(in_channels=1, 
-                reservoir_size = 200, 
-                input_scale = torch.tensor([0.2,1], dtype=torch.float64),
+                reservoir_size = 355, 
+                input_scale = torch.tensor([0.9,0.8],dtype = torch.float64), 
                 connect_prob = 0.15, 
-                spectral_radius = 1.25,
-                leakage = 0.3, 
-                ridge_param = 1.e-8,
+                spectral_radius = 1.23, 
+                leakage = 0.51, 
+                ridge_param = 1.e-9, 
                 seed_id = seed_id )
 
         else:
@@ -104,3 +104,6 @@ print("Average synop MACs accross all repeats and time series: ", sum(synops)/le
 
 # ESN prev hyperparams (200,0.2,1,0.15,1.25,0.3,1.e-8)
 # 324816, 0.8404, 0, 6612.7, 0, 18.634
+
+# ESN new search (355,0.9,0.8,0.15,1.23,0.51,1.e-9)
+# 1016736, 0.843, 0, 19975.73, 13.255

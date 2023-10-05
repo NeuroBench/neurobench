@@ -194,11 +194,11 @@ class synaptic_operations(AccumulatedMetric):
     
     def compute(self):
         if self.total_samples == 0:
-            return {'MACs': 0, 'ACs': 0, 'total synaptic operations': 0}
+            return {'Effective_MACs': 0, 'Effective_ACs': 0, 'Dense': 0}
         ac = self.AC/self.total_samples
         mac = self.MAC/self.total_samples
         total_synops = self.total_synops/self.total_samples
-        return {'MACs': mac, 'ACs': ac, 'total synaptic operations': total_synops}
+        return {'Effective_MACs': mac, 'Effective_ACs': ac, 'Dense': total_synops}
     
 
 class r2(AccumulatedMetric):

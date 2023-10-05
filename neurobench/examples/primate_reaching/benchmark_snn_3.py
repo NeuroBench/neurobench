@@ -11,9 +11,9 @@ from neurobench.examples.primate_reaching.SNN_3 import SNNModel3
 
 # The dataloader and preprocessor has been combined together into a single class
 dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename="indy_20170131_02.mat",
-                          num_steps=1, train_ratio=0.8, bin_width=0.004,
+                          num_steps=1, train_ratio=0.5, bin_width=0.004,
                           biological_delay=0)
-test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=256, shuffle=False)
+test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=len(dataset.ind_test), shuffle=False)
 
 net = SNNModel3(input_size=dataset.input_feature_size)
 net.load_state_dict(torch.load('model_data/snn.pt', map_location=torch.device('cpu'))['model_state_dict'])

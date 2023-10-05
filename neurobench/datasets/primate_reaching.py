@@ -32,7 +32,8 @@ class PrimateReaching(NeuroBenchDataset):
         Once these .mat files are downloaded, store them in the same directory.
     """
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
-                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000):
+                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000,
+                 split_num=1, remove_segments_inactive=False):
         """
             Initialises the Dataset for the Primate Reaching Task.
 
@@ -48,6 +49,9 @@ class PrimateReaching(NeuroBenchDataset):
                 stride (float):  How many steps are taken when moving the bin_window. Default is 0.004 (4ms).
                 bin_width (float): The size of the bin_window. Default is 0.028 (28ms).
                 max_segment_length: Define the upper limits of a segment. Default is 2000 data points (8s)
+                split_num (int): The number of chunks to break the timeseries into. Default is 1 (no splits).
+                remove_segments_inactive (bool): Whether to remove segments longer than max_segment_length,
+                                                 which represent subject inactivity. Default is False.
         """
         # The samples and labels of the dataset
         self.samples = None
@@ -56,7 +60,7 @@ class PrimateReaching(NeuroBenchDataset):
         # used for input data file management
         self.filename = filename
         self.file_path = os.path.join(file_path, self.filename) if '.mat' in self.filename else \
-            os.path.join(self.path, self.filename + ".mat")
+            os.path.join(file_path, self.filename + ".mat")
 
         # test filepath
         assert os.path.exists(self.file_path)
@@ -86,6 +90,8 @@ class PrimateReaching(NeuroBenchDataset):
         self.max_segment_length = max_segment_length
         assert self.max_segment_length > 0
 
+        self.split_num = split_num
+
         # These lists store the index of segments that belongs to training/validation/test set
         self.ind_train, self.ind_val, self.ind_test = [], [], []
 
@@ -101,7 +107,7 @@ class PrimateReaching(NeuroBenchDataset):
         if self.delay > 0:
             self.apply_delay()
 
-        if self.max_segment_length > 0:
+        if self.max_segment_length > 0 and remove_segments_inactive:
             self.remove_segments_by_length()
         
         self.split_data()
@@ -192,7 +198,7 @@ class PrimateReaching(NeuroBenchDataset):
             Split segments into training/validation/test set
         """
         # This is No. of chunks
-        split_num = 4
+        split_num = self.split_num
         total_segments = self.time_segments.shape[0]
         sub_length = int(total_segments / split_num)  # This is no of segments in each chunk
         stride = int(self.stride / SAMPLING_RATE)
@@ -245,3 +251,4 @@ class PrimateReaching(NeuroBenchDataset):
         indices = np.nonzero(np.sum(np.abs(target_diff), axis=0))[0]
 
         return indices
+    

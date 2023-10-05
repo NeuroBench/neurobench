@@ -6,8 +6,8 @@ from snntorch import surrogate
 
 class SNNModel3(nn.Module):
     def __init__(self, input_dim, layer1=32, layer2=48, output_dim=2,
-                 bin_window=0.2, num_steps=7, drop_rate=0.5, beta=0.5,
-                 mem_thresh=0.5, spike_grad=surrogate.atan(alpha=2)):
+                 batch_size=256, bin_window=0.2, num_steps=7, drop_rate=0.5,
+                 beta=0.5, mem_thresh=0.5, spike_grad=surrogate.atan(alpha=2)):
         super().__init__()
 
         self.input_dim = input_dim
@@ -16,6 +16,7 @@ class SNNModel3(nn.Module):
         self.layer2 = layer2
         self.drop_rate = drop_rate
 
+        self.batch_size = batch_size
         self.bin_window_time = bin_window
         self.num_steps = num_steps
         self.sampling_rate = 0.004
@@ -26,7 +27,7 @@ class SNNModel3(nn.Module):
         self.fc2 = nn.Linear(self.layer1, self.layer2)
         self.fc3 = nn.Linear(self.layer2, self.output_dim)
         self.dropout = nn.Dropout(self.drop_rate)
-        self.layerNorm = nn.LayerNorm([self.input_dim])
+        self.norm_layer = nn.LayerNorm([self.input_dim, self.num_steps])
 
         self.beta = beta
         self.mem_thresh = mem_thresh
@@ -43,23 +44,24 @@ class SNNModel3(nn.Module):
 
         self.register_buffer("data_buffer", torch.zeros(1, input_dim).type(torch.float32), persistent=False)
 
-        self.checker = 0
-
-    def reset(self):
+    def reset_mem(self):
         self.lif1.reset_hidden()
         self.lif2.reset_hidden()
         self.lif3.reset_hidden()
 
     def single_forward(self, x):
-        x = self.layerNorm(x)
-        cur1 = self.dropout(self.fc1(x))
-        spk1 = self.lif1(cur1)
+        x = x.permute(1, 0).unsqueeze(dim=0)
+        x = self.norm_layer(x)
+        x = x.squeeze(dim=0).permute(1, 0)
+        for step in range(self.num_steps):
+            cur1 = self.dropout(self.fc1(x[step, :]))
+            spk1 = self.lif1(cur1)
 
-        cur2 = self.fc2(spk1)
-        spk2 = self.lif2(cur2)
+            cur2 = self.fc2(spk1)
+            spk2 = self.lif2(cur2)
 
-        cur3 = self.fc3(spk2)
-        spk3 = self.lif3(cur3)
+            cur3 = self.fc3(spk2)
+            spk3 = self.lif3(cur3)
 
         return self.lif3.mem
 
@@ -71,8 +73,7 @@ class SNNModel3(nn.Module):
             current_seq = x[seq, :, :]
             self.data_buffer = torch.cat((self.data_buffer, current_seq), dim=0)
 
-            if self.data_buffer.shape[0] < self.bin_window_size:
-                self.checker += 1
+            if self.data_buffer.shape[0] <= self.bin_window_size:
                 predictions.append(torch.zeros(1, self.output_dim))
             else:
                 if self.data_buffer.shape[0] > self.bin_window_size:
@@ -81,12 +82,14 @@ class SNNModel3(nn.Module):
                 # Accumulate
                 spikes = self.data_buffer.clone()
                 pred = None
+                acc_spikes = torch.zeros((self.num_steps, self.input_dim))
                 for i in range(self.num_steps):
-                    current_spikes = (torch.sum(spikes[self.step_size*i:self.step_size*i+(1+self.step_size), :], dim=0) > 0).float()
+                    temp = (torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0) > 0).float()
+                    acc_spikes[i, :] = temp
 
-                    pred = self.single_forward(current_spikes.unsqueeze(dim=0))
-                U_x = self.v_x*pred[:, 0]
-                U_y = self.v_y*pred[:, 1]
+                pred = self.single_forward(acc_spikes)
+                U_x = self.v_x*pred[0]
+                U_y = self.v_y*pred[1]
                 out = torch.stack((U_x, U_y), 0).permute(1, 0)
                 predictions.append(out)
 

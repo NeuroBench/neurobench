@@ -247,7 +247,12 @@ def single_layer_MACs(inputs, layer, total=False):
 			# inputs = (x,(h,c))
 			if in_states:
 				out_hh = torch.matmul(layer_bin.weight_hh, inputs[1][0].transpose(0,-1))
+
+			# out_ih[out_ih!=0] = 1
+			# out_hh[out_hh!=0] = 1
+
 			out = out_ih + out_hh 
+
 			ifgo_macs = out.sum() # accounts for i,f,g,o WITHOUT biases
 
 			out += biases # biases are added here for computation of c and h which depend on correct computation of ifgo
@@ -258,8 +263,10 @@ def single_layer_MACs(inputs, layer, total=False):
 				c_1 = ifgo[1,:]*inputs[1][1] + ifgo[0,:]*ifgo[2,:]
 			else:
 				c_1 = ifgo[0,:]*ifgo[2,:]
-			c_1[c_1!=0] = 1
+			
 			ifgoc_macs = ifgo_macs + c_1.sum()
+
+			c_1[c_1!=0] = 1
 			output = ifgo[3,:]*c_1 # drop tanh as does not affect 1 vs 0
 			output[output!=0] = 1
 			macs = output.sum() + ifgoc_macs

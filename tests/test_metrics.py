@@ -425,8 +425,7 @@ def test_synaptic_ops():
 
     syn = synaptic_operations()
     syn_ops = syn(model, out, inp)
-
-    assert syn_ops['MACs'] == 650
+    assert syn_ops['MACs'] == 610
     assert syn_ops['ACs'] == 0
 
     # test RNN network
@@ -443,7 +442,7 @@ def test_synaptic_ops():
     syn = synaptic_operations()
     syn_ops = syn(model, out, inp)
 
-    assert syn_ops['MACs'] == 160
+    assert syn_ops['MACs'] == 150
     assert syn_ops['ACs'] == 0
 
     # test GRU network
@@ -461,7 +460,7 @@ def test_synaptic_ops():
     syn_ops = syn(model, out, inp)
 
     print(syn_ops)
-    assert syn_ops['MACs'] == 650
+    assert syn_ops['MACs'] == 465
     assert syn_ops['ACs'] == 0
 
     
@@ -494,7 +493,7 @@ def test_neuron_update_metric():
 
 class simple_LSTM(nn.Module):
     """Nonsense LSTM for operations testing
-    Should be 650 MACs
+    Should be 610 MACs
     """
     def __init__(self):
         super(simple_LSTM, self).__init__()

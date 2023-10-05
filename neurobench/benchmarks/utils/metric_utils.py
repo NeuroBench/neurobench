@@ -171,7 +171,6 @@ def single_layer_MACs(inputs, layer, total=False):
 	# copy input
 	inputs, spiking, in_states = binary_inputs(inputs, all_ones=total)
 
-
 	stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
 	recurrent_layers = (torch.nn.RNNBase)
 	recurrent_cells  = (torch.nn.RNNCellBase)
@@ -184,19 +183,13 @@ def single_layer_MACs(inputs, layer, total=False):
 		# bias is not considered as a synaptic operation
 		# in the future you can change this parameter to include bias
 		bias = False
+		if layer_bin.bias is not None and not bias:
+			# suppress the bias to zero
+			layer_bin.bias.data = torch.zeros_like(layer_bin.bias.data)
 
-		# how many biases are added
-		# if there is a bias
-		add_bias = 0
-		if layer.bias is not None:
-			add_bias = torch.count_nonzero(layer.bias.data)
-		
 		nr_updates = layer_bin(inputs) # this returns the number of MACs for every output neuron: if spiking neurons only AC
-		
-		if bias:
-			macs = nr_updates.sum() + add_bias
-		else:
-			macs = nr_updates.sum()
+		macs = nr_updates.sum() 
+
 
 	elif isinstance(layer, recurrent_layers):
 		layer_bin = make_binary_copy(layer, all_ones=total)

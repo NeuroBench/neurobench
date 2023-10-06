@@ -38,7 +38,7 @@ def test_dvs_gesture():
     assert int(ds[0][1]) <= 10
 
 def test_mackey_glass():
-    mg = MackeyGlass(17,197,0.7206597)
+    mg = MackeyGlass(tau=17,lyaptime=197,constant_past=0.7206597)
 
     assert len(mg) > 0
 
@@ -59,7 +59,45 @@ def test_mackey_glass():
     assert(torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
 
     bin_window = 3
-    mg = MackeyGlass(17,197,0.7206597, bin_window=bin_window)
+    mg = MackeyGlass(tau=17,lyaptime=197,constant_past=0.7206597, bin_window=bin_window)
+    trainset = torch.utils.data.Subset(mg, mg.ind_train)
+    testset = torch.utils.data.Subset(mg, mg.ind_test)
+    
+    assert trainset[0][0].shape == (bin_window,1)
+    assert trainset[0][1].shape == (1,)
+    assert testset[0][0].shape == (bin_window,1)
+    assert testset[0][1].shape == (1,)
+    
+    assert(torch.eq(mg[0][1], mg[1][0][-1])) # ensure target from previous timestep is appended to lookback window
+
+def test_mackey_glass_load():
+    filepath = dataset_path + "mackey_glass/mg_17.npy"
+    try:
+        assert os.path.exists(filepath)
+    except AssertionError:
+        raise FileExistsError(f"Can't find {filepath}")
+    mg = MackeyGlass(file=filepath)
+
+    assert len(mg) > 0
+
+    trainset = torch.utils.data.Subset(mg, mg.ind_train)
+    testset = torch.utils.data.Subset(mg, mg.ind_test)
+
+    assert len(trainset) == mg.traintime_pts
+    assert len(testset) == mg.testtime_pts
+
+    assert trainset[0][0].shape == (1,1)
+    assert trainset[0][1].shape == (1,)
+    assert testset[0][0].shape == (1,1)
+    assert testset[0][1].shape == (1,)
+
+    assert(torch.eq(trainset[0][0], mg[0][0]))
+    assert(torch.eq(trainset[0][1], mg[0][1]))
+    assert(torch.eq(testset[0][0], mg[mg.traintime_pts][0]))
+    assert(torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
+
+    bin_window = 3
+    mg = MackeyGlass(file=filepath, bin_window=bin_window)
     trainset = torch.utils.data.Subset(mg, mg.ind_train)
     testset = torch.utils.data.Subset(mg, mg.ind_test)
     

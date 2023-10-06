@@ -4,14 +4,14 @@ import torch
 import math
 from jitcdde import jitcdde, y, t, jitcdde_lyap
 
-
 class MackeyGlass(Dataset):
     """ Dataset for the Mackey-Glass task.
     """
     def __init__(self, 
-                 tau,  
-                 lyaptime,
-                 constant_past,
+                 file=None,
+                 tau=17,  
+                 lyaptime=197,
+                 constant_past=0.7206597,
                  nmg = 10, 
                  beta = 0.2, 
                  gamma = 0.1,
@@ -26,6 +26,7 @@ class MackeyGlass(Dataset):
         Initializes the Mackey-Glass dataset.
 
         Args:
+            file (str): path to .npy file containing Mackey-Glass time-series. If this is provided, then tau, lyaptime, constant_past, nmg, beta, gamma are ignored.
             tau (float): parameter of the Mackey-Glass equation
             lyaptime (float): Lyapunov time of the time-series
             constant_past (float): initial condition for the solver
@@ -35,7 +36,7 @@ class MackeyGlass(Dataset):
             pts_per_lyaptime (int): number of points to sample per one Lyapunov time
             traintime (float): number of Lyapunov times to be used for training a model
             testtime (float): number of Lyapunov times to be used for testing a model            
-            start_offset (float): added offset of the starting point of the time-series, in case of repeating using same function values
+            start_offset (int): added offset in number of points to shift the timeseries forward
             seed_id (int): seed for generating function solution
             bin_window (int): number of points forming lookback window for each prediction
         """
@@ -56,7 +57,7 @@ class MackeyGlass(Dataset):
         # Time units to forecast
         self.testtime = testtime*self.lyaptime
         
-        self.start_offset = start_offset*self.lyaptime
+        self.start_offset = start_offset
         self.seed_id = seed_id
 
         self.bin_window = bin_window
@@ -73,11 +74,28 @@ class MackeyGlass(Dataset):
         self.mackeyglass_specification = [ self.beta * y(0,t-self.tau) / (1 + y(0,t-self.tau)**self.nmg) - self.gamma*y(0) ]
 
         # Generate time-series
-        self.generate_data()
+        if file is not None:
+            self.load_data(file)
+        else:
+            self.generate_data()
 
         # Generate train/test indices
         self.split_data()
         
+    def load_data(self, file):
+        all_data = np.load(file)
+
+        self.mackeyglass_soln = all_data[int(self.start_offset) : int(self.start_offset+self.maxtime_pts)]
+
+        assert len(self.mackeyglass_soln) == self.maxtime_pts
+
+        self.mackeyglass_soln = torch.tensor(self.mackeyglass_soln, dtype=torch.float64)
+        self.mackeyglass_soln = self.mackeyglass_soln.unsqueeze(dim=-1)
+
+        breakpoint()
+
+        # pad the soln with preceding zeroes for lookback window
+        self.mackeyglass_soln = torch.cat((torch.zeros((self.bin_window-1,1),dtype=torch.float64), self.mackeyglass_soln),0)
 
     def generate_data(self):
         """ Generate time-series using the provided parameters of the equation.
@@ -86,6 +104,7 @@ class MackeyGlass(Dataset):
 
         # Create the equation object based on the settings
         self.DDE = jitcdde_lyap(self.mackeyglass_specification)
+        # self.DDE.set_integration_parameters(atol=1e-17, rtol=1e-17, min_step=1e-17) # TODO: comment this out later after testing
         self.DDE.constant_past([self.constant_past])
         self.DDE.step_on_discontinuities()
 
@@ -96,7 +115,10 @@ class MackeyGlass(Dataset):
         lyaps = torch.zeros((self.maxtime_pts,1),dtype=torch.float64)
         lyaps_weights = torch.zeros((self.maxtime_pts,1),dtype=torch.float64)
         count = 0
-        for time in torch.linspace(self.DDE.t+self.start_offset, self.DDE.t+self.start_offset+self.maxtime, steps = self.maxtime_pts, dtype=torch.float64):
+
+        offset = self.start_offset * self.lyaptime/self.pts_per_lyaptime
+
+        for time in torch.linspace(self.DDE.t+offset, self.DDE.t+offset+self.maxtime, steps = self.maxtime_pts, dtype=torch.float64):
             value, lyap, weight = self.DDE.integrate(time.item())
             self.mackeyglass_soln[count,0] = value[0] 
             lyaps[count,0] = lyap[0]

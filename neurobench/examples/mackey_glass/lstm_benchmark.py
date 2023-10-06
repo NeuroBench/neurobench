@@ -38,7 +38,8 @@ parser.add_argument('--debug', type=bool, default=False)
 
 args, unparsed = parser.parse_known_args()
 
-assert args.series_id == 0, "Hyperparameter optimization performed only for series id 0"
+assert args.series_id == 0, "Hyperparameter optimization performed "\
+                            "only for series id 0"
 
 if loaded_wandb:
     if args.sw:
@@ -71,6 +72,8 @@ start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5)
 
 # Benchmark run over args.repeat different experiments
 sMAPE_scores = []
+connection_sparsities = []
+activation_sparsities = []
 
 for repeat_id in range(args.repeat):
 
@@ -79,7 +82,9 @@ for repeat_id in range(args.repeat):
     constant_past = mg_parameters.initial_condition[args.series_id]
     offset = start_offset_range[repeat_id].item()
 
-    print(f"Experiment: repeat-id={repeat_id}, tau={tau}, constant_past={constant_past}, lyaptime={lyaptime}, offset={offset}")
+    print(f"Experiment: repeat-id={repeat_id},\n"
+          f"tau={tau}, constant_past={constant_past},\n"
+          f"lyaptime={lyaptime}, offset={offset}")
 
     if repeat_id == 0 and loaded_wandb:
         wandb.config['tau'] = tau
@@ -166,18 +171,23 @@ for repeat_id in range(args.repeat):
     results = benchmark.run()
     print(results)
     sMAPE_scores.append(results["sMAPE"])
+    connection_sparsities.append(results["connection_sparsity"])
+    activation_sparsities.append(results["activation_sparsity"])
     if loaded_wandb:
         wandb.log({"sMAPE_score_val": results["sMAPE"]})
 
-connection_sparsity = results["connection_sparsity"]
-activation_sparsity = results["model_size"]
 model_size = results["model_size"]
 
-avg_sMAPE_score = sum(sMAPE_scores)/len(sMAPE_scores)
+avg_sMAPE_score = sum(sMAPE_scores)/args.repeat
+connection_sparsity = sum(connection_sparsities)/args.repeat
+activation_sparsity = sum(activation_sparsities)/args.repeat
 if loaded_wandb:
     wandb.log({"sMAPE_score": avg_sMAPE_score})
     wandb.log({"connection_sparsity": connection_sparsity})
     wandb.log({"activation_sparsity": activation_sparsity})
     wandb.log({"model_size": model_size})
 
-print(f"sMAPE score {avg_sMAPE_score} on time series id {args.series_id}")
+print(f"sMAPE score = {avg_sMAPE_score},\n"
+      f"connection_sparsity = {connection_sparsity},\n"
+      f"activation_sparsity = {activation_sparsity}\n"
+      f"on time series id {args.series_id}")

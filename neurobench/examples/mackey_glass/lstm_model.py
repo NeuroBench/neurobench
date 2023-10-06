@@ -84,10 +84,10 @@ class LSTMModel(nn.Module):
         Run a single step of the LSTM model
 
         Args:
-            batch (2D tensor): input data of shape [batch_size, input_dim]
+            batch (2D tensor): input data of shape [1, input_dim]
 
         Returns:
-            2D tesnor: output data of shape [batch_size, output_dim]
+            2D tesnor: output data of shape [1, output_dim]
         """
 
         sample = self.layer_norm(sample)
@@ -106,7 +106,7 @@ class LSTMModel(nn.Module):
 
         Args:
             batch (3D tensor): input data of shape
-            [num_steps, 1, input_dim]
+            [num_steps, 1, 1]
         Returns:
             3D tesnor: output data of shape [num_steps, output_dim]
         """

@@ -122,7 +122,8 @@ class PrimateReaching(NeuroBenchDataset):
             Getter method of the dataloader
         """
         # compute indices of congruent binning windows
-        return self.samples[:, idx], self.labels[:, idx]
+        mask = idx - np.arange(self.num_steps) * self.ratio
+        return self.samples[:, mask].transpose(0, 1), self.labels[:, idx]
 
     def load_data(self):
         """

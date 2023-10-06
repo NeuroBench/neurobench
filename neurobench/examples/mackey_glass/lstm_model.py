@@ -1,41 +1,29 @@
-"""
-Class defines an LSTM model + a feedforward layer
-
-Authors
-~~~~~~~
-Younes Bouhadjar
-"""
-
 import torch
 import torch.nn as nn
 
 
 class LSTMModel(nn.Module):
     """
-    LSTM model
+    Initialize the LSTM model
 
-    Parameters: #TODO
-        input_dim:   int
-                     The number of expected features in the input x
-        hidden_size: int 
-                     The number of features in the hidden state of the LSTM
-        n_layers:    int
-                     The number of LSTM layers
-        output_dim:  int 
-                     The number of output features after passing through the fully connected layer
-
-
+    Args:
+        input_dim (int): number of input features
+        hidden_size (int): LSTM hidden size
+        n_layers (int): number of LSTM layers
+        output_dim (int): number of output features
+        mode  (str): modes can be set to 'autonomous' or 'single_step'
+        dtype (torch type): torch data type
+        device (torch device): device type, i.e., cpu or gpu
     """
-    def __init__(
-        self, 
-        input_dim: int = 1, 
-        hidden_size: int = 50, 
-        n_layers: int = 2, 
-        output_dim: int = 1, 
-        mode: str = 'autonomous',
-        dtype = torch.float64,
-        device = torch.device("cpu")
-        ):
+    def __init__(self,
+                 input_dim: int = 1,
+                 hidden_size: int = 50,
+                 n_layers: int = 2,
+                 output_dim: int = 1,
+                 mode: str = 'autonomous',
+                 dtype=torch.float64,
+                 device=torch.device("cpu")
+                 ):
         super().__init__()
 
         self.input_dim = input_dim
@@ -48,7 +36,7 @@ class LSTMModel(nn.Module):
 
         assert self.mode in ['autonomous', 'single_step']
         self.prior_prediction = None
- 
+
         # LSTM model
         self.rnns = nn.ModuleList()
         self.rnns.append(nn.LSTMCell(
@@ -60,9 +48,9 @@ class LSTMModel(nn.Module):
 
         self.activation = nn.ReLU().type(dtype)
         self.fc = nn.Linear(hidden_size, output_dim).type(dtype)
-        self.layer_norm = nn.LayerNorm(self.input_dim).type(dtype) 
+        self.layer_norm = nn.LayerNorm(self.input_dim).type(dtype)
 
-        # Create register buffers to store lookback window as well as for the LSTM states
+        # Create register buffers to store lookback window and LSTM states
         # This allows assessment of model memory footprint
 
         # Stores time steps of lookback window
@@ -70,31 +58,60 @@ class LSTMModel(nn.Module):
 
         # Stores hidden hi states
         for i in range(self.n_layers):
-            self.register_buffer(f'h{i}', torch.zeros(1, self.hidden_size).type(self.dtype))
+            self.register_buffer(f'h{i}',
+                    torch.zeros(1, self.hidden_size).type(self.dtype))
 
         # Stores ci states
         for i in range(self.n_layers):
-            self.register_buffer(f'c{i}', torch.zeros(1, self.hidden_size).type(self.dtype))
+            self.register_buffer(f'c{i}',
+                    torch.zeros(1, self.hidden_size).type(self.dtype))
 
-        #TODO h and c are defined in forward pass to ensure they are in the correct device,
-        # see if there is a cleaner way
+        # TODO
+        # 1. h and c are set in the forward pass to ensure they are
+        # in the correct device, see if there is a cleaner way.
+        # 2. Initializing h and c as 3D tensor, where the first dimension
+        # depicts the number of layers, requires inplace operation
+        # during forward pass.
+        # This latter further requires introducing clone memory operation
+        # for gradient calculation and propagation.
+        # A workaround solution for now is to define them as list of hi and ci,
+        # respectively
         self.h = []
         self.c = []
-        
-    def single_forward(self, sample): 
+
+    def single_forward(self, sample):
+        """
+        Run a single step of the LSTM model
+
+        Args:
+            batch (2D tensor): input data of shape [batch_size, input_dim]
+
+        Returns:
+            2D tesnor: output data of shape [batch_size, output_dim]
+        """
 
         sample = self.layer_norm(sample)
         self.h[0], self.c[0] = self.rnns[0](sample, (self.h[0], self.c[0]))
         for i in range(1, self.n_layers):
-            self.h[i], self.c[i] = self.rnns[i](self.h[i-1], (self.h[i], self.c[i]))
+            self.h[i], self.c[i] = self.rnns[i](self.h[i-1],
+                                                (self.h[i], self.c[i]))
         x = self.activation(self.h[-1])
         out = self.fc(x)
 
         return out
 
     def forward(self, batch):
+        """
+        Run the LSTM model
 
-        # Reset register buffers 
+        Args:
+            batch (3D tensor): input data of shape
+            [num_steps, 1, input_dim]
+        Returns:
+            3D tesnor: output data of shape [num_steps, output_dim]
+        """
+
+        # Reset register buffers
         for i in range(self.n_layers):
             getattr(self, f'h{i}')[:] = 0.
         for i in range(self.n_layers):
@@ -118,12 +135,12 @@ class LSTMModel(nn.Module):
                 self.inp = torch.cat((self.inp, sample), dim=-1)
                 self.inp = self.inp[:, 1:]
                 inp = self.inp.clone()
-       
+
             prediction = self.single_forward(inp)
             predictions.append(prediction)
             self.prior_prediction = prediction
 
-        # reset so that next batch will not have prior prediction
+        # Reset so that next batch will not have prior prediction
         self.prior_prediction = None
 
         return torch.stack(predictions).squeeze(-1)

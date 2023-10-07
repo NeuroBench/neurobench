@@ -87,12 +87,11 @@ class MackeyGlass(Dataset):
 
         self.mackeyglass_soln = all_data[int(self.start_offset) : int(self.start_offset+self.maxtime_pts)]
 
-        assert len(self.mackeyglass_soln) == self.maxtime_pts
+        if len(self.mackeyglass_soln) != self.maxtime_pts:
+            breakpoint()
 
         self.mackeyglass_soln = torch.tensor(self.mackeyglass_soln, dtype=torch.float64)
         self.mackeyglass_soln = self.mackeyglass_soln.unsqueeze(dim=-1)
-
-        breakpoint()
 
         # pad the soln with preceding zeroes for lookback window
         self.mackeyglass_soln = torch.cat((torch.zeros((self.bin_window-1,1),dtype=torch.float64), self.mackeyglass_soln),0)

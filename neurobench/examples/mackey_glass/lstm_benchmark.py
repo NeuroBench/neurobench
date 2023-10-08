@@ -68,16 +68,22 @@ params['output_dim'] = 1
 params['dtype'] = torch.float64
 params['device'] = device
 params['mode'] = 'single_step'
-start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5)
 
 # Benchmark run over args.repeat different experiments
 sMAPE_scores = []
 connection_sparsities = []
 activation_sparsities = []
 
-for repeat_id in range(args.repeat):
+# Shift time series by 0.5 of Lyapunov time-points for each independent run 
+start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5) 
+lyaptime_pts = 75
+start_offset_range = start_offset_range * lyaptime_pts
 
+data_dir = "data/mackey_glass/"
+
+for repeat_id in range(args.repeat):
     tau = mg_parameters.tau[args.series_id]
+    filepath = data_dir + "mg_" + str(tau) + ".npy"
     lyaptime = mg_parameters.lyapunov_time[args.series_id]
     constant_past = mg_parameters.initial_condition[args.series_id]
     offset = start_offset_range[repeat_id].item()
@@ -97,9 +103,7 @@ for repeat_id in range(args.repeat):
     torch.manual_seed(repeat_id)
     torch.cuda.manual_seed_all(repeat_id)
 
-    mg = MackeyGlass(tau=tau,
-                     lyaptime=lyaptime,
-                     constant_past=constant_past,
+    mg = MackeyGlass(filepath,
                      start_offset=offset,
                      bin_window=1)
 

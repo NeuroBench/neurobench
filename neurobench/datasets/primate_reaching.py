@@ -244,8 +244,7 @@ class PrimateReaching(NeuroBenchDataset):
         """
             Helper method for creating a PyTorch DataLoader based on the split_type.
             Args:
-                split_type (str): Defines the split type that will be loaded into the DataLoader.
-                                  Can be of the type "Train", "Validation" or "Test".
+                split_type (str): Can be of the type "Train", "Validation" or "Test".
             :param indices: (list of int) training, testing or validation indices
             :param batch_size: (int) size of batch being processed
             :param shuffle: (boolean) shuffle data

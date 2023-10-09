@@ -10,13 +10,13 @@ from neurobench.examples.primate_reaching.ANN import ANNModel2D
 # class for download instructions.
 
 all_files = ["indy_20160622_01", "indy_20160630_01", "indy_20170131_02", 
-             "loco_20170210_03", "loco_20170217_02", "loco_20170301_05"]
+             "loco_20170210_03", "loco_20170215_02", "loco_20170301_05"]
 
 for filename in all_files:
     # The dataloader and preprocessor has been combined together into a single class
     dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
-                            biological_delay=0, remove_segments_inactive=True)
+                            biological_delay=0, remove_segments_inactive=False)
 
     test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=256, shuffle=False)
 
@@ -25,7 +25,7 @@ for filename in all_files:
 
     # Give the user the option to load their pretrained weights
     # TODO: currently model is not trained
-    net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/2d_model_parameters/"+filename+"_model_params.pth"))
+    net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/2D_ANN_Weight/"+filename+"_model_state_dict.pth"))
 
     model = TorchModel(net)
 

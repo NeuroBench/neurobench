@@ -4,6 +4,8 @@ import torch.nn as nn
 import snntorch as snn
 from snntorch import surrogate
 
+import numpy as np
+
 class SNNModel3(nn.Module):
     def __init__(self, input_dim, layer1=32, layer2=48, output_dim=2,
                  batch_size=256, bin_window=0.2, num_steps=7, drop_rate=0.5,
@@ -27,7 +29,6 @@ class SNNModel3(nn.Module):
         self.fc2 = nn.Linear(self.layer1, self.layer2)
         self.fc3 = nn.Linear(self.layer2, self.output_dim)
         self.dropout = nn.Dropout(self.drop_rate)
-        self.norm_layer = nn.LayerNorm([self.input_dim, self.num_steps])
 
         self.beta = beta
         self.mem_thresh = mem_thresh
@@ -50,11 +51,9 @@ class SNNModel3(nn.Module):
         self.lif3.reset_hidden()
 
     def single_forward(self, x):
-        x = x.permute(1, 0).unsqueeze(dim=0)
-        x = self.norm_layer(x)
-        x = x.squeeze(dim=0).permute(1, 0)
+        x = x.permute(1, 0)
         for step in range(self.num_steps):
-            cur1 = self.dropout(self.fc1(x[step, :]))
+            cur1 = self.dropout(self.fc1(x[:,step]))
             spk1 = self.lif1(cur1)
 
             cur2 = self.fc2(spk1)
@@ -63,35 +62,35 @@ class SNNModel3(nn.Module):
             cur3 = self.fc3(spk2)
             spk3 = self.lif3(cur3)
 
-        return self.lif3.mem
+        return self.lif3.mem.clone()
 
     def forward(self, x):
         predictions = []
 
         seq_length = x.shape[0]
+        self.reset_mem()
         for seq in range(seq_length):
             current_seq = x[seq, :, :]
             self.data_buffer = torch.cat((self.data_buffer, current_seq), dim=0)
 
-            if self.data_buffer.shape[0] <= self.bin_window_size:
-                predictions.append(torch.zeros(1, self.output_dim))
-            else:
-                if self.data_buffer.shape[0] > self.bin_window_size:
-                    self.data_buffer = self.data_buffer[1:, :]
+            if self.data_buffer.shape[0] > self.bin_window_size:
+                self.data_buffer = self.data_buffer[1:, :]
 
-                # Accumulate
-                spikes = self.data_buffer.clone()
-                pred = None
-                acc_spikes = torch.zeros((self.num_steps, self.input_dim))
-                for i in range(self.num_steps):
-                    temp = (torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0) > 0).float()
-                    acc_spikes[i, :] = temp
+            # Accumulate
+            spikes = self.data_buffer.clone()
+            
+            acc_spikes = torch.zeros((self.num_steps, self.input_dim))
+            for i in range(self.num_steps):
+                temp = torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0)
+                acc_spikes[i, :] = temp
 
-                pred = self.single_forward(acc_spikes)
-                U_x = self.v_x*pred[0]
-                U_y = self.v_y*pred[1]
-                out = torch.stack((U_x, U_y), 0).permute(1, 0)
-                predictions.append(out)
+            acc_spikes = (acc_spikes > 0).float()
+
+            pred = self.single_forward(acc_spikes)
+            U_x = self.v_x*pred[0]
+            U_y = self.v_y*pred[1]
+            out = torch.stack((U_x, U_y), 0).permute(1, 0)
+            predictions.append(out)
 
         predictions = torch.stack(predictions).squeeze(dim=1)
 

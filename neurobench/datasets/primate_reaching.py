@@ -23,7 +23,7 @@ class PrimateReaching(NeuroBenchDataset):
         2. indy_20160630_01.mat
         3. indy_20160622_01.mat
         4. loco_20170301_05.mat
-        5. loco_20170217_02.mat
+        5. loco_20170215_02.mat
         6. loco_20170210_03.mat
 
         The description of the structure of the dataset can be found on the website

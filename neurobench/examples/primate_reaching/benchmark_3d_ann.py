@@ -20,6 +20,8 @@ macs = []
 acs = []
 r2 = []
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
 for filename in all_files:
     print("Processing {}".format(filename))
 
@@ -33,7 +35,7 @@ for filename in all_files:
     net = ANNModel3D(input_dim=dataset.input_feature_size, layer1=32, layer2=48, 
                      output_dim=2, bin_window=0.2, num_steps=7, drop_rate=0.5)
 
-    net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/3D_ANN_Weight/"+filename+"_model_state_dict.pth"))
+    net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/3D_ANN_Weight/"+filename+"_model_state_dict.pth", map_location=device))
 
     model = TorchModel(net)
 
@@ -49,8 +51,8 @@ for filename in all_files:
     connection_sparsity.append(results['connection_sparsity'])
     activation_sparsity.append(results['activation_sparsity'])
     dense.append(results['synaptic_operations']['Dense'])
-    macs.append(results['synaptic_operations']['MACs'])
-    acs.append(results['synaptic_operations']['ACs'])
+    macs.append(results['synaptic_operations']['Effective_MACs'])
+    acs.append(results['synaptic_operations']['Effective_ACs'])
     r2.append(results['r2'])
 
 print("Footprint: {}".format(footprint))
@@ -61,3 +63,10 @@ print("MACs: {}".format(macs), sum(macs)/len(macs))
 print("ACs: {}".format(acs), sum(acs)/len(acs))
 print("R2: {}".format(r2), sum(r2)/len(r2))
 
+# Footprint: [94552, 94552, 94552, 180952, 180952, 180952]
+# Connection sparsity: [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]
+# Activation sparsity: [0.7647354121258293, 0.7170055772865946, 0.5856741871331477, 0.732334983618757, 0.5229688072074897, 0.7613369241509738] 0.6806759819204653
+# Dense: [23136.0, 23136.0, 23136.0, 44640.0, 44640.0, 44640.0] 33888.0
+# MACs: [10443.117328969101, 7005.948456888324, 6213.918443002781, 14398.115916437426, 14647.870704534756, 16333.473996765613] 11507.074141099665
+# ACs: [0.006274841054957653, 0.002096161404428141, 0.005560704355885079, 0.011674826884207607, 0.010879230085255504, 0.007352486324552179] 0.007306375018214362
+# R2: [0.6739100217819214, 0.5933212041854858, 0.6587119698524475, 0.5970449447631836, 0.5281975269317627, 0.6410964727401733] 0.6153803567091624

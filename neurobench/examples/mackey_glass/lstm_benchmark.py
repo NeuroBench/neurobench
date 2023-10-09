@@ -73,6 +73,8 @@ params['mode'] = 'single_step'
 sMAPE_scores = []
 connection_sparsities = []
 activation_sparsities = []
+synop_macs = []
+synop_dense = []
 
 # Shift time series by 0.5 of Lyapunov time-points for each independent run 
 start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5) 
@@ -168,7 +170,7 @@ for repeat_id in range(args.repeat):
     model = TorchModel(lstm)
 
     static_metrics = ["model_size", "connection_sparsity"]
-    data_metrics = ["sMAPE", "activation_sparsity"]
+    data_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
 
     benchmark = Benchmark(model, test_set_loader, [], [],
                           [static_metrics, data_metrics])
@@ -177,6 +179,8 @@ for repeat_id in range(args.repeat):
     sMAPE_scores.append(results["sMAPE"])
     connection_sparsities.append(results["connection_sparsity"])
     activation_sparsities.append(results["activation_sparsity"])
+    synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
+    synop_dense.append(results["synaptic_operations"]["Dense"])
     if loaded_wandb:
         wandb.log({"sMAPE_score_val": results["sMAPE"]})
 
@@ -185,6 +189,9 @@ model_size = results["model_size"]
 avg_sMAPE_score = sum(sMAPE_scores)/args.repeat
 connection_sparsity = sum(connection_sparsities)/args.repeat
 activation_sparsity = sum(activation_sparsities)/args.repeat
+synop_macs = sum(synop_macs)/args.repeat
+synop_dense = sum(synop_dense)/args.repeat
+
 if loaded_wandb:
     wandb.log({"sMAPE_score": avg_sMAPE_score})
     wandb.log({"connection_sparsity": connection_sparsity})
@@ -193,5 +200,15 @@ if loaded_wandb:
 
 print(f"sMAPE score = {avg_sMAPE_score},\n"
       f"connection_sparsity = {connection_sparsity},\n"
-      f"activation_sparsity = {activation_sparsity}\n"
+      f"activation_sparsity = {activation_sparsity},\n"
+      f"synop_macs = {synop_macs},\n"
+      f"synop_dense = {synop_dense},\n"
       f"on time series id {args.series_id}")
+
+# With the default params, repeat 30, tau=17
+# sMAPE score = 15.156239883579927,
+# connection_sparsity = 0.0,
+# activation_sparsity = 0.45951777777777786,
+# synop_macs = 14534.032622222225,
+# synop_dense = 14552.413333333332,
+# on time series id 0

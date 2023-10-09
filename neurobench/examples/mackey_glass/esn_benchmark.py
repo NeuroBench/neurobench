@@ -14,7 +14,7 @@ mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)
 
 # generate results for only tau=17
-single_series = False
+single_series = True
 if single_series:
     mg_parameters = mg_parameters[mg_parameters.tau == 17]
 
@@ -27,7 +27,7 @@ synop_macs = []
 synop_dense = []
 
 # Number of simulations to run for each time series
-repeat = 1
+repeat = 30
 # Shift time series by 0.5 of Lyapunov time-points for each independent run 
 start_offset_range = torch.arange(0., 0.5*repeat, 0.5) 
 lyaptime_pts = 75
@@ -104,7 +104,12 @@ print("Average sMAPE score accross all repeats and time series: ", sum(sMAPE_sco
 print("Average synop MACs accross all repeats and time series: ", sum(synop_macs)/len(synop_macs))
 print("Average synop dense accross all repeats and time series: ", sum(synop_dense)/len(synop_dense))
 
-# Score for repeat=1
+# Score for single_series=True, repeat=30 (tau=17, smaller-size hyperparams)
+# Average sMAPE score accross all repeats and time series:  18.382620390575333
+# Average synop MACs accross all repeats and time series:  19445.568177777775
+# Average synop dense accross all repeats and time series:  127092.0
+
+# Score for repeat=1, single_series=False
 # Average sMAPE score accross all repeats and time series:  40.803375080880265
 # Average synop MACs accross all repeats and time series:  290192.71952380956
 # Average synop dense accross all repeats and time series:  565148.5714285715

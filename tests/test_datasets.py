@@ -129,6 +129,6 @@ def test_primate_reaching():
 
     # correct shapes
     assert next(iter(train_set_loader))[0].shape == (1, 250, 96)
-    assert next(iter(train_set_loader))[1].shape == (1, 250, 2)
+    assert next(iter(train_set_loader))[1].shape == (1, 2)
     assert next(iter(test_set_loader))[0].shape == (1, 250, 96)
-    assert next(iter(test_set_loader))[1].shape == (1, 250, 2)
+    assert next(iter(test_set_loader))[1].shape == (1, 2)

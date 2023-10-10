@@ -12,7 +12,7 @@ is planned.
 NeuroBench is a community-driven project, and we welcome further
 development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
-please see the `contributing guidelines <CONTRIBUTING.md>`__.
+please see the `contributing guidelines <CONTRIBUTING.rst>`__.
 
 
 NeuroBench Structure

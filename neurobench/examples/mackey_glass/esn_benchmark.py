@@ -23,20 +23,26 @@ esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/echo_state_networ
 
 # benchmark run over 14 different series
 sMAPE_scores = []
-synops = []
+synop_macs = []
+synop_dense = []
 
 # Number of simulations to run for each time series
 repeat = 30
-# Shift time series by 0.5 of its Lyapunov times for each independent run 
+# Shift time series by 0.5 of Lyapunov time-points for each independent run 
 start_offset_range = torch.arange(0., 0.5*repeat, 0.5) 
+lyaptime_pts = 75
+start_offset_range = start_offset_range * lyaptime_pts
 
-for repeat_id in range(repeat):
-    for series_id in range(len(mg_parameters)):
+data_dir = "data/mackey_glass/"
+
+for series_id in range(len(mg_parameters)):
+    for repeat_id in range(repeat):
         tau = mg_parameters.tau[series_id]
-        mg = MackeyGlass(tau = tau, 
-                         lyaptime = mg_parameters.lyapunov_time[series_id],
-                         constant_past = mg_parameters.initial_condition[series_id],
-                         start_offset=start_offset_range[repeat_id].item(),
+        filepath = data_dir + "mg_" + str(tau) + ".npy"
+        lyaptime = mg_parameters.lyapunov_time[series_id]
+        offset = start_offset_range[repeat_id].item()
+        mg = MackeyGlass(filepath,
+                         start_offset=offset,
                          bin_window=1)
     
         train_set = Subset(mg, mg.ind_train)
@@ -51,12 +57,12 @@ for repeat_id in range(repeat):
         # generate results for only tau=17
         if single_series:
             esn = EchoStateNetwork(in_channels=1, 
-                reservoir_size = 200, 
-                input_scale = torch.tensor([0.2,1], dtype=torch.float64),
+                reservoir_size = 355, 
+                input_scale = torch.tensor([0.9,0.8],dtype = torch.float64), 
                 connect_prob = 0.15, 
-                spectral_radius = 1.25,
-                leakage = 0.3, 
-                ridge_param = 1.e-8,
+                spectral_radius = 1.23, 
+                leakage = 0.51, 
+                ridge_param = 1.e-9, 
                 seed_id = seed_id )
 
         else:
@@ -91,16 +97,19 @@ for repeat_id in range(repeat):
         results = benchmark.run()
         print(results)
         sMAPE_scores.append(results["sMAPE"])
-        synops.append(results["synaptic_operations"]["MACs"])
+        synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
+        synop_dense.append(results["synaptic_operations"]["Dense"])
 
 print("Average sMAPE score accross all repeats and time series: ", sum(sMAPE_scores)/len(sMAPE_scores))
-print("Average synop MACs accross all repeats and time series: ", sum(synops)/len(synops))
+print("Average synop MACs accross all repeats and time series: ", sum(synop_macs)/len(synop_macs))
+print("Average synop dense accross all repeats and time series: ", sum(synop_dense)/len(synop_dense))
 
-# Scores for tau=17:
-# Footprint, Connection Sparsity, Activation Sparsity, SynOps MACs, sMAPE
+# Score for single_series=True, repeat=30 (tau=17, smaller-size hyperparams)
+# Average sMAPE score accross all repeats and time series:  18.382620390575333
+# Average synop MACs accross all repeats and time series:  19445.568177777775
+# Average synop dense accross all repeats and time series:  127092.0
 
-# ESN best hyperparams: (966,0.9,0.78,0.97,1.19,0.69,1e-07)
-# 7488448, 0.03, 0, 908095.2, 0, 9.917
-
-# ESN prev hyperparams (200,0.2,1,0.15,1.25,0.3,1.e-8)
-# 324816, 0.8404, 0, 6612.7, 0, 18.634
+# Score for repeat=1, single_series=False
+# Average sMAPE score accross all repeats and time series:  40.803375080880265
+# Average synop MACs accross all repeats and time series:  290192.71952380956
+# Average synop dense accross all repeats and time series:  565148.5714285715

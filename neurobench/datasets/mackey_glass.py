@@ -4,6 +4,17 @@ import torch
 import math
 from jitcdde import jitcdde, y, t, jitcdde_lyap
 
+'''
+The jitcdde package used to generate the MackeyGlass time-series can vary based 
+on platform, due to lower level integration solvers. In order to ensure that you
+are using the same data as the authors, please download the time-series from here:
+
+mackey_glass_data.tar
+https://drive.google.com/file/d/1lFQsof74x-bBjqkBysVGPKiovqLl51fj/view?usp=sharing
+
+TODO: update the hosting of this data (431 KB)
+'''
+
 class MackeyGlass(Dataset):
     """ Dataset for the Mackey-Glass task.
     """

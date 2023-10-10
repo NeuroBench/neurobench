@@ -56,11 +56,13 @@ The Nonhuman Primate reaching Dataset consists of multi-channel recordings obtai
 of the fingertip of the reaching hand, sampled at a frequency of 250 Hz. The complete dataset contains 37 sessions spanning 10 months 
 for NHP-1 and 10 sessions from NHP-2 spanning one month. For this study, three sessions from each NHP were selected to include the
 entire recording duration, resulting in a total of 6774 seconds of data
+
 .. automodule:: neurobench.datasets.primate_reaching
     :special-members: __init__, __getitem__
     :members:
     :undoc-members:
     :show-inheritance:
+    
 
 Mackey-Glass
 ^^^^^^^^^^^^

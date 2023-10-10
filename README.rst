@@ -33,7 +33,7 @@ NeuroBench contains the following sections:
      - Neurobench framework for Torch and SNNTorch models
    * - neurobench.preprocessing 
      - Preprocessing of data, conversion to spikes
-   * - snntorch.accumulators
+   * - neurobench.accumulators
      - Accumulators take the spiking output from the models and provide several methods of combining them
 
 

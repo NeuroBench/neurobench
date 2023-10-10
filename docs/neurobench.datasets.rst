@@ -13,11 +13,13 @@ DVS Gestures
 ^^^^^^^^^^^^
 
 Dataset
--------------------
+^^^^^^^^^^^^
+
 The IBM Dynamic Vision Sensor (DVS) Gesture dataset is composed of recordings of 29 distinct individuals executing 10 different
 types of gestures, including but not limited to clapping, waving, etc. Additionally, an 11th gesture class is included that comprises 
 gestures that cannot be categorized within the first 10 classes. The gestures are recorded under four distinct lighting conditions, 
 and each gesture is associated with a label that indicates the corresponding lighting condition under which it was performed.
+
 
 .. automodule:: neurobench.datasets.DVSGesture_loader
     :special-members: __init__, __getitem__

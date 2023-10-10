@@ -79,6 +79,7 @@ class S2SProcessor(NeuroBenchProcessor):
             device (torch.device, optional): A torch.Device used by PyTorch for the
                 computation. Defaults to None.
         """
+        self.threshold = 1.0
         self.device = device
         self.transpose = transpose
         self._default_spec_kwargs = {
@@ -115,11 +116,11 @@ class S2SProcessor(NeuroBenchProcessor):
             tensors = tensors.transpose(1, 2)
         tensors = self.transform(tensors)
         tensors = torch.log(tensors)
-        tensors = tensor_to_events(tensors, device=self.device)
+        tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
         return tensors, targets
 
-    def configure(self, threshold=1, **spec_kwargs):
+    def configure(self, threshold=1.0, **spec_kwargs):
         """ Allows the user to configure parameters of the S2S class and the
         MelSpectrogram transform from torchaudio.
 

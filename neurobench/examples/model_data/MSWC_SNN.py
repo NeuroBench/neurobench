@@ -10,9 +10,10 @@ from snntorch import backprop
 from snntorch import functional as SF
 from snntorch import utils
 
-spike_grad = surrogate.fast_sigmoid(slope=25)
+spike_grad = surrogate.fast_sigmoid() #slope=25)
 beta = 0.9
-warmup_steps = 50
+alpha = 0.95
+warmup_steps = 10
 
 
 def remove_sequential(network, all_layers):
@@ -27,7 +28,7 @@ def remove_sequential(network, all_layers):
 
 
 class SNN(nn.Module):
-    def __init__(self,load_model=None, drop=False, latent_layer_num=100):
+    def __init__(self,load_model=None, drop=False, ns_readout=False, latent_layer_num=100):
         """Taken from: https://pytorch.org/tutorials/intermediate/speech_command_classification_with_torchaudio_tutorial.html"""
         super().__init__()
 
@@ -39,14 +40,14 @@ class SNN(nn.Module):
         else:
             net = nn.Sequential(
                 # nn.Flatten(),
-                nn.Linear(20, 256),
-                snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-                nn.Linear(256, 256),
-                snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-                nn.Linear(256, 256),
-                snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-                nn.Linear(256, 256),
-                snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True)
+                nn.Linear(20, 512),
+                snn.Synaptic(alpha=alpha, beta=torch.full((512,),beta), spike_grad=spike_grad, learn_beta=True, init_hidden=True),
+                nn.Linear(512, 512),
+                snn.Synaptic(alpha=alpha, beta=torch.full((512,),beta), spike_grad=spike_grad, learn_beta=True, init_hidden=True),
+                # nn.Linear(512, 512),
+                # snn.Synaptic(alpha=alpha, beta=torch.full((512,),beta), spike_grad=spike_grad, learn_beta=True, init_hidden=True),
+                # nn.Linear(512, 512),
+                # snn.Synaptic(alpha=alpha, beta=torch.full((512,),beta), spike_grad=spike_grad, learn_beta=True, init_hidden=True)
             )
             all_layers = []
             remove_sequential(net, all_layers)
@@ -63,21 +64,27 @@ class SNN(nn.Module):
         self.lat_features = nn.Sequential(collections.OrderedDict(lat_list))
         self.end_features = nn.Sequential(collections.OrderedDict(end_list))
 
-        self.output = nn.Linear(256, 200, bias=False)
-        self.output_neurons = snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True)
+        self.output = nn.Linear(512, 200, bias=False)
         self.softmax = nn.Softmax(dim=1)
+
+        self.ns_readout = ns_readout
+        if self.ns_readout:
+            self.alpha = nn.Parameter(torch.full((200,),0.9))
+        else:
+            self.output_neurons = snn.Synaptic(alpha=alpha, beta=torch.full((200,),beta), spike_grad=spike_grad, learn_beta=True, init_hidden=True, output=True)
+
 
     def forward(self, x, latent_input=None, return_lat_acts=False):
 
         utils.reset(self.lat_features)
         utils.reset(self.end_features)
-        utils.reset(self.output_neurons)
+        if self.ns_readout:
+            out = torch.zeros(x.size(0), 200).to(x.get_device())
+        else:
+            utils.reset(self.output_neurons)
+
         softmax_output = torch.zeros(x.size(0), 200).to(x.get_device())
-        # mem1 = self.lif1.init_leaky()
-        # mem2 = self.lif2.init_leaky()
-        # mem3 = self.lif3.init_leaky()
-        # mem4 = self.lif4.init_leaky()
-        # mem = []
+        spk_rec = []
 
         num_steps = x.shape[1]
 
@@ -94,12 +101,18 @@ class SNN(nn.Module):
             # logits = logits.permute(0, 2, 1)
 
             outputs = self.output(logits)
-            _, mem_out = self.output_neurons(outputs)
+            if self.ns_readout:
+                out = self.alpha*out + (1-self.alpha)* outputs
+            else:
+                spk_out, _, out = self.output_neurons(outputs)
+
+            # spk_rec.append(spk_out)
 
             if step > warmup_steps :
-                softmax_output += self.softmax(mem_out)
+                softmax_output += self.softmax(out)
 
         if return_lat_acts:
-            return softmax_output, orig_acts
+            return torch.stack(spk_rec), orig_acts
         else:
             return softmax_output
+            # return torch.stack(spk_rec)

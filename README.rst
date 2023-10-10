@@ -20,20 +20,22 @@ NeuroBench Structure
 
 NeuroBench contains the following sections:
 
-+-----------------------------+------------------------------------------------------+
-| Section                     | Description                                          |
-+=============================+======================================================+
-| :doc:`neurobench.benchmarks` | Neurobench benchmarks, including data and static metrics |
-+-----------------------------+------------------------------------------------------+
-| :doc:`neurobench.datasets`   | Neurobench datasets                                  |
-+-----------------------------+------------------------------------------------------+
-| :doc:`neurobench.models`    | Neurobench framework for Torch and SNNTorch models  |
-+-----------------------------+------------------------------------------------------+
-| :doc:`neurobench.preprocessing` | Preprocessing of data, conversion to spikes        |
-+-----------------------------+------------------------------------------------------+
-| :doc:`snntorch.accumulators` | Accumulators take the spiking output from the models |
-|                             | and provide several methods of combining them       |
-+-----------------------------+------------------------------------------------------+
+.. list-table:: NeuroBench Sections
+   :widths: 20 60
+
+   * - Section
+     - Description
+   * - :doc:`neurobench.benchmarks <path/neurobench.benchmarks>`
+     - Neurobench benchmarks, including data and static metrics
+   * - :doc:`neurobench.datasets <path/neurobench.datasets>`
+     - Neurobench datasets
+   * - :doc:`neurobench.models <path/neurobench.models>`
+     - Neurobench framework for Torch and SNNTorch models
+   * - :doc:`neurobench.preprocessing <path/neurobench.preprocessing>`
+     - Preprocessing of data, conversion to spikes
+   * - :doc:`snntorch.accumulators <path/neurobench.accumulators>`
+     - Accumulators take the spiking output from the models and provide several methods of combining them
+
 
 
 

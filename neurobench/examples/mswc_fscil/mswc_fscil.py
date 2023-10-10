@@ -14,7 +14,7 @@ import torchaudio.transforms as T
 # from torch_mate.data.utils import IncrementalFewShot
 
 from neurobench.datasets import MSWC
-from neurobench.datasets.IncrementalFewShot import IncrementalFewShot
+from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot
 from neurobench.examples.mswc_fscil.M5 import M5
 from neurobench.models import TorchModel
 
@@ -35,11 +35,11 @@ else:
     PIN_MEMORY = False
 
 # Define MFCC pre-processing 
-n_fft = 2048
+n_fft = 512
 win_length = None
 hop_length = 240
-n_mels = 256
-n_mfcc = 256
+n_mels = 20
+n_mfcc = 20
 
 mfcc = MFCCProcessor(
     sample_rate=48000,
@@ -49,6 +49,8 @@ mfcc = MFCCProcessor(
         "n_mels": n_mels,
         "hop_length": hop_length,
         "mel_scale": "htk",
+        "f_min": 20,
+        "f_max": 4000,
     },
     device = device
 )
@@ -92,7 +94,7 @@ if __name__ == '__main__':
 
     if PRE_TRAIN:
         ### Pre-training phase ###
-        model = M5(n_input=256, stride=2, n_channel=256, 
+        model = M5(n_input=20, stride=2, n_channel=256, 
                 n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
 
         pre_train(model)
@@ -101,9 +103,9 @@ if __name__ == '__main__':
     else:
         ### Loading Pre-trained model ###
 
-        model = M5(n_input=256, stride=2, n_channel=256, 
+        model = M5(n_input=20, stride=2, n_channel=256, 
                 n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-        load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", map_location=device).state_dict()
+        load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_cnn_load", map_location=device).state_dict()
         model.load_state_dict(load_dict)
         model = TorchModel(model)
 
@@ -119,8 +121,7 @@ if __name__ == '__main__':
         act_sparsity = []
         syn_ops = []
 
-        # Get Datasets: evaluation + all test samples from base classes to test forgetting
-        eval_set = MSWC(root=ROOT, subset="evaluation")
+        # Get base test set for evaluation
         base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
         test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
@@ -153,9 +154,9 @@ if __name__ == '__main__':
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
-        few_shot_dataloader = IncrementalFewShot(eval_set, n_way=10, k_shot=5, query_shots=100,
-                                    incremental=True,
-                                    cumulative=True,
+        few_shot_dataloader = IncrementalFewShot(n_way=10, k_shot=5, 
+                                    root = ROOT,
+                                    query_shots=100,
                                     support_query_split=(100,100),
                                     samples_per_class=200)
 
@@ -220,10 +221,11 @@ if __name__ == '__main__':
             eval_accs.append(session_results['classification_accuracy'])
             act_sparsity.append(session_results['activation_sparsity'])
             syn_ops.append(session_results['synaptic_operations'])
+            print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
 
             # Run benchmark on query classes only
             query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
-            print("Accuracy on new classes:", query_results['classification_accuracy'])
+            print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
             query_accs.append(query_results['classification_accuracy'])
             # query_acc = query_results['classification_accuracy']
             # print(f"The accuracy on new classes is {query_acc*100}%")
@@ -236,5 +238,3 @@ if __name__ == '__main__':
         print(f"Query Accs: {query_accs}")
         print(f"Act Sparsity: {act_sparsity}")
         print(f"Syn Ops: {syn_ops}")
-
-        few_shot_dataloader.reset()

@@ -119,7 +119,8 @@ if __name__ == '__main__':
         eval_accs = []
         query_accs = []
         act_sparsity = []
-        syn_ops = []
+        syn_ops_dense = []
+        syn_ops_macs = []
 
         # Get base test set for evaluation
         base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
@@ -150,7 +151,8 @@ if __name__ == '__main__':
         print("Base results:", pre_train_results)
         eval_accs.append(pre_train_results['classification_accuracy'])
         act_sparsity.append(pre_train_results['activation_sparsity'])
-        syn_ops.append(pre_train_results['synaptic_operations'])
+        syn_ops_dense.append(pre_train_results['synaptic_operations']['Dense'])
+        syn_ops_macs.append(pre_train_results['synaptic_operations']['Effective_MACs'])
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
@@ -220,7 +222,8 @@ if __name__ == '__main__':
             # print(f"The session accuracy is {session_acc*100}%")
             eval_accs.append(session_results['classification_accuracy'])
             act_sparsity.append(session_results['activation_sparsity'])
-            syn_ops.append(session_results['synaptic_operations'])
+            syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
+            syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
 
             # Run benchmark on query classes only
@@ -237,4 +240,5 @@ if __name__ == '__main__':
         print(f"Eval Accs: {eval_accs}")
         print(f"Query Accs: {query_accs}")
         print(f"Act Sparsity: {act_sparsity}")
-        print(f"Syn Ops: {syn_ops}")
+        print(f"Syn Ops Dense: {syn_ops_dense}")
+        print(f"Syn Ops MACs: {syn_ops_macs}")

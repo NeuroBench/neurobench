@@ -23,8 +23,8 @@ NeuroBench contains the following sections:
 .. list-table:: 
    :widths: 20 60
 
-   * - Section
-     - Description
+   * - **Section**
+     - **Description**
    * - neurobench.benchmarks
      - Neurobench benchmarks, including data and static metrics
    * - :doc:`neurobench.datasets <path/neurobench.datasets>`

@@ -29,16 +29,17 @@ class SNNModel3(nn.Module):
         self.fc2 = nn.Linear(self.layer1, self.layer2)
         self.fc3 = nn.Linear(self.layer2, self.output_dim)
         self.dropout = nn.Dropout(self.drop_rate)
+        self.norm_layer = nn.LayerNorm([self.num_steps, self.input_dim])
 
         self.beta = beta
         self.mem_thresh = mem_thresh
         self.spike_grad = spike_grad
         self.lif1 = snn.Leaky(beta=self.beta, spike_grad=self.spike_grad, threshold=self.mem_thresh, 
-                              learn_beta=True, learn_threshold=True, init_hidden=True)
+                              learn_beta=False, learn_threshold=False, init_hidden=True)
         self.lif2 = snn.Leaky(beta=self.beta, spike_grad=self.spike_grad, threshold=self.mem_thresh, 
-                              learn_beta=True, learn_threshold=True, init_hidden=True)
+                              learn_beta=False, learn_threshold=False, init_hidden=True)
         self.lif3 = snn.Leaky(beta=self.beta, spike_grad=self.spike_grad, threshold=self.mem_thresh, 
-                              learn_beta=True, learn_threshold=True, init_hidden=True)
+                              learn_beta=False, learn_threshold=False, init_hidden=True, reset_mechanism="none")
         
         self.v_x = torch.nn.Parameter(torch.normal(0, 1, size=(1,), requires_grad=True))
         self.v_y = torch.nn.Parameter(torch.normal(0, 1, size=(1,), requires_grad=True))
@@ -51,9 +52,10 @@ class SNNModel3(nn.Module):
         self.lif3.reset_hidden()
 
     def single_forward(self, x):
-        x = x.permute(1, 0)
+        x = self.norm_layer(x)
+        self.reset_mem()
         for step in range(self.num_steps):
-            cur1 = self.dropout(self.fc1(x[:,step]))
+            cur1 = self.dropout(self.fc1(x[step, :]))
             spk1 = self.lif1(cur1)
 
             cur2 = self.fc2(spk1)
@@ -68,7 +70,6 @@ class SNNModel3(nn.Module):
         predictions = []
 
         seq_length = x.shape[0]
-        self.reset_mem()
         for seq in range(seq_length):
             current_seq = x[seq, :, :]
             self.data_buffer = torch.cat((self.data_buffer, current_seq), dim=0)
@@ -83,8 +84,6 @@ class SNNModel3(nn.Module):
             for i in range(self.num_steps):
                 temp = torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0)
                 acc_spikes[i, :] = temp
-
-            acc_spikes = (acc_spikes > 0).float()
 
             pred = self.single_forward(acc_spikes)
             U_x = self.v_x*pred[0]

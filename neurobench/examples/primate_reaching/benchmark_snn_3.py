@@ -1,8 +1,10 @@
 import torch
 from torch.utils.data import DataLoader, Subset
+import snntorch as snn
+from snntorch import surrogate
 
 from neurobench.datasets import PrimateReaching
-from neurobench.models.snntorch_models import SNNTorchModel
+from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
 from neurobench.examples.primate_reaching.SNN_3 import SNNModel3
@@ -24,14 +26,16 @@ r2 = []
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     
 for filename in all_files:
+    print("Processing {}".format(filename))
+
     # The dataloader and preprocessor has been combined together into a single class
     dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
                             biological_delay=0, remove_segments_inactive=False)
     
-    test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=len(dataset.ind_test), shuffle=False)
+    test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=1024, shuffle=False)
 
-    net = SNNModel3(input_size=dataset.input_feature_size, layer1=32, layer2=48, output_dim=2,
+    net = SNNModel3(input_dim=dataset.input_feature_size, layer1=32, layer2=48, output_dim=2,
                     batch_size=256, bin_window=0.2, num_steps=7, drop_rate=0.5,
                     beta=0.5, mem_thresh=0.5, spike_grad=surrogate.atan(alpha=2))
 
@@ -39,9 +43,9 @@ for filename in all_files:
     # TODO: currently model is not trained
     net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/SNN3_Weight/"+filename+"_model_state_dict.pth", map_location=device))
 
-    model = SNNTorchModel(net)
+    model = TorchModel(net)
+    model.add_activation_module(snn.SpikingNeuron)
 
-    # metrics = ["r_squared", "model_size", "latency", "MACs"]
     static_metrics = ["model_size", "connection_sparsity"]
     data_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
 

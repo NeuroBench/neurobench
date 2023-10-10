@@ -20,12 +20,12 @@ NeuroBench Structure
 
 NeuroBench contains the following sections:
 
-.. list-table:: NeuroBench Sections
+.. list-table:: 
    :widths: 20 60
 
    * - Section
      - Description
-   * - :doc:`neurobench.benchmarks <path/neurobench.benchmarks>`
+   * - :doc:`neurobench.benchmarks <>`
      - Neurobench benchmarks, including data and static metrics
    * - :doc:`neurobench.datasets <path/neurobench.datasets>`
      - Neurobench datasets

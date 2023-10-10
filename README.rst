@@ -14,26 +14,27 @@ development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
 please see the `contributing guidelines <CONTRIBUTING.md>`__.
 
+
 NeuroBench Structure
-^^^^^^^^^^^^^^^^^^^^^^^^
-NeuroBench contains the following sections: 
+---------------------
 
-.. list-table::
-   :widths: 20 60
-   :header-rows: 1
+NeuroBench contains the following sections:
 
-   * - Section
-     - Description
-   * - `neurobench.benchmarks <https://path/neurobench.benchmarks.html>`_
-     - neurobench benchmarks, including data and static metrics 
-   * - `neurobench.datasets  <https://path/neurobench.datasets.html>`_
-     - neurobench datasets 
-   * - `neurobench.models  <https://path/neurobench.models.html>`_
-     -  neurobench framework for Torch and SNNTorch models
-   * - `neurobench.preprocessing  <https://path/neurobench.preprocessing.html>`_
-     - preprocessing of data, conversion to spikes
-   * - `snntorch.accumulators <https://path/neurobench.accumulators.html>`_
-     - accumulators take the spiking output from the models and provide several methods of combining them
++-----------------------------+------------------------------------------------------+
+| Section                     | Description                                          |
++=============================+======================================================+
+| :doc:`neurobench.benchmarks` | Neurobench benchmarks, including data and static metrics |
++-----------------------------+------------------------------------------------------+
+| :doc:`neurobench.datasets`   | Neurobench datasets                                  |
++-----------------------------+------------------------------------------------------+
+| :doc:`neurobench.models`    | Neurobench framework for Torch and SNNTorch models  |
++-----------------------------+------------------------------------------------------+
+| :doc:`neurobench.preprocessing` | Preprocessing of data, conversion to spikes        |
++-----------------------------+------------------------------------------------------+
+| :doc:`snntorch.accumulators` | Accumulators take the spiking output from the models |
+|                             | and provide several methods of combining them       |
++-----------------------------+------------------------------------------------------+
+
 
 
 Installation

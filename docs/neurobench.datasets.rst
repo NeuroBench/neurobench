@@ -54,7 +54,7 @@ the evolution of the signal can be altered by a number of different parameters. 
 
 .. math::
 
-   \frac{ \sum_{t=0}^{N}f(t,k) }{N}
+   \\frac{ \\sum_{t=0}^{N}f(t,k) }{N}
 
 .. automodule:: neurobench.datasets.mackey_glass
     :special-members: __init__, __getitem__

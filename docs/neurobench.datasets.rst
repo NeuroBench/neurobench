@@ -52,8 +52,8 @@ Mackey-Glass
 The Mackey Glass dataset is a one-dimensional non-linear time delay differential equation, where 
 the evolution of the signal can be altered by a number of different parameters. These parameters are defined in NeuroBench.
 
-.. math:: \\frac{ \\sum_{t=0}^{N}f(t,k) }{N}
-.. math:: p=f(x)
+.. math::  \\frac{dx}{dt} = \\frac{\\beta x(t-\\tau)}{1 + x(t-\\tau)^n} - \\gamma x(t)
+
 
 .. automodule:: neurobench.datasets.mackey_glass
     :special-members: __init__, __getitem__

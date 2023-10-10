@@ -25,7 +25,7 @@ NeuroBench contains the following sections:
 
    * - **Section**
      - **Description**
-   * - :doc:'docs/neurobench.benchmarks.rst'
+   * - neurobench.benchmarks
      - Neurobench benchmarks, including data and static metrics
    * - neurobench.datasets
      - Neurobench datasets

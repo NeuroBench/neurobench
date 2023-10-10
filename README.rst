@@ -27,13 +27,13 @@ NeuroBench contains the following sections:
      - **Description**
    * - neurobench.benchmarks
      - Neurobench benchmarks, including data and static metrics
-   * - :doc:`neurobench.datasets <path/neurobench.datasets>`
+   * - neurobench.datasets
      - Neurobench datasets
-   * - :doc:`neurobench.models <path/neurobench.models>`
+   * - neurobench.models 
      - Neurobench framework for Torch and SNNTorch models
-   * - :doc:`neurobench.preprocessing <path/neurobench.preprocessing>`
+   * - neurobench.preprocessing 
      - Preprocessing of data, conversion to spikes
-   * - :doc:`snntorch.accumulators <path/neurobench.accumulators>`
+   * - snntorch.accumulators
      - Accumulators take the spiking output from the models and provide several methods of combining them
 
 

@@ -217,10 +217,10 @@ SAMPLE_RATE = 48000
 ALL_LANGUAGES = ["en"] #, "es"]
 FOLDER_AUDIO = "clips"
 
-def _load_list(root: Union[str, Path], split: str) -> List[Tuple[str, str, bool, str, str]]:
+def _load_list(split_path: Union[str, Path]) -> List[Tuple[str, str, bool, str, str]]:
     walker = []
 
-    with open(os.path.join(root, f'{split}.csv'), 'r') as f:
+    with open(split_path, 'r') as f:
         for line in f:
             path, word, lang = line.strip().split(',')
             
@@ -268,7 +268,7 @@ class MSWC(Dataset):
     and the original csv splits file to select the samples to use for the MSWC FSCIL task.
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
-                 languages: Optional[List[str]] = None, incremental: Optional[bool] = False
+                 language: Optional[str] = None, incremental: Optional[bool] = False
                  ):
         """ Initialization will create the new base eval splits if needed .
         
@@ -276,7 +276,7 @@ class MSWC(Dataset):
             root (str): Path of MSWC dataset folder where the Metadata.json file and en/ folders should be.
             subset (str): Return "base" or "evaluation" classes.
             procedure (str): For base subset, return "training", "testing" or "validation" samples.
-            languages (List[str]): List of languages to use. Not implemented for now, only english will be used.
+            languages (str): Language to use for evaluation task.
         """
         self.root = root
 
@@ -292,15 +292,18 @@ class MSWC(Dataset):
                 raise ValueError("procedure must be one of \"training\", \"validation\", or \"testing\"")
 
             split = self.subset +'_' + self.procedure
+            split_path = os.path.join(root, f'{split}.csv')
             if incremental:
                 self.return_path = True
             else:
                 self.return_path = False
+                
 
         elif subset == 'evaluation':
             self.subset = 'evaluation'
             self.procedure = None
             split = self.subset
+            split_path = os.path.join(root, language, f'{split}.csv')
             self.return_path = True
 
         else:
@@ -314,7 +317,7 @@ class MSWC(Dataset):
         # if not os.path.isfile(os.path.join(root, f'{split}.csv')):
         #     generate_mswc_fscil_splits(root, languages)
 
-        self._walker = _load_list(root, split)
+        self._walker = _load_list(split_path)
 
     def __getitem__(self, index: int) -> Tuple[Tensor, int]:
         """ Getter method to get waveform samples.

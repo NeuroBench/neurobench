@@ -105,7 +105,8 @@ if __name__ == '__main__':
 
         model = M5(n_input=20, stride=2, n_channel=256, 
                 n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-        load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_cnn_load", map_location=device).state_dict()
+        load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", 
+                               map_location=device).state_dict()
         model.load_state_dict(load_dict)
         model = TorchModel(model)
 

@@ -23,6 +23,7 @@ from neurobench.examples.mswc_fscil.M5 import M5
 from neurobench.models import TorchModel
 
 from neurobench.examples.model_data.sparchSNNs import SNN
+from neurobench.examples.model_data.sparchSNNs import LIFLayer
 
 from neurobench.benchmarks import Benchmark
 from neurobench.preprocessing import MFCCProcessor
@@ -127,7 +128,8 @@ if __name__ == '__main__':
 
         if SPIKING:
             model = torch.load("neurobench/examples/mswc_fscil/model_data/SPmodel_noSft_best", map_location=device)
-            model = TorchModel(model)          
+            model = TorchModel(model)
+            model.add_activation_module(LIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)

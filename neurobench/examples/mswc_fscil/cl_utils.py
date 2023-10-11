@@ -268,18 +268,32 @@ def change_brn_pars(
             change_brn_pars(target_attr, target_name, momentum, r_d_max_inc_step, r_max, d_max)
 
 
-def consolidate_weights(model, cur_clas):
+def consolidate_norm(model, norm, cur_clas):
     """ Mean-shift for the target layer weights"""
 
     with torch.no_grad():
-        globavg = np.average(model.output.weight.detach()
-                             .cpu().numpy()[cur_clas])
 
         for c in cur_clas:
-            w = model.output.weight.detach().cpu().numpy()[c]
+            w = norm.weight.detach().cpu().numpy()[c]
+            b = norm.bias.detach().cpu().numpy()[c]
+
+            model.saved_norm['weights'][c] = w
+            model.saved_norm['biases'][c] = b
+
+def consolidate_weights(model, output, cur_clas):
+    """ Mean-shift for the target layer weights"""
+
+    with torch.no_grad():
+        globavg = np.average(output.weight.detach()
+                             .cpu().numpy()[cur_clas])
+        
+        # globalnorm = np.std(output.weight.detach()
+        #                      .cpu().numpy()[cur_clas])
+        for c in cur_clas:
+            w = output.weight.detach().cpu().numpy()[c]
 
             if c in cur_clas:
-                new_w = (w - globavg)
+                new_w = (w - globavg) #/globalnorm
                 if c in model.saved_weights.keys():
                     wpast_j = np.sqrt(model.past_j[c] / model.cur_j[c])
                     model.saved_weights[c] = (model.saved_weights[c] * wpast_j
@@ -288,24 +302,32 @@ def consolidate_weights(model, cur_clas):
                     model.saved_weights[c] = new_w
 
 
-def set_consolidate_weights(model):
+def set_consolidate_weights(model, output):
     """ set trained weights """
 
     with torch.no_grad():
         for c, w in model.saved_weights.items():
-            model.output.weight[c].copy_(
+            output.weight[c].copy_(
                 torch.from_numpy(model.saved_weights[c])
             )
 
+def set_consolidate_norm(model, norm):
+    """ set trained weights """
 
-def reset_weights(model, cur_clas):
+    with torch.no_grad():
+        for c in model.saved_norm['weights'].keys():
+            norm.weight[c].data = torch.full((1,),float(model.saved_norm['weights'][c]))
+            norm.bias[c].data = torch.full((1,),float(model.saved_norm['biases'][c]))
+
+
+def reset_weights(model, output, cur_clas):
     """ reset weights"""
 
     with torch.no_grad():
-        model.output.weight.fill_(0.0)
+        output.weight.fill_(0.0)
         for c, w in model.saved_weights.items():
             if c in cur_clas:
-                model.output.weight[c].copy_(
+                output.weight[c].copy_(
                     torch.from_numpy(model.saved_weights[c])
                 )
 
@@ -354,11 +376,11 @@ def set_bn_to(m, name="", phase="train"):
         else:
             set_bn_to(target_attr, target_name, phase)
 
-def eval_below(model, freeze_below_layer, only_conv=False):
+def eval_below(model, eval_below_layer, only_conv=False):
     # tells whether we want to set model in eval or not
     for name, module in model.named_children():
 
-        if freeze_below_layer in name:
+        if eval_below_layer in name:
             break
         
         if only_conv:
@@ -369,15 +391,14 @@ def eval_below(model, freeze_below_layer, only_conv=False):
             module.eval()
             # print("Freezing parameter " + name)
 
-
 def freeze_below(model, freeze_below_layer, only_conv=False):
     # tells whether we want to use gradients for a given parameter
     for name, param in model.named_parameters():
 
         if freeze_below_layer in name:
             break
-        
-        if only_conv:
+
+        elif only_conv:
             if "conv" in name:
                 param.requires_grad = False
                 # print("Freezing parameter " + name)
@@ -385,11 +406,9 @@ def freeze_below(model, freeze_below_layer, only_conv=False):
             param.requires_grad = False
             # print("Freezing parameter " + name)
 
-
 def freeze_up_to(model, freeze_below_layer, only_conv=False):
-    # tells whether we want to use gradients for a given parameter
     for name, param in model.named_parameters():
-        
+        # tells whether we want to use gradients for a given parameter
         if only_conv:
             if "conv" in name:
                 param.requires_grad = False
@@ -523,14 +542,3 @@ def compute_ewc_loss(model, ewcData, lambd=0):
     ewcData = maybe_cuda(ewcData, use_cuda=True)
     loss = (lambd / 2) * torch.dot(ewcData[1], (weights_vector - ewcData[0])**2)
     return loss
-
-
-if __name__ == "__main__":
-
-    from models.mobilenet import MyMobilenetV1
-    model = MyMobilenetV1(pretrained=True)
-    replace_bn_with_brn(model, "net")
-
-    ewcData, synData = create_syn_data(model)
-    extract_weights(model, ewcData[0])
-

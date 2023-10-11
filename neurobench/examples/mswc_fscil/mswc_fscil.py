@@ -2,6 +2,10 @@
 # NOTE: This task is still under development.
 #
 
+import sys
+sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
+import os
+
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -18,16 +22,26 @@ from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot
 from neurobench.examples.mswc_fscil.M5 import M5
 from neurobench.models import TorchModel
 
+from neurobench.examples.model_data.sparchSNNs import SNN
+
 from neurobench.benchmarks import Benchmark
 from neurobench.preprocessing import MFCCProcessor
+from neurobench.preprocessing import S2SProcessor
 
 from cl_utils import *
 
-ROOT = "data/MSWC/"
+ROOT = "//scratch/p306982/data/fscil/FSCIL_subset/" #"data/MSWC/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
 NUM_REPEATS = 1
+SPIKING = True
 PRE_TRAIN = False
+
+if SPIKING:
+    EVAL_LR = 0
+else:
+    EVAL_LR = 0.3
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == torch.device("cuda"):
     PIN_MEMORY = True
@@ -41,19 +55,27 @@ hop_length = 240
 n_mels = 20
 n_mfcc = 20
 
-mfcc = MFCCProcessor(
-    sample_rate=48000,
-    n_mfcc=n_mfcc,
-    melkwargs={
-        "n_fft": n_fft,
-        "n_mels": n_mels,
-        "hop_length": hop_length,
-        "mel_scale": "htk",
-        "f_min": 20,
-        "f_max": 4000,
-    },
-    device = device
-)
+if SPIKING:
+    encode = S2SProcessor(device, transpose=False)
+    config_change = {"sample_rate": 48000,
+                     "hop_length": 240}
+    encode.configure(threshold=1.0, **config_change)
+else:
+    encode = MFCCProcessor(
+        sample_rate=48000,
+        n_mfcc=n_mfcc,
+        melkwargs={
+            "n_fft": n_fft,
+            "n_mels": n_mels,
+            "hop_length": hop_length,
+            "mel_scale": "htk",
+            "f_min": 20,
+            "f_max": 4000,
+        },
+        device = device
+    )
+
+
 
 squeeze = lambda x: (x[0].squeeze(), x[1])
 out2pred = lambda x: torch.argmax(x, dim=-1)
@@ -75,7 +97,7 @@ def pre_train(model):
             target = target.to(device)
 
             # apply transform and model on whole batch directly on device
-            data, target = mfcc((data,target))
+            data, target = encode((data,target))
             output = model(data.squeeze())
 
             loss = F.cross_entropy(output.squeeze(), target)
@@ -103,12 +125,16 @@ if __name__ == '__main__':
     else:
         ### Loading Pre-trained model ###
 
-        model = M5(n_input=20, stride=2, n_channel=256, 
-                n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-        load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", 
-                               map_location=device).state_dict()
-        model.load_state_dict(load_dict)
-        model = TorchModel(model)
+        if SPIKING:
+            model = torch.load("neurobench/examples/mswc_fscil/model_data/SPmodel_noSft_best", map_location=device)
+            model = TorchModel(model)          
+        else:
+            model = M5(n_input=20, stride=2, n_channel=256, 
+                    n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
+            load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", 
+                                map_location=device).state_dict()
+            model.load_state_dict(load_dict)
+            model = TorchModel(model)
 
 
     for eval_iter in range(NUM_REPEATS):
@@ -136,10 +162,10 @@ if __name__ == '__main__':
 
         # Define benchmark object
         benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
-                            preprocessors=[to_device, mfcc, squeeze], postprocessors=[])
+                            preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
         benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
-                            preprocessors=[to_device, mfcc, squeeze], postprocessors=[])
+                            preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
         # Define specific post-processing with masking on the base classes
         mask = torch.full((200,), float('inf')).to(device)
@@ -166,19 +192,36 @@ if __name__ == '__main__':
         # Saves shifted versions of 
         eval_model.net.saved_weights = {}
         pre_train_class = range(100)
-        consolidate_weights(eval_model.net, pre_train_class)
+        if SPIKING:
+            consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, pre_train_class)
+        else:
+            consolidate_weights(eval_model.net, eval_model.net.output, pre_train_class)
 
-        few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=0.3, momentum=0.9, weight_decay=0.0005)
+
+        few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
             print(f"Session: {session+1}")
 
+            # Define benchmark object
+            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
+                                preprocessors=[to_device, encode, squeeze], postprocessors=[])
+
+            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
+                                preprocessors=[to_device, encode, squeeze], postprocessors=[])
+
+
             ### Few Shot Learning phase ###
             eval_model.net.train()
             #eval_model.lat_features.eval()
-            freeze_below(eval_model.net, "output", only_conv=False)
-            eval_below(eval_model.net, "output")
+            if SPIKING:
+                eval_model.net.snn[:-1].eval()
+                freeze_below(eval_model.net, "none", only_conv=False)
+                eval_model.net.snn[-1].W.weight.requires_grad = True
+            else:
+                freeze_below(eval_model.net, "output", only_conv=False)
+                eval_below(eval_model.net, "output")
 
             cur_class = support[0][1].tolist()
             eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
@@ -187,7 +230,7 @@ if __name__ == '__main__':
             for X_shot, y_shot in support:
                 few_shot_optimizer.zero_grad()
 
-                data, target = mfcc((X_shot.to(device), y_shot.to(device)))
+                data, target = encode((X_shot.to(device), y_shot.to(device)))
                 data = data.squeeze()
 
                 output = eval_model(data)
@@ -197,8 +240,12 @@ if __name__ == '__main__':
                 few_shot_optimizer.step()
 
             # Mean-shift weights and save them 
-            consolidate_weights(eval_model.net, cur_class)
-            set_consolidate_weights(eval_model.net)
+            if SPIKING:
+                consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, cur_class)
+                set_consolidate_weights(eval_model.net, eval_model.net.snn[-1].W)
+            else:
+                consolidate_weights(eval_model.net, eval_model.net.output, cur_class)
+                set_consolidate_weights(eval_model.net, eval_model.net.output)
 
 
             ### Testing phase ###

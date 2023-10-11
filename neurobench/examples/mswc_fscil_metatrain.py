@@ -142,6 +142,7 @@ if SPIKING:
     # LOSS_FUNCTION = SF.mse_count_loss(correct_rate=0.5, incorrect_rate=0.025)
     # FEW_SHOT_LOSS_FUNCTION = SF.mse_count_loss(correct_rate=0.5, incorrect_rate=0.025)
     LOSS_FUNCTION = F.cross_entropy
+    # FEW_SHOT_LOSS_FUNCTION = lambda x,y : F.mse_loss(F.softmax(x, dim=1), F.one_hot(y, x.shape[-1]).float())
     FEW_SHOT_LOSS_FUNCTION = F.cross_entropy
 else:
     LOSS_FUNCTION = F.cross_entropy
@@ -317,7 +318,7 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
         else:
             torch.nn.init.xavier_normal_(model.output.weight)
 
-    # set_consolidate_weights(model, model.snn[-1].W)
+    set_consolidate_weights(model, model.snn[-1].W)
 
 
     cur_ep = 0
@@ -403,7 +404,7 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
             if reg_lambda !=0:
                 post_update(model, model.synData, grads)
 
-            # set_consolidate_weights(model, model.snn[-1].W)
+            set_consolidate_weights(model, model.snn[-1].W)
 
 
 

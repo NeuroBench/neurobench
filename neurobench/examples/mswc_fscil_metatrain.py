@@ -267,7 +267,7 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
     if not meta:
         if SPIKING:
             model.snn[:-1].eval()
-            model.snn[1].drop.train()
+            # model.snn[1].drop.train()
             freeze_below(model, "none", only_conv=False) #"snn.2.W"
             model.snn[-1].W.weight.requires_grad = True
         else:
@@ -317,7 +317,7 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
         else:
             torch.nn.init.xavier_normal_(model.output.weight)
 
-    set_consolidate_weights(model, model.snn[-1].W)
+    # set_consolidate_weights(model, model.snn[-1].W)
 
 
     cur_ep = 0
@@ -403,7 +403,7 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
             if reg_lambda !=0:
                 post_update(model, model.synData, grads)
 
-            set_consolidate_weights(model, model.snn[-1].W)
+            # set_consolidate_weights(model, model.snn[-1].W)
 
 
 
@@ -565,7 +565,7 @@ if __name__ == '__main__':
             use_readout_layer=args.ns_out,
             ).to(device)
     #     else:
-        model = torch.load(os.path.join(ROOT, "SPmodel_noSoftmax"), map_location=device)
+        # model = torch.load(os.path.join(ROOT, "SPmodel_noSoftmax"), map_location=device)
         # model = SNN(hidden_size=args.hidden_size, rec=not args.no_rec, ns_readout=args.ns_out).to(device) #hidden_size=args.hidden_size, 
     elif MFCC:
         model = M5(n_input=20, stride=2, n_channel=N_CHANNELS, n_output=200, input_kernel=4, pool_kernel=2, latent_layer_num=LATENT_NUMBER, drop=DROPOUT).to(device)

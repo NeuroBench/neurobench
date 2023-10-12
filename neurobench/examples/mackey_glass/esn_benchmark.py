@@ -18,7 +18,7 @@ single_series = False
 if single_series:
     mg_parameters = mg_parameters[mg_parameters.tau == 17]
 
-all_series_single_hyperparam = False
+all_series_single_hyperparam = True
 
 # Load hyperparameters of echo state networks found via the random search
 esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/echo_state_network_hyperparameters.csv")
@@ -99,31 +99,16 @@ for series_id in range(len(mg_parameters)):
         # data_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
 
         static_metrics = []
-        data_metrics = ["sMAPE", "synaptic_operations"]
+        data_metrics = ["sMAPE"]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
         results = benchmark.run()
         print(results)
         series_sMAPE.append(results["sMAPE"])
-        series_macs.append(results["synaptic_operations"]["Effective_MACs"])
-        # synop_dense.append(results["synaptic_operations"]["Dense"])
+        # series_macs.append(results["synaptic_operations"]["Effective_MACs"])
 
     sMAPE_scores.append(sum(series_sMAPE)/repeat)
-    synop_macs.append(sum(series_macs)/repeat)
+    # synop_macs.append(sum(series_macs)/repeat)
 
-# print("Average sMAPE score accross all repeats and time series: ", sum(sMAPE_scores)/len(sMAPE_scores))
-# print("Average synop MACs accross all repeats and time series: ", sum(synop_macs)/len(synop_macs))
-# print("Average synop dense accross all repeats and time series: ", sum(synop_dense)/len(synop_dense))
-
-print("sMAPE scores over all series with tuned hyperparam set:", sMAPE_scores)
-print("synop MACs over all series with tuned hyperparam set:", synop_macs)
-
-# Score for single_series=True, repeat=30 (tau=17, smaller-size hyperparams)
-# Average sMAPE score accross all repeats and time series:  18.382620390575333
-# Average synop MACs accross all repeats and time series:  19445.568177777775
-# Average synop dense accross all repeats and time series:  127092.0
-
-# Score for repeat=1, single_series=False
-# Average sMAPE score accross all repeats and time series:  40.803375080880265
-# Average synop MACs accross all repeats and time series:  290192.71952380956
-# Average synop dense accross all repeats and time series:  565148.5714285715
+print("sMAPE scores over all series with single hyperparam set:", sMAPE_scores)
+# print("synop MACs over all series with tuned hyperparam set:", synop_macs)

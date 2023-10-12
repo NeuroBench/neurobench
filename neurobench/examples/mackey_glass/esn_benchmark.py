@@ -14,9 +14,11 @@ mg_parameters_file="neurobench/datasets/mackey_glass_parameters.csv"
 mg_parameters = pd.read_csv(mg_parameters_file)
 
 # generate results for only tau=17
-single_series = True
+single_series = False
 if single_series:
     mg_parameters = mg_parameters[mg_parameters.tau == 17]
+
+all_series_single_hyperparam = False
 
 # Load hyperparameters of echo state networks found via the random search
 esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/echo_state_network_hyperparameters.csv")
@@ -36,6 +38,9 @@ start_offset_range = start_offset_range * lyaptime_pts
 data_dir = "data/mackey_glass/"
 
 for series_id in range(len(mg_parameters)):
+    series_sMAPE = []
+    series_macs = []
+
     for repeat_id in range(repeat):
         tau = mg_parameters.tau[series_id]
         filepath = data_dir + "mg_" + str(tau) + ".npy"
@@ -55,14 +60,14 @@ for series_id in range(len(mg_parameters)):
         seed_id = repeat_id     
         
         # generate results for only tau=17
-        if single_series:
+        if single_series or all_series_single_hyperparam:
             esn = EchoStateNetwork(in_channels=1, 
-                reservoir_size = 355, 
-                input_scale = torch.tensor([0.9,0.8],dtype = torch.float64), 
-                connect_prob = 0.15, 
-                spectral_radius = 1.23, 
-                leakage = 0.51, 
-                ridge_param = 1.e-9, 
+                reservoir_size = 186, 
+                input_scale = torch.tensor([0.68,0.85],dtype = torch.float64), 
+                connect_prob = 0.11, 
+                spectral_radius = 1.09, 
+                leakage = 0.58, 
+                ridge_param = 1.e-8, 
                 seed_id = seed_id )
 
         else:
@@ -90,19 +95,28 @@ for series_id in range(len(mg_parameters)):
     
         model = TorchModel(esn)
     
-        static_metrics = ["model_size", "connection_sparsity"]
-        data_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
+        # static_metrics = ["model_size", "connection_sparsity"]
+        # data_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
+
+        static_metrics = []
+        data_metrics = ["sMAPE", "synaptic_operations"]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
         results = benchmark.run()
         print(results)
-        sMAPE_scores.append(results["sMAPE"])
-        synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
-        synop_dense.append(results["synaptic_operations"]["Dense"])
+        series_sMAPE.append(results["sMAPE"])
+        series_macs.append(results["synaptic_operations"]["Effective_MACs"])
+        # synop_dense.append(results["synaptic_operations"]["Dense"])
 
-print("Average sMAPE score accross all repeats and time series: ", sum(sMAPE_scores)/len(sMAPE_scores))
-print("Average synop MACs accross all repeats and time series: ", sum(synop_macs)/len(synop_macs))
-print("Average synop dense accross all repeats and time series: ", sum(synop_dense)/len(synop_dense))
+    sMAPE_scores.append(sum(series_sMAPE)/repeat)
+    synop_macs.append(sum(series_macs)/repeat)
+
+# print("Average sMAPE score accross all repeats and time series: ", sum(sMAPE_scores)/len(sMAPE_scores))
+# print("Average synop MACs accross all repeats and time series: ", sum(synop_macs)/len(synop_macs))
+# print("Average synop dense accross all repeats and time series: ", sum(synop_dense)/len(synop_dense))
+
+print("sMAPE scores over all series with tuned hyperparam set:", sMAPE_scores)
+print("synop MACs over all series with tuned hyperparam set:", synop_macs)
 
 # Score for single_series=True, repeat=30 (tau=17, smaller-size hyperparams)
 # Average sMAPE score accross all repeats and time series:  18.382620390575333

@@ -38,8 +38,8 @@ parser.add_argument('--debug', type=bool, default=False)
 
 args, unparsed = parser.parse_known_args()
 
-assert args.series_id == 0, "Hyperparameter optimization performed "\
-                            "only for series id 0"
+# assert args.series_id == 0, "Hyperparameter optimization performed "\
+#                             "only for series id 0"
 
 if loaded_wandb:
     if args.sw:
@@ -141,7 +141,7 @@ for repeat_id in range(args.repeat):
         loss_val.backward()
         opt.step()
 
-        print(f"Epoch {epoch}: loss = {loss_val.item()}")
+        # print(f"Epoch {epoch}: loss = {loss_val.item()}")
         if loaded_wandb:
             wandb.log({"loss": loss_val.item()})
 
@@ -172,15 +172,17 @@ for repeat_id in range(args.repeat):
     static_metrics = ["model_size", "connection_sparsity"]
     data_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
 
+    data_metrics = ["sMAPE"]
+
     benchmark = Benchmark(model, test_set_loader, [], [],
                           [static_metrics, data_metrics])
     results = benchmark.run()
     print(results)
     sMAPE_scores.append(results["sMAPE"])
-    connection_sparsities.append(results["connection_sparsity"])
-    activation_sparsities.append(results["activation_sparsity"])
-    synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
-    synop_dense.append(results["synaptic_operations"]["Dense"])
+    # connection_sparsities.append(results["connection_sparsity"])
+    # activation_sparsities.append(results["activation_sparsity"])
+    # synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
+    # synop_dense.append(results["synaptic_operations"]["Dense"])
     if loaded_wandb:
         wandb.log({"sMAPE_score_val": results["sMAPE"]})
 
@@ -199,10 +201,10 @@ if loaded_wandb:
     wandb.log({"model_size": model_size})
 
 print(f"sMAPE score = {avg_sMAPE_score},\n"
-      f"connection_sparsity = {connection_sparsity},\n"
-      f"activation_sparsity = {activation_sparsity},\n"
-      f"synop_macs = {synop_macs},\n"
-      f"synop_dense = {synop_dense},\n"
+      # f"connection_sparsity = {connection_sparsity},\n"
+      # f"activation_sparsity = {activation_sparsity},\n"
+      # f"synop_macs = {synop_macs},\n"
+      # f"synop_dense = {synop_dense},\n"
       f"on time series id {args.series_id}")
 
 # With the default params, repeat 30, tau=17

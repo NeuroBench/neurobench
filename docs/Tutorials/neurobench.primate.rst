@@ -6,6 +6,9 @@
 
 This tutorial aims to provide insights into how the NeuroBench framework is organized and how you can utilize it to benchmark your models!
 
+This is a static non-editable version. The editable version can be found at this link:
+ * `Local Notebook <path/to/ipynb_file>`__
+ 
 .. _about-primate-reaching:
 
 **About Primate Reaching**

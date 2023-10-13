@@ -18,4 +18,4 @@ you can use it to benchmark your own models!
    * - `Primate Reaching tutorial <docs/Tutorials/neurobench.primate.rst>`__
      - Velocity prediction on a nonhuman primate reaching task dataset
    * - `Mackey-Glass tutorial <docs/Tutorials/neurobench.mg.rst>`__
-     - Chaotic function prediction oh the Mackey-Glass dataset
+     - Chaotic function prediction on the Mackey-Glass datase

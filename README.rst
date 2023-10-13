@@ -26,9 +26,9 @@ NeuroBench contains the following sections:
    * - **Section**
      - **Description**
    * - `neurobench.benchmarks <docs/neurobench.benchmarks.rst>`__
-     - Neurobench benchmarks, including data and static metrics
+     - Neurobench benchmarks, including data metrics and static metrics
    * - `neurobench.datasets <docs/neurobench.datasets.rst>`__
-     - Neurobench datasets
+     - Neurobench benchmark datasets
    * - `neurobench.models <docs/neurobench.models.rst>`__
      - Neurobench framework for Torch and SNNTorch models
    * - `neurobench.preprocessing <docs/neurobench.preprocessing.rst>`__

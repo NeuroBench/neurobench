@@ -9,7 +9,7 @@ you can use it to benchmark your own models!
 
    * - **Tutorial**
      - **Content**
-   * - `GSC tutorial <docs/Tutorials/neurobench.gsc.rst>`__
+   * - `GSC tutorial <neurobench.gsc.rst>`__
      - Keyword spotting on the Google Speech Commands dataset
    * - `DVS Gestures tutorial <docs/Tutorials/neurobench.dvs.rst>`__
      - Classification on the IBM Dynamic Vision Sensor (DVS) Gesture dataset

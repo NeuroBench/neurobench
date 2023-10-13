@@ -1,172 +1,113 @@
-.. container:: cell markdown
+.. _google-speech-commands-benchmark-tutorial:
 
-   .. rubric:: Google Speech Commands Benchmark Tutorial
-      :name: google-speech-commands-benchmark-tutorial
+============================================
+**Google Speech Commands Benchmark Tutorial**
+============================================
 
-   This tutorial aims to provide an insight on how the NeuroBench
-   framework is organized and how you can use it to benchmark your own
-   models!
+This tutorial aims to provide an insight on how the NeuroBench framework is organized and how you can use it to benchmark your own models!
 
-   .. rubric:: About Google Speech Commands:
-      :name: about-google-speech-commands
+.. _about-google-speech-commands:
 
-   Google Speech Commands is a keyword spotting task. Voice commands
-   represent a natural and easily accessible modality for human-machine
-   interaction. Keyword detection, in particular, is frequently employed
-   in edge devices that operate in always-listening, wake-up situations,
-   where it triggers more computationally demanding processes such as
-   automatic speech recognition. Keyword spotting finds application in
-   activating voice assistants, speech data mining, audio indexing, and
-   phone call routing. Given that it generally operates in always-on and
-   battery-powered edge scenarios, keyword detection represents a
-   pertinent benchmark for energy-efficient neuromorphic solutions.
+**About Google Speech Commands**
+----------------------------------
 
-   .. rubric:: Dataset:
-      :name: dataset
+Google Speech Commands is a keyword spotting task. Voice commands represent a natural and easily accessible modality for human-machine interaction. Keyword detection, in particular, is frequently employed in edge devices that operate in always-listening, wake-up situations, where it triggers more computationally demanding processes such as automatic speech recognition. Keyword spotting finds application in activating voice assistants, speech data mining, audio indexing, and phone call routing. Given that it generally operates in always-on and battery-powered edge scenarios, keyword detection represents a pertinent benchmark for energy-efficient neuromorphic solutions.
 
-   The Google Speech Commands dataset (V2) is a commonly used dataset in
-   assessing the performance of keyword spotting algorithms. The dataset
-   consists of 105,829 1 second utterances of 35 different words from
-   2,618 distinct speakers. The data is encoded as linear 16-bit,
-   single-channel, pulse code modulated values, at a 16 kHz sampling
-   frequency.
+.. _dataset:
 
-   .. rubric:: Benchmark Task:
-      :name: benchmark-task
+**Dataset**
+------------
 
-   The goal is to develop a model that trains using the designated train
-   and validation sets, followed by an evaluation of generalization to a
-   spearate test set. The task is a classification task.
+The Google Speech Commands dataset (V2) is a commonly used dataset in assessing the performance of keyword spotting algorithms. The dataset consists of 105,829 1 second utterances of 35 different words from 2,618 distinct speakers. The data is encoded as linear 16-bit, single-channel, pulse code modulated values, at a 16 kHz sampling frequency.
 
-   First we will import the relevant libraries. These include the
-   datasets, preprocessors and accumulators. To ensure your model to be
-   compatible with the NeuroBench framework, we will import the wrapper
-   for snnTorch models. This wrapper will not change your model.
-   Finally, we import the Benchmark class, which will run the benchmark
-   and calculate your metrics.
+.. _benchmark-task:
 
-.. container:: cell code
+**Benchmark Task**
+-------------------
 
-   .. code:: python
+The goal is to develop a model that trains using the designated train and validation sets, followed by an evaluation of generalization to a separate test set. The task is a classification task.
 
-      import torch
-      # import the dataloader
-      from torch.utils.data import DataLoader
+First we will import the relevant libraries. These include the datasets, preprocessors and accumulators. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
 
-      # import the dataset, preprocessors and accumulators you want to use
-      from neurobench.datasets import SpeechCommands
-      from neurobench.preprocessing import S2SProcessor
-      from neurobench.accumulators import choose_max_count
+.. code:: python
 
-      # import the NeuroBench wrapper to wrap your snnTorch model for usage in the NeuroBench framework
-      from neurobench.models import SNNTorchModel
-      # import the benchmark class
-      from neurobench.benchmarks import Benchmark
+   import torch
+   # import the dataloader
+   from torch.utils.data import DataLoader
 
-.. container:: cell markdown
+   # import the dataset, preprocessors and accumulators you want to use
+   from neurobench.datasets import SpeechCommands
+   from neurobench.preprocessing import S2SProcessor
+   from neurobench.accumulators import choose_max_count
 
-   For this tutorial, we will make use of the example architecture that
-   is included in the NeuroBench framework.
+   # import the NeuroBench wrapper to wrap your snnTorch model for usage in the NeuroBench framework
+   from neurobench.models import SNNTorchModel
+   # import the benchmark class
+   from neurobench.benchmarks import Benchmark
 
-.. container:: cell code
+For this tutorial, we will make use of the example architecture that is included in the NeuroBench framework.
 
-   .. code:: python
+.. code:: python
 
-      # this is the network we will be using in this tutorial
-      from neurobench.examples.gsc.SNN import net
+   # this is the network we will be using in this tutorial
+   from neurobench.examples.gsc.SNN import net
 
-.. container:: cell markdown
+To get started, we will load our desired dataset in a dataloader:
 
-   To get started, we will load our desired dataset in a dataloader:
+.. code:: python
 
-.. container:: cell code
+   test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
 
-   .. code:: python
+   test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
-      test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
+Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the time of writing this tutorial, (V1.0) snnTorch is the only supported framework, therefore, we will wrap our snnTorch model in the SNNTorchModel() wrapper.
 
-      test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
+.. code:: python
 
-.. container:: cell markdown
+   net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/s2s_gsc_snntorch", map_location=torch.device('cpu')))
+   # Wrap our net in the SNNTorchModel wrapper
+   model = SNNTorchModel(net)
 
-   Next, load our model and wrap it in the corresponding NeuroBench
-   wrapper. At the time of writing this tutorial, (V1.0) snnTorch is the
-   only supported framework, therefore, we will wrap our snnTorch model
-   in the SNNTorchModel() wrapper.
+Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessors and neurobench/accumulators respectively.
 
-.. container:: cell code
+.. code:: python
 
-   .. code:: python
+   preprocessors = [S2SProcessor()]
+   postprocessors = [choose_max_count]
 
-      net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/s2s_gsc_snntorch", map_location=torch.device('cpu')))
+Next specify the metrics which you want to calculate. The available metrics (V1.0 release) are:
 
-      # Wrap our net in the SNNTorchModel wrapper
-      model = SNNTorchModel(net)
+**Static Metrics:**
 
-.. container:: cell markdown
+- model_size
+- connection_sparsity
+- frequency
 
-   Specify the preprocessor and postprocessor want to use. These will be
-   applied to your data before feeding into the model, and to the output
-   spikes respectively. Available preprocessors and postprocessors can
-   be found in neurobench/preprocessors and neurobench/accumulators
-   respectively.
+**Data Metrics:**
 
-.. container:: cell code
+- activation_sparsity
+- multiply_accumulates
+- classification_accuracy
 
-   .. code:: python
+More accuracy metrics are available, for which the user is recommended to consult the documentation
 
-      preprocessors = [S2SProcessor()]
-      postprocessors = [choose_max_count]
+More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`.
 
-.. container:: cell markdown
+.. code:: python
 
-   Next specify the metrics which you want to calculate. The available
-   metrics (V1.0 release) are:
+   static_metrics = ["model_size"]
+   data_metrics = ["classification_accuracy"]
 
-   static_metrics:
+Next, we instantiate the benchmark. We have to specify the model, the dataloader, the preprocessors, the postprocessor and the list of the static and data metrics which we want to measure:
 
-   -  model_size
-   -  connection_sparsity
-   -  frequency
+.. code:: python
 
-   data_metrics
+   benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
 
-   -  activation_sparsity
-   -  multiply_accumulates
-   -  classification_accuracy
+Now, let's run the benchmark and print our results!
 
-   More accuracy metrics are available, for which the user is
-   recommended to consult the documentation
+.. code:: python
 
-   More explanation on the metrics can be found on
-   https://neurobench.ai/.
+   results = benchmark.run()
+   print(results)
 
-.. container:: cell code
-
-   .. code:: python
-
-      static_metrics = ["model_size"]
-      data_metrics = ["classification_accuracy"]
-
-.. container:: cell markdown
-
-   Next, we instanciate the benchmark. We have to specify the model, the
-   dataloader, the preprocessors, the postprocessor and the list of the
-   static and data metrics which we want to measure:
-
-.. container:: cell code
-
-   .. code:: python
-
-      benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
-
-.. container:: cell markdown
-
-   Now, let's run the benchmark and print our results!
-
-.. container:: cell code
-
-   .. code:: python
-
-      results = benchmark.run()
-      print(results)

@@ -5,7 +5,6 @@
 ===================================
 
 This tutorial aims to provide an insight on how the NeuroBench framework is organized and how you can use it to benchmark your own models!
-
 This is a static non-editable version. The editable version can be found at this link:
  * 'Local Notebook <path/to/ipynb>'_
 

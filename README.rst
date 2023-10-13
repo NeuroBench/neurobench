@@ -12,7 +12,32 @@ is planned.
 NeuroBench is a community-driven project, and we welcome further
 development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
-please see the `contributing guidelines <CONTRIBUTING.md>`__.
+please see the `contributing guidelines <CONTRIBUTING.rst>`__.
+
+
+NeuroBench Structure
+---------------------
+
+NeuroBench contains the following sections:
+
+.. list-table:: 
+   :widths: 20 60
+
+   * - **Section**
+     - **Description**
+   * - `neurobench.benchmarks <docs/neurobench.benchmarks.rst>`__
+     - Neurobench benchmarks, including data metrics and static metrics
+   * - `neurobench.datasets <docs/neurobench.datasets.rst>`__
+     - Neurobench benchmark datasets
+   * - `neurobench.models <docs/neurobench.models.rst>`__
+     - Neurobench framework for Torch and SNNTorch models
+   * - `neurobench.preprocessing <docs/neurobench.preprocessing.rst>`__
+     - Preprocessing of data, conversion to spikes
+   * - `neurobench.accumulators <docs/neurobench.accumulators.rst>`__
+     - Accumulators take the spiking output from the models and provide several methods of combining them
+
+
+
 
 Installation
 ------------

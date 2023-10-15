@@ -252,3 +252,4 @@ class PrimateReaching(NeuroBenchDataset):
         indices = np.nonzero(np.sum(np.abs(target_diff), axis=0))[0]
 
         return indices
+    

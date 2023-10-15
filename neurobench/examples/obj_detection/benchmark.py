@@ -106,6 +106,6 @@ print(results)
 # batch size of inference slightly affects the results.
 
 # Results - ANN, batch = 4
-# {'model_size': 91314912, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6339577418819095, 'COCO_mAP': 0.4286601323956029, 'synaptic_operations': {'MACs': 248564010060.39734, 'ACs': 0.0}}
+# {'model_size': 91314912, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6339577418819095, 'COCO_mAP': 0.4286601323956029, 'synaptic_operations': {'Effective_MACs': 248423062860.16266, 'Effective_ACs': 0.0, 'Dense': 284070730752.0}}
 # Results - Hybrid, batch = 4
-# {'model_size': 12133872, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6130047485397788, 'COCO_mAP': 0.27111120859281557, 'synaptic_operations': {'MACs': 37553261811.858665, 'ACs': 563658613.7066667}}
+# {'model_size': 12133872, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6130047485397788, 'COCO_mAP': 0.27111120859281557, 'synaptic_operations': {'Effective_MACs': 37520084211.538666, 'Effective_ACs': 559864693.7093333, 'Dense': 98513107968.0}}

@@ -25,7 +25,7 @@ class PrimateReaching(NeuroBenchDataset):
         2. indy_20160630_01.mat
         3. indy_20160622_01.mat
         4. loco_20170301_05.mat
-        5. loco_20170217_02.mat
+        5. loco_20170215_02.mat
         6. loco_20170210_03.mat
 
         The description of the structure of the dataset can be found on the website
@@ -40,7 +40,7 @@ class PrimateReaching(NeuroBenchDataset):
         "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
         "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
         "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
-        "loco_20170217_02.mat": "bba2889a6ea20e74c8a9054e97a80dd4",
+        "loco_20170217_02.mat": "739b70762d838f3a1f358733c426bb02",
         "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
     }
 

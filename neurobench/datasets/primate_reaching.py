@@ -68,7 +68,7 @@ class PrimateReaching(NeuroBenchDataset):
                 remove_segments_inactive (bool): Whether to remove segments longer than max_segment_length,
                                                  which represent subject inactivity. Default is False.
                 download (bool): If True, downloads the dataset from the internet and puts it in root 
-                                 directory. If dataset is already downloaded, it is not downloaded again.
+                                 directory. If dataset is already downloaded, it will not be downloaded again.
         """
         # The samples and labels of the dataset
         self.samples = None

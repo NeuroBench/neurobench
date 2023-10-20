@@ -39,8 +39,6 @@ for filename in all_files:
                     batch_size=256, bin_window=0.2, num_steps=7, drop_rate=0.5,
                     beta=0.5, mem_thresh=0.5, spike_grad=surrogate.atan(alpha=2))
 
-    # Give the user the option to load their pretrained weights
-    # TODO: currently model is not trained
     net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/SNN3_Weight/"+filename+"_model_state_dict.pth", map_location=device))
 
     model = TorchModel(net)

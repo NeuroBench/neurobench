@@ -32,8 +32,8 @@ class PrimateReaching(NeuroBenchDataset):
         Once these .mat files are downloaded, store them in the same directory.
     """
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
-                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000,
-                 split_num=1):
+                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, 
+                 max_segment_length=2000, split_num=1, remove_segments_inactive=False):
         """
             Initialises the Dataset for the Primate Reaching Task.
 
@@ -49,7 +49,6 @@ class PrimateReaching(NeuroBenchDataset):
                 stride (float):  How many steps are taken when moving the bin_window. Default is 0.004 (4ms).
                 bin_width (float): The size of the bin_window. Default is 0.028 (28ms).
                 max_segment_length: Define the upper limits of a segment. Default is 2000 data points (8s)
-                                    If set to 0, no segments will be removed.
                 split_num (int): The number of chunks to break the timeseries into. Default is 1 (no splits).
                 remove_segments_inactive (bool): Whether to remove segments longer than max_segment_length,
                                                  which represent subject inactivity. Default is False.
@@ -108,7 +107,7 @@ class PrimateReaching(NeuroBenchDataset):
         if self.delay > 0:
             self.apply_delay()
 
-        if self.max_segment_length > 0:
+        if remove_segments_inactive and self.max_segment_length > 0:
             self.valid_segments = self.remove_segments_by_length()
         else:
             self.valid_segments = np.arange(self.time_segments.shape[0])

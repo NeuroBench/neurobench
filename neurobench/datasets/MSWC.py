@@ -244,20 +244,17 @@ class MSWC(Dataset):
         - 100 test samples
     - 100 evaluation classes to do class-incremental learning on with 200 samples each.
 
-    Before the first use, you need to download the english dataset, metadata.json and data splits 
-    from the MSWC website and organize them in the neurobench/data/ folder as follows:
+    The subset of data used for this task, as well as the supporting files for base class and incremental 
+    splits, will be hosted and available shortly. If you are interested in using this dataset beforehand, 
+    please email jyik@g.harvard.edu for dataset download.
+    
+    The data should be organized as follows:
     data/
     MSWC/
-        metadata.json
+        base_[test,train,val].csv
         language/ (for all languages in general or FSCIL dataset)
             clips/
             *.csv
-            version.txt
-    To do so, download the full dataset at https://mlcommons.org/en/multilingual-spoken-words/ .
-
-
-    When running for the first time, MSWC will create new data splits csv files based on metadata.json
-    and the original csv splits file to select the samples to use for the MSWC FSCIL task.
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
                  language: Optional[str] = None, incremental: Optional[bool] = False

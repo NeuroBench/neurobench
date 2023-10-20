@@ -49,6 +49,7 @@ class PrimateReaching(NeuroBenchDataset):
                 stride (float):  How many steps are taken when moving the bin_window. Default is 0.004 (4ms).
                 bin_width (float): The size of the bin_window. Default is 0.028 (28ms).
                 max_segment_length: Define the upper limits of a segment. Default is 2000 data points (8s)
+                                    If set to 0, no segments will be removed.
                 split_num (int): The number of chunks to break the timeseries into. Default is 1 (no splits).
                 remove_segments_inactive (bool): Whether to remove segments longer than max_segment_length,
                                                  which represent subject inactivity. Default is False.

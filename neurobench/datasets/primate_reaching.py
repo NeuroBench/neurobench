@@ -23,7 +23,7 @@ class PrimateReaching(NeuroBenchDataset):
         2. indy_20160630_01.mat
         3. indy_20160622_01.mat
         4. loco_20170301_05.mat
-        5. loco_20170217_02.mat
+        5. loco_20170215_02.mat
         6. loco_20170210_03.mat
 
         The description of the structure of the dataset can be found on the website
@@ -32,8 +32,8 @@ class PrimateReaching(NeuroBenchDataset):
         Once these .mat files are downloaded, store them in the same directory.
     """
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
-                 mode="3D", model_type="ANN", biological_delay=0,
-                 spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000):
+                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, 
+                 max_segment_length=2000, split_num=1, remove_segments_inactive=False):
         """
             Initialises the Dataset for the Primate Reaching Task.
 
@@ -43,24 +43,27 @@ class PrimateReaching(NeuroBenchDataset):
                 num_steps (int): number of timesteps the data will be split into.
                 train_ratio (float): ratio for how the dataset will be split into training/(val+test) set.
                                      Default is 0.8 (80% of data is training).
-                mode (str): The data processed will be either "2D" (data_points, input_features) or 
-                            "3D" (data_points, num_steps, input_features). Default is "3D".
-                model_type (str): The type of model that will be using the dataset. Currently expects "ANN",
-                                  "SNN" or "LSTM" (LSTM to be added later). Default is "ANN"
                 biological_delay (int): How many steps of delay is to be applied to the dataset. Default is 0
                                         i.e. no delay applied.
                 spike_sorting (bool): Apply spike sorting for processing raw spike data. Default is False.
                 stride (float):  How many steps are taken when moving the bin_window. Default is 0.004 (4ms).
                 bin_width (float): The size of the bin_window. Default is 0.028 (28ms).
                 max_segment_length: Define the upper limits of a segment. Default is 2000 data points (8s)
+                split_num (int): The number of chunks to break the timeseries into. Default is 1 (no splits).
+                remove_segments_inactive (bool): Whether to remove segments longer than max_segment_length,
+                                                 which represent subject inactivity. Default is False.
         """
         # The samples and labels of the dataset
         self.samples = None
         self.labels = None
 
         # used for input data file management
-        self.path = file_path
         self.filename = filename
+        self.file_path = os.path.join(file_path, self.filename) if '.mat' in self.filename else \
+            os.path.join(file_path, self.filename + ".mat")
+
+        # test filepath
+        assert os.path.exists(self.file_path)
 
         # related to processing of spike data
         self.spike_sorting = spike_sorting
@@ -69,6 +72,15 @@ class PrimateReaching(NeuroBenchDataset):
         self.bin_width = bin_width
         self.num_steps = num_steps
         self.train_ratio = train_ratio
+        self.ratio = int(np.round(self.bin_width / SAMPLING_RATE))
+
+        # test parameters
+        assert self.delay >= 0
+        assert self.stride >= SAMPLING_RATE
+        assert self.bin_width >= SAMPLING_RATE, \
+            "The binning window has to be greater than the sampling size (i.e. 0.004s)"
+        assert self.num_steps >= 1
+        assert 0 <= self.train_ratio <= 1
 
         # Defines the beginning and end of each segment.
         self.start_end_indices = None
@@ -76,10 +88,9 @@ class PrimateReaching(NeuroBenchDataset):
 
         # Defines the maximum length of a segment.
         self.max_segment_length = max_segment_length
+        assert self.max_segment_length >= 0
 
-        # Dataset use mode
-        self.mode = mode
-        self.model_type = model_type
+        self.split_num = split_num
 
         # These lists store the index of segments that belongs to training/validation/test set
         self.ind_train, self.ind_val, self.ind_test = [], [], []
@@ -96,8 +107,10 @@ class PrimateReaching(NeuroBenchDataset):
         if self.delay > 0:
             self.apply_delay()
 
-        if self.max_segment_length > 0:
-            self.remove_segments_by_length()
+        if remove_segments_inactive and self.max_segment_length > 0:
+            self.valid_segments = self.remove_segments_by_length()
+        else:
+            self.valid_segments = np.arange(self.time_segments.shape[0])
         
         self.split_data()
 
@@ -108,13 +121,9 @@ class PrimateReaching(NeuroBenchDataset):
         """
             Getter method of the dataloader
         """
-        if self.mode == "3D":
-            sample = self.get_history(idx)
-            label = self.labels[:, idx]
-        else:
-            sample = self.samples[:, idx]
-            label = self.labels[:, idx]
-        return sample, label
+        # compute indices of congruent binning windows
+        mask = idx - np.arange(self.num_steps) * self.ratio
+        return self.samples[:, mask].transpose(0, 1), self.labels[:, idx]
 
     def load_data(self):
         """
@@ -122,11 +131,8 @@ class PrimateReaching(NeuroBenchDataset):
             if spike data has been processed and stored already
         """
         # Assume input is the original dataset, instead of the reconstructed one
-        if ".mat" in self.filename:
-            file_path = os.path.join(self.path, self.filename)
-        else:
-            file_path = os.path.join(self.path, self.filename + ".mat")
-        dataset = h5py.File(file_path, "r")
+
+        dataset = h5py.File(self.file_path, "r")
 
         # extract data from datafile
         spikes = dataset["spikes"][()]  # Get the reference object's locations in the HDF5/mat file
@@ -168,9 +174,8 @@ class PrimateReaching(NeuroBenchDataset):
             spike_train = np.bitwise_or.reduce(spike_train, axis=0)
 
         # use convolution to compute binning window
-        ratio = int(np.round(self.bin_width / SAMPLING_RATE))
-        if ratio != 1:
-            binned_spike_train = convolve2d(spike_train, np.ones((1, ratio)), mode='valid')
+        if self.ratio != 1:
+            binned_spike_train = convolve2d(spike_train, np.ones((1, self.ratio)), mode='valid')
         else:
             binned_spike_train = spike_train
 
@@ -195,7 +200,7 @@ class PrimateReaching(NeuroBenchDataset):
             Split segments into training/validation/test set
         """
         # This is No. of chunks
-        split_num = 4
+        split_num = self.split_num
         total_segments = self.time_segments.shape[0]
         sub_length = int(total_segments / split_num)  # This is no of segments in each chunk
         stride = int(self.stride / SAMPLING_RATE)
@@ -211,53 +216,22 @@ class PrimateReaching(NeuroBenchDataset):
         for split_no in range(split_num):
             for i in range(sub_length):
                 # Each segment's Dimension is: No_of_Probes * No_of_Recording
-                if i < train_len:
+                if i < train_len and i in self.valid_segments:
                     self.ind_train += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                      self.time_segments[split_no * sub_length + i, 1], stride))
-                elif train_len <= i < train_len + val_len:
+                elif train_len <= i < train_len + val_len and i in self.valid_segments:
                     self.ind_val += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                    self.time_segments[split_no * sub_length + i, 1], stride))
-                else:
+                elif i in self.valid_segments:
                     self.ind_test += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                     self.time_segments[split_no * sub_length + i, 1], stride))
-
-    def get_history(self, idx):
-        """
-            return self.num_steps number of congruent non-overlapping binning windows
-        """
-        # binning window has a range for "ratio" timesteps
-        ratio = int(np.round(self.bin_width / SAMPLING_RATE))
-
-        # compute indices of congruent binning windows
-        mask = idx - np.arange(self.num_steps) * ratio
-        return self.samples[:, mask]
 
     def remove_segments_by_length(self):
         """
             remove the segments where its duration exceeds the limit set by
             max_segment_length
         """
-        self.time_segments = self.time_segments[self.time_segments[:, 1] - self.time_segments[:, 0] <
-                                                self.max_segment_length, :]
-        
-    def create_dataloader(self, indices, batch_size=256, shuffle=True, drop_last=False):
-        """
-            Helper method for creating a PyTorch DataLoader based on the split_type.
-            Args:
-                split_type (str): Defines the split type that will be loaded into the DataLoader.
-                                  Can be of the type "Train", "Validation" or "Test".
-            :param indices: (list of int) training, testing or validation indices
-            :param batch_size: (int) size of batch being processed
-            :param shuffle: (boolean) shuffle data
-            :param drop_last: (boolean) drop last batch
-        """
-        current_loader = torch.utils.data.DataLoader(
-            dataset=torch.utils.data.Subset(self, indices),
-            batch_size=batch_size,
-            shuffle=shuffle,
-            drop_last=drop_last)
-
-        return current_loader
+        return np.nonzero(self.time_segments[:, 1] - self.time_segments[:, 0] < self.max_segment_length)[0]
 
     @staticmethod
     def split_into_segments(indices):
@@ -278,3 +252,4 @@ class PrimateReaching(NeuroBenchDataset):
         indices = np.nonzero(np.sum(np.abs(target_diff), axis=0))[0]
 
         return indices
+    

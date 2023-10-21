@@ -10,13 +10,13 @@ class CSNN(nn.Module):
         super().__init__()
 
         self.conv1 = nn.Conv1d(6, 200, 2, padding=4)
-        self.max1 = nn.MaxPool2d(2)
+        self.max1 = nn.MaxPool1d(2)
         self.leaky1 = snn.Leaky(beta=0.4, init_hidden=True, threshold=0.002)
-        self.conv2 = nn.Conv1d(100, 256, kernel_size=1)
-        self.max2 = nn.MaxPool2d(2)
+        self.conv2 = nn.Conv1d(200, 256, kernel_size=1)
+        self.max2 = nn.MaxPool1d(2)
         self.leaky2 = snn.Leaky(beta=0.3, init_hidden=True, threshold=0.001)
         self.flatten = nn.Flatten()
-        self.linear = nn.Linear(256, 7)
+        self.linear = nn.Linear(512, 7)
         self.leaky3 = snn.Leaky(beta=0.5, output=True, init_hidden=True, threshold=0.001)
         self.num_steps = 40
 

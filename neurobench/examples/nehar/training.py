@@ -1,12 +1,12 @@
-import pytorch_lightning as pl
+from pytorch_lightning import LightningModule
 from pytorch_lightning import Trainer
-from neurobench.datasets.WISDM_data_loader import WISDMDataModule
+from neurobench.datasets import WISDMDataLoader
 from CSNN import CSNN
 import torch.nn as nn
 import torch
 
 
-class SpikingNetwork(pl.LightningModule):
+class SpikingNetwork(LightningModule):
     def __init__(self, lr):
         super().__init__()
         self.model = CSNN()
@@ -66,7 +66,6 @@ class SpikingNetwork(pl.LightningModule):
 
     def predict_step(self, batch, batch_idx, dataloader_idx):
         test_data, test_labels = batch
-        test_data = test_data.swapaxes(1, 0)
 
         test_spk, _ = self.model.single_forward(test_data)
 
@@ -85,7 +84,7 @@ if __name__ == '__main__':
     batch_size = 256
     lr = 1.e-3
     dataset_path = "./dataset/watch_subset2_40.npz"
-    data_module = WISDMDataModule(dataset_path, batch_size=batch_size)
+    data_module = WISDMDataLoader(path=dataset_path, batch_size=batch_size)
 
     num_inputs = data_module.num_inputs
     num_outputs = data_module.num_outputs

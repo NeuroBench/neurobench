@@ -16,3 +16,6 @@ def DVSGesture(*args, **kwargs):
 def MackeyGlass(*args, **kwargs):
     return _lazy_import("neurobench.datasets", ".mackey_glass", "MackeyGlass")(*args, **kwargs)
 
+def WISDMDataLoader(*args, **kwargs):
+    return _lazy_import("neurobench.datasets", ".WISDM_loader", "WISDMDataLoader")(*args, **kwargs)
+

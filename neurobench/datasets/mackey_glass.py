@@ -2,7 +2,7 @@ from neurobench.datasets.dataset import Dataset
 import numpy as np
 import torch
 import math
-from jitcdde import jitcdde, y, t, jitcdde_lyap
+# from jitcdde import jitcdde, y, t, jitcdde_lyap
 
 '''
 The jitcdde package used to generate the MackeyGlass time-series can vary based 
@@ -81,13 +81,15 @@ class MackeyGlass(Dataset):
         self.testtime_pts = round(testtime*self.pts_per_lyaptime)
         self.maxtime_pts = self.traintime_pts + self.testtime_pts + 1 # eval one past the end
 
-        # Specify the system using the provided parameters
-        self.mackeyglass_specification = [ self.beta * y(0,t-self.tau) / (1 + y(0,t-self.tau)**self.nmg) - self.gamma*y(0) ]
+        
 
         # Generate time-series
         if file is not None:
             self.load_data(file)
         else:
+            # Specify the system using the provided parameters
+            self.mackeyglass_specification = [ self.beta * y(0,t-self.tau) / (1 + y(0,t-self.tau)**self.nmg) - self.gamma*y(0) ]
+            
             self.generate_data()
 
         # Generate train/test indices

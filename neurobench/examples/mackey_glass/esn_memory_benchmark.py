@@ -75,17 +75,23 @@ for bin_window in bin_window:
             
             # generate results for only tau=17
             if single_series or all_series_single_hyperparam:
-                input_scale = [0.68] + [0.85] * bin_window
+                # complexity constrained hyperparams
+                # params = [186,0.68,0.85,0.11,1.09,0.58,1e-8]
+                
+                # best hyperparams from overall search
+                params = [966,0.9,0.78,0.97,1.19,0.69,1e-07]
+
+                input_scale = [params[1]] + [params[2]] * bin_window
                 input_scale = torch.tensor(input_scale, dtype = torch.float64)
 
                 esn = EchoStateNetwork(in_channels=bin_window, 
-                    reservoir_size = 186, 
+                    reservoir_size = params[0], 
                     # input_scale = torch.tensor([0.68,0.85],dtype = torch.float64), 
                     input_scale = input_scale,
-                    connect_prob = 0.11, 
-                    spectral_radius = 1.09, 
-                    leakage = 0.58, 
-                    ridge_param = 1.e-8, 
+                    connect_prob = params[3], 
+                    spectral_radius = params[4], 
+                    leakage = params[5], 
+                    ridge_param = params[6], 
                     seed_id = seed_id )
 
             else:

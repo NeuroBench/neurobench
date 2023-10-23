@@ -32,7 +32,7 @@ class Benchmark():
         Returns:
             results: A dictionary of results.
         """
-        print("Running benchmark")
+        # print("Running benchmark")
         
         # add hooks to the model
         data_metrics.detect_activations_connections(self.model)
@@ -52,7 +52,8 @@ class Benchmark():
         dataset_len = len(self.dataloader.dataset)
         
         batch_num = 0
-        for data in tqdm(self.dataloader, total=len(self.dataloader)):
+        # for data in tqdm(self.dataloader, total=len(self.dataloader)):
+        for data in self.dataloader:
             batch_size = data[0].size(0)
             
             # convert data to tuple

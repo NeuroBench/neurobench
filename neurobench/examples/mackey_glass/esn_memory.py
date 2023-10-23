@@ -1,17 +1,8 @@
-"""
-=====================================================================
-Project:      NeuroBench
-File:         echo_state_network.py
-Description:  Python code providing an implementation of Echo State Networks 
-Date:         20. July 2023
-=====================================================================
-Copyright stuff
-=====================================================================
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+
+# The ESN but with explicit buffered memory
 
 class EchoStateNetwork(nn.Module):
     """Class for Echo State Networks that creates a network and includes methods for training the network and for performing the inference with the trained model. For details of the architecture please refer to `A Practical Guide to Applying Echo State Networks <https://link.springer.com/chapter/10.1007/978-3-642-35289-8_36>`_.
@@ -59,6 +50,9 @@ class EchoStateNetwork(nn.Module):
         assert self.mode in ["autonomous", "single_step"]
         self.prior_prediction = None
         
+        # Stores time steps of lookback window
+        self.register_buffer('inp', torch.zeros(1, self.in_channels).type(torch.float64))
+
         # Check if bias is added into the input
         if self.include_bias:
             self.in_channels_bias = self.in_channels + 1 
@@ -107,7 +101,8 @@ class EchoStateNetwork(nn.Module):
         targets: torch.tensor, 
         warmup_pts: int,
     ):
-        training_data = training_data.view(training_data.numel(), 1)
+        # training_data = training_data.view(training_data.numel(), 1)
+        training_data = training_data.squeeze(dim=-1)
 
         warmtrain_pts = training_data.shape[0]
         
@@ -116,8 +111,6 @@ class EchoStateNetwork(nn.Module):
         # Add constant bias if applicable
         if self.include_bias:
             training_data = torch.concatenate((1*torch.ones((warmtrain_pts,1)), training_data, ), axis=1)
-   
-        breakpoint()
 
         # Initialize reservoir's state to an empty state
         self.reservoir = torch.zeros((self.reservoir_size, 1),dtype=torch.float64)
@@ -150,17 +143,21 @@ class EchoStateNetwork(nn.Module):
     def single_forward(self, sample):
         # Update the reservoir state for the next predicition 
         if self.include_bias:
-            sample_b = torch.concatenate((1*torch.ones((1, 1)), sample,), axis=0)
+            # sample_b = torch.concatenate((1*torch.ones((1, 1)), sample,), axis=0)
+            sample_b = torch.concatenate((1*torch.ones((1, 1)), sample,), axis=1)
         else:
             sample_b = sample       
 
         # Project input to the reservoir & Update the reservoir
-        x = torch.tanh(self.W(self.reservoir.T) + self.Win(sample_b.T)) 
+        # x = torch.tanh(self.W(self.reservoir.T) + self.Win(sample_b.T)) 
+        x = torch.tanh(self.W(self.reservoir.T) + self.Win(sample_b))
+        
         self.reservoir = (1-self.leakage)*self.reservoir + self.leakage*x.T
         
         # Include input if applicable
         if self.include_input:
-            x = torch.cat((sample_b,self.reservoir), dim=0)
+            # x = torch.cat((sample_b,self.reservoir), dim=0)
+            x = torch.cat((sample_b.T,self.reservoir), dim=0)
         else:
             x = self.reservoir
                 
@@ -174,10 +171,22 @@ class EchoStateNetwork(nn.Module):
     ##     
     def forward(self, batch): # forward is not called during the model fitting
         predictions = []
+        self.inp[:] = 0.
+
         for sample in batch:
             if self.mode == 'autonomous' and self.prior_prediction is not None:
-                sample = self.prior_prediction
-            prediction = self.single_forward(sample)
+                # push new element
+                self.inp = torch.cat((self.inp, self.prior_prediction), dim=-1)
+                # pop oldest element
+                self.inp = self.inp[:, 1:]
+                # update register
+                inp = self.inp.clone()
+            else:
+                self.inp = sample.T
+                inp = self.inp.clone()
+
+
+            prediction = self.single_forward(inp)
             predictions.append(prediction)
             self.prior_prediction = prediction
 

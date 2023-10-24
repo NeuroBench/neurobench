@@ -23,7 +23,7 @@ class Benchmark():
         self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
 
-    def run(self):
+    def run(self, quiet=False):
         """ Runs batched evaluation of the benchmark.
 
         Currently, data metrics are accumulated via mean over the entire
@@ -52,7 +52,7 @@ class Benchmark():
         dataset_len = len(self.dataloader.dataset)
         
         batch_num = 0
-        for data in tqdm(self.dataloader, total=len(self.dataloader)):
+        for data in tqdm(self.dataloader, total=len(self.dataloader), disable=quiet):
             batch_size = data[0].size(0)
             
             # convert data to tuple

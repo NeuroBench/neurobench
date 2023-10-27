@@ -31,15 +31,30 @@ from neurobench.preprocessing import S2SProcessor
 
 from cl_utils import *
 
+
+import argparse
+
+def parse_arguments():
+    parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
+    
+    parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
+    parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
+
+
+    args = parser.parse_args()
+    return args
+
+
+args = parse_arguments()
 ROOT = "//scratch/p306982/data/fscil/FSCIL_subset/" #"data/MSWC/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
-NUM_REPEATS = 1
+NUM_REPEATS = 2
 SPIKING = True
 PRE_TRAIN = False
 
 if SPIKING:
-    EVAL_LR = 0.0045
+    EVAL_LR = args.eval_lr
 else:
     EVAL_LR = 0.3
 
@@ -112,8 +127,18 @@ def pre_train(model):
     del base_train_set
     del pre_train_loader
 
+import wandb
+
 if __name__ == '__main__':
 
+
+    wandb.login()
+
+    wandb_run = wandb.init(
+    # Set the project where this run will be logged
+    project="MDWC FSCIL SNN Clean",
+    # Track hyperparameters and run metadata
+    config=args.__dict__)
 
     if PRE_TRAIN:
         ### Pre-training phase ###
@@ -127,7 +152,7 @@ if __name__ == '__main__':
         ### Loading Pre-trained model ###
 
         if SPIKING:
-            model = torch.load("neurobench/examples/mswc_fscil/model_data/SpikingModel_noSoftmax_ep50_0.001_bs64_RTall", map_location=device)
+            model = torch.load("/home3/p306982/Simulations/fscil/algorithms_benchmarks/neurobench/examples/mswc_fscil/model_data/"+args.pt_model, map_location=device)
             model = TorchModel(model)
             model.add_activation_module(RadLIFLayer)
         else:
@@ -138,6 +163,9 @@ if __name__ == '__main__':
             model.load_state_dict(load_dict)
             model = TorchModel(model)
 
+    all_evals = []
+
+    all_query = []
 
     for eval_iter in range(NUM_REPEATS):
         print(f"Evaluation Iteration: 0")
@@ -207,7 +235,7 @@ if __name__ == '__main__':
             print(f"Session: {session+1}")
 
             # Define benchmark object
-            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
+            benchmark_all_test = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
@@ -268,27 +296,40 @@ if __name__ == '__main__':
             # Run benchmark to evaluate accuracy of this specific session
             session_results = benchmark_all_test.run(dataloader = full_session_test_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
             print("Session results:", session_results)
+            
             # session_acc = session_results['classification_accuracy']
             # print(f"The session accuracy is {session_acc*100}%")
             eval_accs.append(session_results['classification_accuracy'])
-            act_sparsity.append(session_results['activation_sparsity'])
-            syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
-            syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
+            # act_sparsity.append(session_results['activation_sparsity'])
+            # syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
+            # syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
+            wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
 
             # Run benchmark on query classes only
             query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
             print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
             query_accs.append(query_results['classification_accuracy'])
+            wandb.log({"query_accuracy":query_accs[-1]}, commit=True)
             # query_acc = query_results['classification_accuracy']
             # print(f"The accuracy on new classes is {query_acc*100}%")
 
+
+        all_evals.append(eval_accs)
+        all_query.append(query_accs)
         # mean_accuracy = np.mean(eval_accs)
         # print(f"The total mean accuracy is {mean_accuracy*100}%")
 
         # Print all data
-        print(f"Eval Accs: {eval_accs}")
-        print(f"Query Accs: {query_accs}")
-        print(f"Act Sparsity: {act_sparsity}")
-        print(f"Syn Ops Dense: {syn_ops_dense}")
-        print(f"Syn Ops MACs: {syn_ops_macs}")
+        # print(f"Eval Accs: {eval_accs}")
+        # print(f"Query Accs: {query_accs}")
+        # print(f"Act Sparsity: {act_sparsity}")
+        # print(f"Syn Ops Dense: {syn_ops_dense}")
+        # print(f"Syn Ops MACs: {syn_ops_macs}")
+
+
+    results = {"all": all_evals, "query": all_query}
+    import json
+    name = "eval_noreset_SPIKING_"+str(args.pt_model)+str(EVAL_LR)+"lr.json"
+    with open(os.path.join(ROOT,name), "w") as f:
+        json.dump(results, f)

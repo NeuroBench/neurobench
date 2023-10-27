@@ -81,9 +81,10 @@ class PrimateReaching(NeuroBenchDataset):
 
 
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
-                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000,
-                 split_num=1, remove_segments_inactive=False,
+                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028,
+                 max_segment_length=2000, split_num=1, remove_segments_inactive=False, 
                  download= False):
+
         """
             Initialises the Dataset for the Primate Reaching Task.
 
@@ -143,7 +144,7 @@ class PrimateReaching(NeuroBenchDataset):
 
         # Defines the maximum length of a segment.
         self.max_segment_length = max_segment_length
-        assert self.max_segment_length > 0
+        assert self.max_segment_length >= 0
 
         self.split_num = split_num
 
@@ -162,8 +163,10 @@ class PrimateReaching(NeuroBenchDataset):
         if self.delay > 0:
             self.apply_delay()
 
-        if self.max_segment_length > 0 and remove_segments_inactive:
-            self.remove_segments_by_length()
+        if remove_segments_inactive and self.max_segment_length > 0:
+            self.valid_segments = self.remove_segments_by_length()
+        else:
+            self.valid_segments = np.arange(self.time_segments.shape[0])
         
         self.split_data()
 
@@ -293,13 +296,13 @@ class PrimateReaching(NeuroBenchDataset):
         for split_no in range(split_num):
             for i in range(sub_length):
                 # Each segment's Dimension is: No_of_Probes * No_of_Recording
-                if i < train_len:
+                if i < train_len and i in self.valid_segments:
                     self.ind_train += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                      self.time_segments[split_no * sub_length + i, 1], stride))
-                elif train_len <= i < train_len + val_len:
+                elif train_len <= i < train_len + val_len and i in self.valid_segments:
                     self.ind_val += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                    self.time_segments[split_no * sub_length + i, 1], stride))
-                else:
+                elif i in self.valid_segments:
                     self.ind_test += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                     self.time_segments[split_no * sub_length + i, 1], stride))
 
@@ -308,8 +311,7 @@ class PrimateReaching(NeuroBenchDataset):
             remove the segments where its duration exceeds the limit set by
             max_segment_length
         """
-        self.time_segments = self.time_segments[self.time_segments[:, 1] - self.time_segments[:, 0] <
-                                                self.max_segment_length, :]
+        return np.nonzero(self.time_segments[:, 1] - self.time_segments[:, 0] < self.max_segment_length)[0]
 
     @staticmethod
     def split_into_segments(indices):

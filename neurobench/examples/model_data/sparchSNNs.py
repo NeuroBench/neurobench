@@ -80,13 +80,14 @@ class SNN(nn.Module):
         self,
         input_shape,
         layer_sizes,
+        out_model,
         neuron_type="LIF",
         threshold=1.0,
         dropout=0.0,
         normalization="batchnorm",
         use_bias=False,
         bidirectional=False,
-        use_readout_layer=True,
+        use_readout_layer=True
     ):
         super().__init__()
 
@@ -105,6 +106,7 @@ class SNN(nn.Module):
         self.bidirectional = bidirectional
         self.use_readout_layer = use_readout_layer
         self.is_snn = True
+        self.out_model = out_model
 
         if neuron_type not in ["LIF", "adLIF", "RLIF", "RadLIF"]:
             raise ValueError(f"Invalid neuron type {neuron_type}")
@@ -141,8 +143,14 @@ class SNN(nn.Module):
 
         # Readout layer
         if self.use_readout_layer:
+            if self.out_model=="simple":
+                readout = Simple_ReadoutLayer
+            elif self.out_model=="full":
+                readout = ReadoutLayer
+            elif self.out_model=="leaky":
+                readout = Leaky_ReadoutLayer                
             snn.append(
-                Simple_ReadoutLayer(
+                readout(
                     input_size=input_size,
                     hidden_size=self.layer_sizes[-1],
                     batch_size=self.batch_size,
@@ -865,10 +873,7 @@ class Simple_ReadoutLayer(nn.Module):
         self.input_size = int(input_size)
         self.hidden_size = int(hidden_size)
         self.batch_size = batch_size
-        self.dropout = dropout
-        self.normalization = normalization
         self.use_bias = use_bias
-        self.alpha_lim = [np.exp(-1 / 5), np.exp(-1 / 25)]
 
         # Trainable parameters
         self.W = nn.Linear(self.input_size, self.hidden_size, bias=use_bias)
@@ -892,11 +897,91 @@ class Simple_ReadoutLayer(nn.Module):
         device = Wx.device
         out = torch.zeros(Wx.shape[0], Wx.shape[2]).to(device)
 
-
         # Loop over time axis
         for t in range(Wx.shape[1]):
 
             # Compute potential (LIF)
             out = out + Wx[:, t, :] #+ F.softmax(Wx[:, t, :], dim=1)
+
+        return out
+
+
+class Leaky_ReadoutLayer(nn.Module):
+    """
+    This function implements a single layer of non-spiking Leaky Integrate and
+    Fire (LIF) neurons, where the output consists of a cumulative sum of the
+    membrane potential using a softmax function, instead of spikes.
+
+    Arguments
+    ---------
+    input_size : int
+        Feature dimensionality of the input tensors.
+    hidden_size : int
+        Number of output neurons.
+    batch_size : int
+        Batch size of the input tensors.
+    dropout : float
+        Dropout factor (must be between 0 and 1).
+    normalization : str
+        Type of normalization. Every string different from 'batchnorm'
+        and 'layernorm' will result in no normalization.
+    use_bias : bool
+        If True, additional trainable bias is used with feedforward weights.
+    bidirectional : bool
+        If True, a bidirectional model that scans the sequence both directions
+        is used, which doubles the size of feedforward matrices in layers l>0.
+    """
+
+    def __init__(
+        self,
+        input_size,
+        hidden_size,
+        batch_size,
+        dropout=0.0,
+        normalization="batchnorm",
+        use_bias=False,
+    ):
+        super().__init__()
+
+        # Fixed parameters
+        self.input_size = int(input_size)
+        self.hidden_size = int(hidden_size)
+        self.batch_size = batch_size
+        self.use_bias = use_bias
+        self.alpha_lim = [np.exp(-1 / 5), np.exp(-1 / 25)]
+
+        self.alpha = nn.Parameter(torch.Tensor(self.hidden_size))
+        nn.init.uniform_(self.alpha, self.alpha_lim[0], self.alpha_lim[1])
+
+        # Trainable parameters
+        self.W = nn.Linear(self.input_size, self.hidden_size, bias=use_bias)
+        # self.drop = nn.Dropout(p=0.2)
+
+    def forward(self, x):
+
+        # Feed-forward affine transformations (all steps in parallel)
+        Wx = self.W(x)
+
+        # Compute membrane potential via non-spiking neuron dynamics
+        out = self._readout_cell(Wx)
+
+        # out = self.drop(out)
+
+        return out
+
+    def _readout_cell(self, Wx):
+
+        # Initializations
+        device = Wx.device
+        out = torch.zeros(Wx.shape[0], Wx.shape[2]).to(device)
+        ut = torch.rand(Wx.shape[0], Wx.shape[2]).to(device)
+        alpha = torch.clamp(self.alpha, min=self.alpha_lim[0], max=self.alpha_lim[1])
+
+        # Loop over time axis
+        for t in range(Wx.shape[1]):
+
+            # Compute potential (LIF)
+            ut = alpha * ut + (1 - alpha) * Wx[:, t, :]
+            out = out + ut #+ F.softmax(Wx[:, t, :], dim=1)
 
         return out

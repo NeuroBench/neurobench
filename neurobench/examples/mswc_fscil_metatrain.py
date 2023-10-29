@@ -53,6 +53,7 @@ def parse_arguments():
     parser.add_argument("--retrain_out", action="store_true", help="Use non-spiking readout")
     parser.add_argument("--reset_out", action="store_true", help="Use non-spiking readout")
     parser.add_argument("--from_scratch", action="store_true", help="Use non-spiking readout")
+    parser.add_argument("--out_model", type=str, default="simple", help="SNN output model")
 
     
     parser.add_argument("--n_channels", type=int, default=256, help="Number of channels")
@@ -524,13 +525,13 @@ def pre_train(model):
 
     if args.save_pre_train:
         if SPIKING:
-            name = "SpikingModel_noSoftmax_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_bs"+str(BATCH_SIZE)
-            if not args.retrain_out:
-                name += "_RTall"
-            if args.reset_out:
-                name += "_resetOut"
-            if args.from_scratch:
-                name += "_scratch"
+            name = "SpikingModel_ep"+str(PRE_TRAIN_EPOCHS)+"_" + str(PRE_TRAIN_LR)+"_bs"+str(BATCH_SIZE)+"_Nhidden"+str(args.hidden_size)+"_"+args.out_model
+            # if not args.retrain_out:
+            #     name += "_RTall"
+            # if args.reset_out:
+            #     name += "_resetOut"
+            # if args.from_scratch:
+            #     name += "_scratch"
             torch.save(model, os.path.join(ROOT,name))
         else:
             if DROPOUT:
@@ -560,6 +561,7 @@ if __name__ == '__main__':
             input_shape=(args.batch_size, 201, 20),
             neuron_type="RadLIF",
             layer_sizes=[args.hidden_size, args.hidden_size, 200],
+            out_model = args.out_model,
             normalization="batchnorm",
             dropout=0.1,
             bidirectional=False,

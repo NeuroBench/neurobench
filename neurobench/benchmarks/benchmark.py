@@ -32,6 +32,9 @@ class Benchmark():
         Currently, data metrics are accumulated via mean over the entire
         test set, and thus must return a float or int.
 
+        Args:
+            quiet (bool, default=False): If True, output is suppressed.
+
         Returns:
             results: A dictionary of results.
         """

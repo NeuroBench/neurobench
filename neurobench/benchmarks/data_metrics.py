@@ -336,3 +336,31 @@ class COCO_mAP(AccumulatedMetric):
             self.evaluator.partial_eval([np.concatenate(self.gt_detections[key])], [np.concatenate(self.dt_detections[key])])
         coco_kpi = self.evaluator.accumulate()
         return coco_kpi['mean_ap']
+
+
+
+class reward(AccumulatedMetric):
+    '''
+    Accumulate rewards over interactions.
+    '''
+    def __init__(self):
+        self.rewards = []
+
+    def __call__(self, model, reward, data):
+        self.rewards.append(reward)
+
+    def compute(self):
+        return np.mean(self.rewards)
+    
+class average_time(AccumulatedMetric):
+    '''
+    Accumulate times over interactions.
+    '''
+    def __init__(self):
+        self.times = []
+
+    def __call__(self, model, reward, time):
+        self.times.append(time)
+
+    def compute(self):
+        return np.mean(self.times)

@@ -270,8 +270,9 @@ def inner_loop(model, support, optimizer=None, meta=None, features = torch.nn.Id
         if SPIKING:
             model.snn[:-1].eval()
             # model.snn[1].drop.train()
-            freeze_below(model, "none", only_conv=False) #"snn.2.W"
-            model.snn[-1].W.weight.requires_grad = True
+            freeze_below(model.snn[:-1], "none", only_conv=False) #"snn.2.W"
+            
+            # model.snn[-1].W.weight.requires_grad = True
         else:
             eval_below(model, 'output')
             freeze_below(model, "output", only_conv=False)

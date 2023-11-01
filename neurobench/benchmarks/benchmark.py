@@ -25,11 +25,15 @@ class Benchmark():
         self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
 
-    def run(self, verbose=False):
+    def run(self, verbose: bool = False):
         """ Runs batched evaluation of the benchmark.
 
         Currently, data metrics are accumulated via mean over the entire
         test set, and thus must return a float or int.
+
+        Args:
+            verbose (bool, default=False): If True, metrics for each bach will be printed.
+            If False (default), metrics are accumulated and printed after all batches are processed.
 
         Returns:
             results: A dictionary of results.

@@ -46,6 +46,15 @@ class AccumulatedMetric:
 def detect_activations_connections(model):
     """Register hooks or other operations that should be called before running a benchmark.
     """
+    for hook in model.activation_hooks:
+        hook.reset()
+        hook.close()
+    for hook in model.connection_hooks:
+        hook.reset()
+        hook.close()
+    model.activation_hooks = []
+    model.connection_hooks = []
+    
     supported_layers = model.supported_layers
     
     # recurrent_supported_layers = (torch.nn.RNNBase)
@@ -172,6 +181,7 @@ class synaptic_operations(AccumulatedMetric):
     def reset(self):
         self.MAC = 0
         self.AC  = 0
+        self.total_synops = 0
         self.total_samples = 0
 
     def __call__(self, model, preds, data):

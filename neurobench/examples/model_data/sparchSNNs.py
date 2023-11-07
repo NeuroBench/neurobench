@@ -709,7 +709,9 @@ class RadLIFLayer(nn.Module):
         b = torch.clamp(self.b, min=self.b_lim[0], max=self.b_lim[1])
 
         # Set diagonal elements of recurrent matrix to zero
-        V = self.V.weight.clone().fill_diagonal_(0)
+        with torch.no_grad():
+            self.V.weight.fill_diagonal_(0.)
+        # V = self.V.weight.clone().fill_diagonal_(0)
 
         # Loop over time axis
         for t in range(Wx.shape[1]):
@@ -717,8 +719,11 @@ class RadLIFLayer(nn.Module):
             # Compute potential (RadLIF)
             wt = beta * wt + a * ut + b * st
             ut = alpha * (ut - st) + (1 - alpha) * (
-                Wx[:, t, :] + torch.matmul(st, V) - wt
+                Wx[:, t, :] + self.V(st) - wt
             )
+            # ut = alpha * (ut - st) + (1 - alpha) * (
+            #     Wx[:, t, :] + torch.matmul(st, V) - wt
+            # )
 
             # Compute spikes with surrogate gradient
             st = self.spike_fct(ut - self.threshold)

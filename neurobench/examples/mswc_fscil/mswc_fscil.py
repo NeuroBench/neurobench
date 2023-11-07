@@ -39,7 +39,7 @@ def parse_arguments():
     
     parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
     parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
-
+    # parser.add_argument("--spiking", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
 
     args = parser.parse_args()
     return args
@@ -49,7 +49,7 @@ args = parse_arguments()
 ROOT = "//scratch/p306982/data/fscil/FSCIL_subset/" #"data/MSWC/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
-NUM_REPEATS = 2
+NUM_REPEATS = 1
 SPIKING = True
 PRE_TRAIN = False
 
@@ -158,7 +158,7 @@ if __name__ == '__main__':
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            load_dict = torch.load("neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", 
+            load_dict = torch.load("/home3/p306982/Simulations/fscil/algorithms_benchmarks/neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", 
                                 map_location=device).state_dict()
             model.load_state_dict(load_dict)
             model = TorchModel(model)
@@ -235,7 +235,7 @@ if __name__ == '__main__':
             print(f"Session: {session+1}")
 
             # Define benchmark object
-            benchmark_all_test = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
+            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
@@ -299,10 +299,11 @@ if __name__ == '__main__':
             
             # session_acc = session_results['classification_accuracy']
             # print(f"The session accuracy is {session_acc*100}%")
+            print("Session results:", session_results)
             eval_accs.append(session_results['classification_accuracy'])
-            # act_sparsity.append(session_results['activation_sparsity'])
-            # syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
-            # syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
+            act_sparsity.append(session_results['activation_sparsity'])
+            syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
+            syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
             wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
 
@@ -330,6 +331,9 @@ if __name__ == '__main__':
 
     results = {"all": all_evals, "query": all_query}
     import json
-    name = "eval_noreset_SPIKING_"+str(args.pt_model)+str(EVAL_LR)+"lr.json"
+    name = "eval_"
+    if SPIKING:
+        name += "SPIKING_"
+    name += str(args.pt_model)+str(EVAL_LR)+"lr.json"
     with open(os.path.join(ROOT,name), "w") as f:
         json.dump(results, f)

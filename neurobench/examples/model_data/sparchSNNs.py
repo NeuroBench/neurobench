@@ -700,6 +700,7 @@ class RadLIFLayer(nn.Module):
         ut = torch.rand(Wx.shape[0], Wx.shape[2]).to(device)
         wt = torch.rand(Wx.shape[0], Wx.shape[2]).to(device)
         st = torch.rand(Wx.shape[0], Wx.shape[2]).to(device)
+        st = self.spike_fct(ut - 0.5)
         s = []
 
         # Bound values of the neuron parameters to plausible ranges

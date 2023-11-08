@@ -1,5 +1,6 @@
+============
 Introduction
-------------
+============
 
 A harness for running evaluations on
 `NeuroBench <https://neurobench.ai>`__ algorithm benchmarks.

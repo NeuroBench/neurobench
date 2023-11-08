@@ -1,5 +1,3 @@
-.. _mackey-glass-benchmark-tutorial:
-
 =======================================
 **Mackey Glass Benchmark Tutorial**
 =======================================
@@ -9,14 +7,10 @@ This tutorial aims to provide insights into how the NeuroBench framework is orga
 This is a static non-editable version. The editable version can be found at this link:
  * `Local Notebook <path/to/ipynb_file>`__
  
-.. _about-mackey-glass:
-
 **About Mackey Glass**
 ------------------------
 
 The Mackey Glass task is a chaotic function prediction task. Unlike other tasks in NeuroBench, the Mackey Glass dataset is synthetic. Real-world data can be high-dimensional, requiring large networks for high accuracy, posing challenges for solution types with limited I/O support and network capacity, such as mixed-signal prototype solutions.
-
-.. _dataset:
 
 **Dataset**
 ------------
@@ -24,8 +18,6 @@ The Mackey Glass task is a chaotic function prediction task. Unlike other tasks 
 The Mackey Glass dataset is a one-dimensional nonlinear time-delay differential equation, where the evolution of the signal can be altered by various parameters. These parameters are defined in NeuroBench.
 
 .. math:: \frac{dx}{dt} = \frac{\beta x(t-\tau)}{1 + x(t-\tau)^n} - \gamma x(t)
-
-.. _benchmark-task:
 
 **Benchmark Task**
 -------------------
@@ -43,8 +35,6 @@ The task is a sequence-to-sequence prediction problem, similar to the primate re
       from neurobench.models import TorchModel
       from neurobench.benchmarks import Benchmark
 
-.. _model-imports:
-
 **Model Imports**
 ------------------
 
@@ -56,8 +46,6 @@ For this tutorial, we will use the example architecture included in the NeuroBen
 
       # This is the network we will use in this tutorial
       from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
-
-.. _mackey-glass-parameters:
 
 **Mackey Glass Parameters**
 ---------------------------

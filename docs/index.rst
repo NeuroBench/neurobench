@@ -8,6 +8,7 @@ NeuroBench Documentation
    :caption: Contents:
 
    readme
+   tutorials/index
    neurobench.benchmarks
    neurobench.datasets
    neurobench.models

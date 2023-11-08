@@ -1,5 +1,3 @@
-.. _dvs-gesture-benchmark-tutorial:
-
 ===================================
 **DVS Gesture Benchmark Tutorial**
 ===================================
@@ -9,21 +7,15 @@ This tutorial aims to provide an insight on how the NeuroBench framework is orga
 This is a static non-editable version. The editable version can be found at this link:
  * `Local Notebook <path/to/ipynb_file>`__
 
-.. _about-dvs-gesture:
-
 **About DVS Gesture**
 -----------------------
 
 Mid-air gestures represent a natural modality of communication that holds benefits in a range of human-computer interaction applications owing to its touchless and efficient nature. Gesture recognition systems find utility in edge scenarios such as car infotainment systems, high-traffic public areas, or as alternative interaction modes for individuals with speech or hearing impairments.
 
-.. _dataset:
-
 **Dataset**
 ------------
 
 The IBM Dynamic Vision Sensor (DVS) Gesture dataset is composed of recordings of 29 distinct individuals executing 10 different types of gestures, including but not limited to clapping, waving, etc. Additionally, an 11th gesture class is included that comprises gestures that cannot be categorized within the first 10 classes. The gestures are recorded under four distinct lighting conditions, and each gesture is associated with a label that indicates the corresponding lighting condition under which it was performed.
-
-.. _benchmark-task:
 
 **Benchmark Task**
 -------------------

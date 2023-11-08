@@ -1,29 +1,21 @@
-.. _google-speech-commands-benchmark-tutorial:
-
-============================================
+=============================================
 **Google Speech Commands Benchmark Tutorial**
-============================================
+=============================================
 
 This tutorial aims to provide an insight on how the NeuroBench framework is organized and how you can use it to benchmark your own models!
 
 This is a static non-editable version. The editable version can be found at this link:
  * `Local Notebook <path/to/ipynb_file>`__
  
-.. _about-google-speech-commands:
-
 **About Google Speech Commands**
 ----------------------------------
 
 Google Speech Commands is a keyword spotting task. Voice commands represent a natural and easily accessible modality for human-machine interaction. Keyword detection, in particular, is frequently employed in edge devices that operate in always-listening, wake-up situations, where it triggers more computationally demanding processes such as automatic speech recognition. Keyword spotting finds application in activating voice assistants, speech data mining, audio indexing, and phone call routing. Given that it generally operates in always-on and battery-powered edge scenarios, keyword detection represents a pertinent benchmark for energy-efficient neuromorphic solutions.
 
-.. _dataset:
-
 **Dataset**
 ------------
 
 The Google Speech Commands dataset (V2) is a commonly used dataset in assessing the performance of keyword spotting algorithms. The dataset consists of 105,829 1 second utterances of 35 different words from 2,618 distinct speakers. The data is encoded as linear 16-bit, single-channel, pulse code modulated values, at a 16 kHz sampling frequency.
-
-.. _benchmark-task:
 
 **Benchmark Task**
 -------------------

@@ -111,7 +111,7 @@ class PrimateReaching(NeuroBenchDataset):
         self.labels = None
 
         # used for input data file management
-        self.filename = filename if filename[-4:] == '.mat' else self.filename + ".mat"
+        self.filename = filename if filename[-4:] == '.mat' else filename + ".mat"
         self.file_path = os.path.join(file_path, self.filename)
 
         if download:

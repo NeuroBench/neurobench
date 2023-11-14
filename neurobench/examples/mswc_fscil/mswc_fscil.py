@@ -41,7 +41,7 @@ def parse_arguments():
     parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Pre-trained model to use")
     # parser.add_argument("--spiking", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
-
+    parser.add_argument("-normalize", action="store_true", help="Apply normalization to newly learned weights in addition to centering them")
 
     args = parser.parse_args()
     return args
@@ -225,9 +225,9 @@ if __name__ == '__main__':
         eval_model.net.saved_weights = {}
         pre_train_class = range(100)
         if SPIKING:
-            consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, pre_train_class)
+            consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, pre_train_class, normalize=args.normalize)
         else:
-            consolidate_weights(eval_model.net, eval_model.net.output, pre_train_class)
+            consolidate_weights(eval_model.net, eval_model.net.output, pre_train_class, normalize=args.normalize)
 
 
         few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
             # Mean-shift weights and save them 
             if SPIKING:
-                consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, cur_class)
+                consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, cur_class, normalize=args.normalize)
                 set_consolidate_weights(eval_model.net, eval_model.net.snn[-1].W)
             else:
                 consolidate_weights(eval_model.net, eval_model.net.output, cur_class)

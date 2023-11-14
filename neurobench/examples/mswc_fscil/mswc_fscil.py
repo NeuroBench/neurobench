@@ -38,8 +38,10 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
     
     parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
-    parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
+    parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Pre-trained model to use")
     # parser.add_argument("--spiking", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
+    parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
+
 
     args = parser.parse_args()
     return args
@@ -252,6 +254,16 @@ if __name__ == '__main__':
             else:
                 freeze_below(eval_model.net, "output", only_conv=False)
                 eval_below(eval_model.net, "output")
+
+            if args.reset=="zero":
+                reset_weights(eval_model.net, eval_model.net.snn[-1].W, cur_class)
+            elif args.reset=="random":
+                if SPIKING:
+                    torch.nn.init.xavier_normal_(eval_model.net.snn[-1].W.weight)
+
+            # Set prior centered weights again after eventual resetting of all weights
+            set_consolidate_weights(eval_model.net, eval_model.net.snn[-1].W) 
+            
 
             cur_class = support[0][1].tolist()
             eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)

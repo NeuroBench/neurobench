@@ -69,6 +69,13 @@ class MFCCProcessor(NeuroBenchProcessor):
         if isinstance(data, list):
             data = torch.vstack(data)
 
+        # Data is expected in (batch, timesteps, features) format
+        if data.dim() == 2:
+            data.permute(1, 0)
+        
+        elif data.dim() == 3:
+            data = data.permute(0, 2, 1)
+
         self.results = self.mfcc(data)
 
         if kwargs:

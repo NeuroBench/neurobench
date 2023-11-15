@@ -5,5 +5,5 @@ MSE
 Definition
 ----------
 
-Implementation
---------------
+Implementation Notes
+--------------------

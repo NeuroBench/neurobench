@@ -8,3 +8,4 @@ Static Metrics
    model_size
    parameter_count
    connection_sparsity
+   model_execution_rate

@@ -5,5 +5,5 @@ Parameter Count
 Definition
 ----------
 
-Implementation
---------------
+Implementation Notes
+--------------------

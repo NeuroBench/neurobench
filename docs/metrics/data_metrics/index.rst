@@ -11,4 +11,4 @@ Data Metrics
    smape
    r2
    mse
-   multiply_accumulates
+   synaptic_operations

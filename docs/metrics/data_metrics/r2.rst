@@ -4,6 +4,7 @@ R2
 
 Definition
 ----------
+The correctness metric for the Non-human Primate Motor Prediction task.
 
-Implementation
---------------
+Implementation Notes
+--------------------

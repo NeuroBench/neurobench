@@ -1,5 +1,7 @@
 import torch
 
+import spikingjelly
+
 from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.models import NeuroBenchModel
 from neurobench.benchmarks import Benchmark
@@ -9,11 +11,18 @@ from obj_det_model import Vanilla, Vanilla_lif
 from metavision_ml.detection.anchors import Anchors
 from metavision_ml.detection.rpn import BoxHead
 
+import argparse
+
+parser = argparse.ArgumentParser(description='NeuroBench benchmark for object detection models')
+parser.add_argument('--batch_size', type=int, default=4, help='batch size for inference')
+parser.add_argument('--mode', type=str, default="ann", help='mode of the model, ann or hybrid')
+args = parser.parse_args()
+
 # dataloader itself takes about 7 minutes for loading, with model evaluation and score calculation is about 20 minutes on i9-12900KF, RTX3080
 test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi channel",
         split="testing",
         label_map_path="neurobench/datasets/label_map_dictionary.json",
-        batch_size = 12,
+        batch_size = args.batch_size,
         num_tbins = 12,
         preprocess_function_name="multi_channel_timesurface",
         delta_t=50000,
@@ -28,6 +37,7 @@ test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi cha
 
 class ObjDetectionModel(NeuroBenchModel):
     def __init__(self, net, box_coder, head):
+        super(ObjDetectionModel, self).__init__(net)
         self.net = net
         self.box_coder = box_coder
         self.head = head
@@ -53,7 +63,7 @@ class ObjDetectionModel(NeuroBenchModel):
         return self.net
 
 # Loading the model
-mode = "hybrid" # "ann" or "hybrid
+mode = args.mode # "ann" or "hybrid
 if mode == "ann":
     # baseline ANN RED architecture
     model = Vanilla(cin = 6, cout = 256, base = 16)
@@ -77,13 +87,17 @@ else:
 
 model = ObjDetectionModel(model, box_coder, head)
 
-# Evaluation
+# add activation modules for hybrid models
+if mode == "hybrid":
+    model.add_activation_module(spikingjelly.activation_based.neuron.BaseNode)
 
+# Evaluation
 preprocessors = []
 postprocessors = []
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["COCO_mAP"]
+data_metrics = ["activation_sparsity", "COCO_mAP", "synaptic_operations"]
+
 
 benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, data_metrics])
 results = benchmark.run()
@@ -91,7 +105,7 @@ print(results)
 
 # batch size of inference slightly affects the results.
 
-# Results - ANN, batch = 12
-# {'model_size': 91314912, 'connection_sparsity': 0.0, 'COCO_mAP': 0.43047329135339685}
-# Results - Hybrid, batch = 12
-# {'model_size': 12133872, 'connection_sparsity': 0.0, 'COCO_mAP': 0.2711162430904825}
+# Results - ANN, batch = 4
+# {'model_size': 91314912, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6339577418819095, 'COCO_mAP': 0.4286601323956029, 'synaptic_operations': {'Effective_MACs': 248423062860.16266, 'Effective_ACs': 0.0, 'Dense': 284070730752.0}}
+# Results - Hybrid, batch = 4
+# {'model_size': 12133872, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6130047485397788, 'COCO_mAP': 0.27111120859281557, 'synaptic_operations': {'Effective_MACs': 37520084211.538666, 'Effective_ACs': 559864693.7093333, 'Dense': 98513107968.0}}

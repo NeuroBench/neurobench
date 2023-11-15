@@ -38,7 +38,7 @@ def test_dvs_gesture():
     assert int(ds[0][1]) <= 10
 
 def test_mackey_glass():
-    mg = MackeyGlass(17, 0.9)
+    mg = MackeyGlass(tau=17,lyaptime=197,constant_past=0.7206597)
 
     assert len(mg) > 0
 
@@ -57,6 +57,57 @@ def test_mackey_glass():
     assert(torch.eq(trainset[0][1], mg[0][1]))
     assert(torch.eq(testset[0][0], mg[mg.traintime_pts][0]))
     assert(torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
+
+    bin_window = 3
+    mg = MackeyGlass(tau=17,lyaptime=197,constant_past=0.7206597, bin_window=bin_window)
+    trainset = torch.utils.data.Subset(mg, mg.ind_train)
+    testset = torch.utils.data.Subset(mg, mg.ind_test)
+    
+    assert trainset[0][0].shape == (bin_window,1)
+    assert trainset[0][1].shape == (1,)
+    assert testset[0][0].shape == (bin_window,1)
+    assert testset[0][1].shape == (1,)
+    
+    assert(torch.eq(mg[0][1], mg[1][0][-1])) # ensure target from previous timestep is appended to lookback window
+
+def test_mackey_glass_load():
+    filepath = dataset_path + "mackey_glass/mg_17.npy"
+    try:
+        assert os.path.exists(filepath)
+    except AssertionError:
+        raise FileExistsError(f"Can't find {filepath}")
+    mg = MackeyGlass(file=filepath)
+
+    assert len(mg) > 0
+
+    trainset = torch.utils.data.Subset(mg, mg.ind_train)
+    testset = torch.utils.data.Subset(mg, mg.ind_test)
+
+    assert len(trainset) == mg.traintime_pts
+    assert len(testset) == mg.testtime_pts
+
+    assert trainset[0][0].shape == (1,1)
+    assert trainset[0][1].shape == (1,)
+    assert testset[0][0].shape == (1,1)
+    assert testset[0][1].shape == (1,)
+
+    assert(torch.eq(trainset[0][0], mg[0][0]))
+    assert(torch.eq(trainset[0][1], mg[0][1]))
+    assert(torch.eq(testset[0][0], mg[mg.traintime_pts][0]))
+    assert(torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
+
+    bin_window = 3
+    mg = MackeyGlass(file=filepath, bin_window=bin_window)
+    trainset = torch.utils.data.Subset(mg, mg.ind_train)
+    testset = torch.utils.data.Subset(mg, mg.ind_test)
+    
+    assert trainset[0][0].shape == (bin_window,1)
+    assert trainset[0][1].shape == (1,)
+    assert testset[0][0].shape == (bin_window,1)
+    assert testset[0][1].shape == (1,)
+    
+    assert(torch.eq(mg[0][1], mg[1][0][-1])) # ensure target from previous timestep is appended to lookback window
+
 
 def test_1mp():
     path = dataset_path + "Gen 4 Histograms/"
@@ -90,3 +141,32 @@ def test_1mp():
     assert isinstance(data[1], list) # list[list[nparr]]
     assert isinstance(data[2], dict)
 
+def test_primate_reaching():
+    path = dataset_path + "primate_reaching/PrimateReachingDataset"
+    try:
+        assert os.path.exists(path)
+    except AssertionError:
+        raise FileExistsError(f"Can't find {path}")
+
+    dataset = PrimateReaching(file_path=path,
+                              filename="indy_20170131_02.mat",
+                              num_steps=250, train_ratio=0.8, bin_width=0.004,
+                              biological_delay=50)
+
+    # check dataset non-empty
+    assert len(dataset)
+
+    train_set_loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(dataset, dataset.ind_train), batch_size=1, shuffle=False)
+    test_set_loader = torch.utils.data.DataLoader(
+        torch.utils.data.Subset(dataset, dataset.ind_test), batch_size=1, shuffle=False)
+
+    # correct amount of samples
+    assert len(train_set_loader) == len(dataset.ind_train)
+    assert len(test_set_loader) == len(dataset.ind_test)
+
+    # correct shapes
+    assert next(iter(train_set_loader))[0].shape == (1, 250, 96)
+    assert next(iter(train_set_loader))[1].shape == (1, 2)
+    assert next(iter(test_set_loader))[0].shape == (1, 250, 96)
+    assert next(iter(test_set_loader))[1].shape == (1, 2)

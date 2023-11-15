@@ -1,6 +1,7 @@
 import torch
 import numpy as np
-from .utils.metric_utils import check_shape
+from .utils.metric_utils import check_shape, make_binary_copy, single_layer_MACs
+from ..benchmarks.hooks import ActivationHook, LayerHook
 
 class AccumulatedMetric:
     """ Abstract class for a metric which must save state between batches.
@@ -33,11 +34,32 @@ class AccumulatedMetric:
 
 
 # dynamic metrics, require model, model predictions, and labels
+
+def detect_activations_connections(model):
+    """Register hooks or other operations that should be called before running a benchmark.
+    """
+    supported_layers = model.supported_layers
+    
+    # recurrent_supported_layers = (torch.nn.RNNBase)
+    # recurr_cell_supported_layers = (torch.nn.RNNCellBase)
+
+    act_layers = model.activation_layers()
+    # Registered activation hooks
+    for layer in act_layers:
+        model.activation_hooks.append(ActivationHook(layer))
+
+    con_layers = model.connection_layers()
+    for flat_layer in con_layers:
+        if isinstance(flat_layer, supported_layers):
+            model.connection_hooks.append(LayerHook(flat_layer))
+
+    
+
 def activation_sparsity(model, preds, data):
     """ Sparsity of model activations.
     
     Calculated as the number of zero activations over the total number
-    def __init__():
+    of activations, over all layers, timesteps, samples in data.
 
     Args:
         model: A NeuroBenchModel.
@@ -47,31 +69,43 @@ def activation_sparsity(model, preds, data):
         float: Activation sparsity.
     """
     # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers
-    #       Standard FF ANN should be zero (no activation sparsity)
-    raise NotImplementedError("Activation sparsity not yet implemented")
+    #       Standard FF ANN depends on activation function, ReLU can introduce sparsity.
+    total_spike_num, total_neuro_num = 0, 0
+    for hook in model.activation_hooks:
+        for spikes in hook.activation_outputs:  # do we need a function rather than a member
+            spike_num, neuro_num = torch.count_nonzero(spikes).item(), torch.numel(spikes)
+            total_spike_num += spike_num
+            total_neuro_num += neuro_num
 
-    check_shape(preds, data[1])
-    return model.activation_sparsity()
-
-def multiply_accumulates(model, preds, data):
-    """ Multiply-accumulates (MACs) of the model forward.
+    sparsity = (total_neuro_num - total_spike_num) / total_neuro_num if total_neuro_num != 0 else 0.0
+    return sparsity
+    
+def number_neuron_updates(model, preds, data):
+    """ Number of times each neuron type is updated.
 
     Args:
         model: A NeuroBenchModel.
         preds: A tensor of model predictions.
         data: A tuple of data and labels.
     Returns:
-        float: Multiply-accumulates.
+        dict: key is neuron type, value is number of updates.
     """
-    # TODO: 
-    #   Spiking model: number of spike activations * fanout (see snnmetrics)
-    #   Recurrent layers: each connection is one MAC
-    #   ANN: use PyTorch profiler
-    raise NotImplementedError("Multiply-accumulates not yet implemented")
+    # check_shape(preds, data[1])
+    macs = 0
 
-    check_shape(preds, data[1])
-    macs = 0.0
-    return macs
+    update_dict = {}
+    for hook in model.activation_hooks: 
+        for spikes_batch in hook.activation_inputs:  
+            for spikes in spikes_batch: 
+                nr_updates = torch.count_nonzero(spikes) 
+                if str(type(hook.layer)) not in update_dict:
+                    update_dict[str(type(hook.layer))] = 0
+                update_dict[str(type(hook.layer))] += int(nr_updates)
+    # print formatting
+    print('Number of updates for:')
+    for key in update_dict:
+        print(key, ':',update_dict[key])
+    return update_dict
 
 def classification_accuracy(model, preds, data):
     """ Classification accuracy of the model predictions.
@@ -113,6 +147,59 @@ def sMAPE(model, preds, data):
     check_shape(preds, data[1])
     smape = 200*torch.mean(torch.abs(preds - data[1])/(torch.abs(preds)+torch.abs(data[1])))
     return torch.nan_to_num(smape, nan=200.0).item()
+
+class synaptic_operations(AccumulatedMetric):
+    """ Number of synaptic operations 
+    
+    MACs for ANN
+    ACs for SNN
+    """
+
+    def __init__(self):
+        self.MAC = 0
+        self.AC  = 0
+        self.total_synops = 0
+        self.total_samples = 0
+
+    def __call__(self, model, preds, data):
+        """ Multiply-accumulates (MACs) of the model forward.
+
+        Args:
+            model: A NeuroBenchModel.
+            preds: A tensor of model predictions.
+            data: A tuple of data and labels.
+            inputs: A tensor of model inputs.
+        Returns:
+            float: Multiply-accumulates.
+        """
+        for hook in model.connection_hooks:
+            inputs = hook.inputs # copy of the inputs, delete hooks after
+            for spikes in inputs:
+                # spikes is batch, features, see snntorchmodel wrappper
+                # for single_in in spikes:
+                if len(spikes) == 1:
+                    spikes = spikes[0]
+                hook.hook.remove()
+                operations, spiking = single_layer_MACs(spikes, hook.layer)
+                total_ops,_ = single_layer_MACs(spikes, hook.layer, total=True)
+                self.total_synops += total_ops
+                if spiking:
+                    self.AC += operations
+                else:
+                    self.MAC += operations
+                hook.register_hook()
+        # ops_per_sample = ops / data[0].size(0)
+        self.total_samples += data[0].size(0)
+        return self.compute()
+    
+    def compute(self):
+        if self.total_samples == 0:
+            return {'Effective_MACs': 0, 'Effective_ACs': 0, 'Dense': 0}
+        ac = self.AC/self.total_samples
+        mac = self.MAC/self.total_samples
+        total_synops = self.total_synops/self.total_samples
+        return {'Effective_MACs': mac, 'Effective_ACs': ac, 'Dense': total_synops}
+    
 
 class r2(AccumulatedMetric):
     """ R2 Score of the model predictions.

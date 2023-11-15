@@ -320,6 +320,9 @@ class MSWC(Dataset):
             full_size[:, :waveform.size()[1]] = waveform
             waveform = full_size
 
+        # Data is expected to be (timesteps, features)
+        waveform = waveform.permute(1,0)
+
         if self.return_path:
             return (waveform, item[1], dirname, item[0])
         else:
@@ -364,6 +367,8 @@ class MSWC_query(Dataset):
             full_size[:, :waveform.size()[1]] = waveform
             waveform = full_size
 
+        # Data is expected to be (timesteps, features)
+        waveform = waveform.permute(1,0)
 
         return (waveform, item[2])
 

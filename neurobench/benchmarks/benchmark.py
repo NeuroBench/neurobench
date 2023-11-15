@@ -1,7 +1,6 @@
 import sys
-
-from tqdm import tqdm
 from contextlib import redirect_stdout
+from tqdm import tqdm
 
 from . import static_metrics, data_metrics
 
@@ -26,7 +25,7 @@ class Benchmark():
         self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
 
-    def run(self, quiet=False):
+    def run(self, quiet=False, verbose: bool = False):
         """ Runs batched evaluation of the benchmark.
 
         Currently, data metrics are accumulated via mean over the entire
@@ -35,12 +34,15 @@ class Benchmark():
         Args:
             quiet (bool, default=False): If True, output is suppressed.
 
+            verbose (bool, default=False): If True, metrics for each bach will be printed.
+            If False (default), metrics are accumulated and printed after all batches are processed.
+
         Returns:
             results: A dictionary of results.
         """
         with redirect_stdout(None if quiet else sys.stdout):
             print("Running benchmark")
-        
+
             # add hooks to the model
             data_metrics.detect_activations_connections(self.model)
 
@@ -96,12 +98,19 @@ class Benchmark():
                 # delete hook contents
                 self.model.reset_hooks()
 
+                if verbose:
+                    for m in self.data_metrics.keys():
+                        if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                            results[m] = self.data_metrics[m].compute()
+                    print(f'\nBatch num {batch_num + 1}/{len(self.dataloader)}')
+                    print(results)
+
                 batch_num += 1
 
-
-            # compute AccumulatedMetrics after all batches
-            for m in self.data_metrics.keys():
-                if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                    results[m] = self.data_metrics[m].compute()
+            # compute AccumulatedMetrics after all batches if they are not calculated at every iteration
+            if not verbose:
+                for m in self.data_metrics.keys():
+                    if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                        results[m] = self.data_metrics[m].compute()
 
         return results

@@ -50,6 +50,7 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+wandb/
 
 # Translations
 *.mo
@@ -81,6 +82,9 @@ target/
 # IPython
 profile_default/
 ipython_config.py
+
+# VS Code
+.vscode
 
 # pyenv
 #   For a library or package, you might want to ignore these files since the code is
@@ -159,7 +163,14 @@ cython_debug/
 #  option (not recommended) you can uncomment the following to ignore the entire idea folder.
 #.idea/
 
+# VSCode
+.vscode/settings.json
+
+# macOS
 .DS_Store
+
+# Datasets
+neurobench/data/datasets/data
 data/
 
 # DVS Gesture dataset

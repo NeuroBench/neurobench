@@ -17,7 +17,8 @@ class Benchmark():
             metric_list: A list of lists of strings of metrics to run. 
                 First item is static metrics, second item is data metrics.
         """
-        self.model = model
+
+        self.model = model 
         self.dataloader = dataloader # dataloader not dataset
         self.preprocessors = preprocessors
         self.postprocessors = postprocessors
@@ -25,17 +26,17 @@ class Benchmark():
         self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
         self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
 
-    def run(self, quiet=False, verbose: bool = False):
+    def run(self, quiet=False, verbose: bool = False, 
+            dataloader=None, preprocessors=None, postprocessors=None):
         """ Runs batched evaluation of the benchmark.
 
-        Currently, data metrics are accumulated via mean over the entire
-        test set, and thus must return a float or int.
-
         Args:
+            dataloader (optional): override DataLoader for this run.
+            preprocessors (optional): override preprocessors for this run.
+            postprocessors (optional): override postprocessors for this run.
             quiet (bool, default=False): If True, output is suppressed.
-
             verbose (bool, default=False): If True, metrics for each bach will be printed.
-            If False (default), metrics are accumulated and printed after all batches are processed.
+                                           If False (default), metrics are accumulated and printed after all batches are processed.
 
         Returns:
             results: A dictionary of results.
@@ -43,25 +44,29 @@ class Benchmark():
         with redirect_stdout(None if quiet else sys.stdout):
             print("Running benchmark")
 
-            # add hooks to the model
-            data_metrics.detect_activations_connections(self.model)
-
             # Static metrics
             results = {}
             for m in self.static_metrics.keys():
                 results[m] = self.static_metrics[m](self.model)
 
+            # add hooks to the model
+            data_metrics.detect_activations_connections(self.model)
+
+            dataloader = dataloader if dataloader is not None else self.dataloader
+            preprocessors = preprocessors if preprocessors is not None else self.preprocessors
+            postprocessors = postprocessors if postprocessors is not None else self.postprocessors
+
             # Init/re-init stateful data metrics
             for m in self.data_metrics.keys():
                 if isinstance(self.data_metrics[m],type) and issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
                     self.data_metrics[m] = self.data_metrics[m]()
-                elif isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                    self.data_metrics[m] = self.data_metrics[m]()
+                elif isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric): # new benchmark run, reset metric state
+                    self.data_metrics[m].reset()
 
-            dataset_len = len(self.dataloader.dataset)
+            dataset_len = len(dataloader.dataset)
 
             batch_num = 0
-            for data in tqdm(self.dataloader, total=len(self.dataloader), disable=quiet):
+            for data in tqdm(dataloader, total=len(dataloader), disable=quiet):
                 batch_size = data[0].size(0)
 
                 # convert data to tuple
@@ -69,13 +74,13 @@ class Benchmark():
                     data = tuple(data)
 
                 # Preprocessing data
-                for alg in self.preprocessors:
+                for alg in preprocessors:
                     data = alg(data)
 
                 # Run model on test data
                 preds = self.model(data[0])
 
-                for alg in self.postprocessors:
+                for alg in postprocessors:
                     preds = alg(preds)
 
                 # Data metrics
@@ -102,7 +107,7 @@ class Benchmark():
                     for m in self.data_metrics.keys():
                         if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
                             results[m] = self.data_metrics[m].compute()
-                    print(f'\nBatch num {batch_num + 1}/{len(self.dataloader)}')
+                    print(f'\nBatch num {batch_num + 1}/{len(dataloader)}')
                     print(results)
 
                 batch_num += 1

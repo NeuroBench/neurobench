@@ -16,6 +16,7 @@ class MFCCProcessor(NeuroBenchProcessor):
         norm: str = "ortho",
         log_mels: bool = False,
         melkwargs: dict = None,
+        device = None,
     ):
         super(NeuroBenchProcessor).__init__()
         """
@@ -43,6 +44,9 @@ class MFCCProcessor(NeuroBenchProcessor):
             melkwargs=self.melkwargs,
         )
 
+        if device:
+            self.mfcc = self.mfcc.to(device)
+
     def __call__(self, dataset):
         """ Executes the MFCC computation on the dataset.
 
@@ -64,6 +68,13 @@ class MFCCProcessor(NeuroBenchProcessor):
 
         if isinstance(data, list):
             data = torch.vstack(data)
+
+        # Data is expected in (batch, timesteps, features) format
+        if data.dim() == 2:
+            data.permute(1, 0)
+        
+        elif data.dim() == 3:
+            data = data.permute(0, 2, 1)
 
         self.results = self.mfcc(data)
 

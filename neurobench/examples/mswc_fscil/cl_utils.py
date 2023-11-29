@@ -280,7 +280,7 @@ def consolidate_norm(model, norm, cur_clas):
             model.saved_norm['weights'][c] = w
             model.saved_norm['biases'][c] = b
 
-def consolidate_weights(model, output, cur_clas, normalize=False):
+def consolidate_weights(model, output, cur_clas, normalize=0):
     """ Mean-shift for the target layer weights"""
 
     with torch.no_grad():
@@ -295,15 +295,15 @@ def consolidate_weights(model, output, cur_clas, normalize=False):
 
             if c in cur_clas:
                 if normalize:
-                    new_w = (w - globavg)/globalnorm
+                    new_w = (w - globavg)*normalize/globalnorm
                 else:
                     new_w = (w - globavg)
-                if c in model.saved_weights.keys():
-                    wpast_j = np.sqrt(model.past_j[c] / model.cur_j[c])
-                    model.saved_weights[c] = (model.saved_weights[c] * wpast_j
-                     + new_w) / (wpast_j + 1)
-                else:
-                    model.saved_weights[c] = new_w
+                # if c in model.saved_weights.keys():
+                #     wpast_j = np.sqrt(model.past_j[c] / model.cur_j[c])
+                #     model.saved_weights[c] = (model.saved_weights[c] * wpast_j
+                #      + new_w) / (wpast_j + 1)
+                # else:
+                model.saved_weights[c] = new_w
 
 
 def set_consolidate_weights(model, output):

@@ -39,7 +39,7 @@ import torch
 import torchaudio
 
 
-def tensor_to_events(batch, threshold=1, device=None):
+def tensor_to_events(batch, threshold=1, device=None, soft_delta=False):
     """ Converts a batch of continuous signals to binary spikes via delta modulation
     (https://en.wikipedia.org/wiki/Delta_modulation).
 
@@ -61,11 +61,18 @@ def tensor_to_events(batch, threshold=1, device=None):
     if device:
         events = events.to(device)
 
-    for t in range(batch.shape[-1]):
-        events[..., t] = (batch[..., t] - levels > threshold).to(torch.int8) - (
-            batch[..., t] - levels < -threshold
-        ).to(torch.int8)
-        levels += events[..., t] * threshold
+    if soft_delta:
+        for t in range(batch.shape[-1]):
+            events[..., t] = (batch[..., t] - levels > threshold).to(torch.int8) - (
+                batch[..., t] - levels < -threshold
+            ).to(torch.int8)
+            levels = batch[..., t] #+= events[..., t] * threshold
+    else:
+        for t in range(batch.shape[-1]):
+            events[..., t] = (batch[..., t] - levels > threshold).to(torch.int8) - (
+                batch[..., t] - levels < -threshold
+            ).to(torch.int8)
+            levels += events[..., t] * threshold
     return events
 
 
@@ -73,7 +80,7 @@ class S2SProcessor(NeuroBenchProcessor):
     """ The SpikeEncoder class manages the conversion from raw audio into spikes
     and stores the required conversion parameters.
     """
-    def __init__(self, device=None, transpose=True):
+    def __init__(self, device=None, transpose=True, soft_delta=False):
         """
         Args:
             device (torch.device, optional): A torch.Device used by PyTorch for the
@@ -92,6 +99,7 @@ class S2SProcessor(NeuroBenchProcessor):
         self.transform = torchaudio.transforms.MelSpectrogram(
             **self._default_spec_kwargs
         ).to(device)
+        self.soft_delta = soft_delta
 
     def __call__(self, batch):
         """ Converts raw audio data to spikes using Speech2Spikes algorithm
@@ -120,7 +128,7 @@ class S2SProcessor(NeuroBenchProcessor):
             tensors = tensors.transpose(1, 2)
         tensors = self.transform(tensors)
         tensors = torch.log(tensors)
-        tensors = tensor_to_events(tensors, device=self.device)
+        tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device, soft_delta=self.soft_delta)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
         
         if kwargs:

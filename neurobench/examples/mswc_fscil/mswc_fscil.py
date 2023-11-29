@@ -41,7 +41,9 @@ def parse_arguments():
     parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Pre-trained model to use")
     # parser.add_argument("--spiking", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
-    parser.add_argument("-normalize", action="store_true", help="Apply normalization to newly learned weights in addition to centering them")
+    parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
+    parser.add_argument("--soft_delta", action='store_true',  help="Use Delta encoding with only jump between 2 timesteps counted")
+    parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
 
     args = parser.parse_args()
     return args
@@ -53,7 +55,9 @@ NUM_WORKERS = 8
 BATCH_SIZE = 256
 NUM_REPEATS = 1
 SPIKING = True
-PRE_TRAIN = False
+PRE_TRAIN = args.pre_train
+EVAL_EPOCHS = 1
+EVAL_SHOTS = 5
 
 if SPIKING:
     EVAL_LR = args.eval_lr
@@ -74,7 +78,7 @@ n_mels = 20
 n_mfcc = 20
 
 if SPIKING:
-    encode = S2SProcessor(device, transpose=False)
+    encode = S2SProcessor(device, transpose=False, soft_delta=args.soft_delta)
     config_change = {"sample_rate": 48000,
                      "hop_length": 240}
     encode.configure(threshold=1.0, **config_change)
@@ -104,8 +108,20 @@ def pre_train(model):
 
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
     pre_train_loader = DataLoader(base_train_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True, pin_memory=PIN_MEMORY)
+    
+    base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
+    test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=0.01, weight_decay=0.0001)
+    mask = torch.full((200,), float('inf')).to(device)
+    mask[torch.arange(0,100, dtype=int)] = 0
+    out_mask = lambda x: x - mask
+
+
+    if SPIKING:
+        lr = 0.001
+    else:
+        lr = 0.01
+    optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0.0001)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
     for epoch in range(50):
         print(f"Epoch: {epoch+1}")
@@ -123,6 +139,25 @@ def pre_train(model):
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
+
+        if epoch%5==2:
+            total_acc = 0
+            for data in test_loader:
+            
+                data, target = squeeze(encode(to_device(data)))
+
+                pred = model(data)
+
+                pred = out2pred(out_mask(pred)).squeeze()
+
+                acc = float(torch.sum(pred==target))/BATCH_SIZE
+                total_acc += acc * BATCH_SIZE/ len(base_test_set)
+                print(acc)
+                print(total_acc)
+
+            wandb.log({"test_accuracy":total_acc})
+            print(f"The test accuracy is {total_acc*100}%")
+        scheduler.step()
 
         scheduler.step()
     
@@ -144,11 +179,29 @@ if __name__ == '__main__':
 
     if PRE_TRAIN:
         ### Pre-training phase ###
-        model = M5(n_input=20, stride=2, n_channel=256, 
-                n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
+        if SPIKING:
+            model = SNN(
+                input_shape=(BATCH_SIZE, 201, 20),
+                neuron_type="RadLIF",
+                layer_sizes=[1024, 1024, 200],
+                normalization="batchnorm",
+                dropout=0.1,
+                bidirectional=False,
+                use_readout_layer=True,
+                ).to(device)
+            pre_train(model)
+            name = "SPModel_clean"
+            if args.soft_delta:
+                name +="softDT"
+            torch.save(model, os.path.join(ROOT,name))
+            model = TorchModel(model)
+            model.add_activation_module(RadLIFLayer)
+        else:
+            model = M5(n_input=20, stride=2, n_channel=256, 
+                    n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
 
-        pre_train(model)
-        model = TorchModel(model)
+            pre_train(model)
+            model = TorchModel(model)
 
     else:
         ### Loading Pre-trained model ###
@@ -215,7 +268,7 @@ if __name__ == '__main__':
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
-        few_shot_dataloader = IncrementalFewShot(n_way=10, k_shot=5, 
+        few_shot_dataloader = IncrementalFewShot(n_way=10, k_shot=EVAL_SHOTS, 
                                     root = ROOT,
                                     query_shots=100,
                                     support_query_split=(100,100),
@@ -225,9 +278,9 @@ if __name__ == '__main__':
         eval_model.net.saved_weights = {}
         pre_train_class = range(100)
         if SPIKING:
-            consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, pre_train_class, normalize=args.normalize)
+            consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, pre_train_class)
         else:
-            consolidate_weights(eval_model.net, eval_model.net.output, pre_train_class, normalize=args.normalize)
+            consolidate_weights(eval_model.net, eval_model.net.output, pre_train_class)
 
 
         few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
@@ -268,26 +321,28 @@ if __name__ == '__main__':
             cur_class = support[0][1].tolist()
             eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
 
-            # Update weigts over successive shots
-            for X_shot, y_shot in support:
-                few_shot_optimizer.zero_grad()
+            for n in range(EVAL_EPOCHS):
 
-                data, target = encode((X_shot.to(device), y_shot.to(device)))
-                data = data.squeeze()
+                # Update weigts over successive shots
+                for X_shot, y_shot in support:
+                    few_shot_optimizer.zero_grad()
 
-                output = eval_model(data)
+                    data, target = encode((X_shot.to(device), y_shot.to(device)))
+                    data = data.squeeze()
 
-                loss = F.cross_entropy(output.squeeze(), target)
-                loss.backward()
-                few_shot_optimizer.step()
+                    output = eval_model(data)
 
-            # Mean-shift weights and save them 
-            if SPIKING:
-                consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, cur_class, normalize=args.normalize)
-                set_consolidate_weights(eval_model.net, eval_model.net.snn[-1].W)
-            else:
-                consolidate_weights(eval_model.net, eval_model.net.output, cur_class)
-                set_consolidate_weights(eval_model.net, eval_model.net.output)
+                    loss = F.cross_entropy(output.squeeze(), target)
+                    loss.backward()
+                    few_shot_optimizer.step()
+
+                # Mean-shift weights and save them 
+                if SPIKING:
+                    consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, cur_class, normalize=args.normalize)
+                    set_consolidate_weights(eval_model.net, eval_model.net.snn[-1].W)
+                else:
+                    consolidate_weights(eval_model.net, eval_model.net.output, cur_class)
+                    set_consolidate_weights(eval_model.net, eval_model.net.output)
 
 
             ### Testing phase ###

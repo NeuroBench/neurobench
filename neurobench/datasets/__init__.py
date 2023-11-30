@@ -1,4 +1,5 @@
 from .dataset import *
+from .utils import *
 from ..utils import _lazy_import
 
 def SpeechCommands(*args, **kwargs):

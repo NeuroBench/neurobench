@@ -147,11 +147,18 @@ def test_primate_reaching():
         assert os.path.exists(path)
     except AssertionError:
         raise FileExistsError(f"Can't find {path}")
+    
+    filename="indy_20170131_02.mat"
+    file_path = os.path.join(path, filename)
+    try:
+        assert not os.path.exists(file_path)
+    except AssertionError:
+        raise FileExistsError(f"Dataset {filename} already exists in {path}")
 
     dataset = PrimateReaching(file_path=path,
                               filename="indy_20170131_02.mat",
                               num_steps=250, train_ratio=0.8, bin_width=0.004,
-                              biological_delay=50)
+                              biological_delay=50, download=True)
 
     # check dataset non-empty
     assert len(dataset)

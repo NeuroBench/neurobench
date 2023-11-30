@@ -21,6 +21,10 @@ information.
 =======================================================================
 BSD 3-Clause License
 =======================================================================
+This product includes code from PyTorch Vision (https://github.com/pytorch/vision),
+which is licensed under the BSD 3-Clause License which is below. For more
+information see `datasets/primate_reaching.py` and `datasets/utils.py`.
+
 Copyright (c) Soumith Chintala 2016, 
 All rights reserved.
 

@@ -1,4 +1,7 @@
 """
+This file contains code from PyTorch Vision (https://github.com/pytorch/vision),
+which is licensed under the following:
+
 BSD 3-Clause License
 
 Copyright (c) Soumith Chintala 2016, 
@@ -28,9 +31,6 @@ SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
 CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-The original code can be found at:
-https://github.com/pytorch/vision
 """
 
 from .dataset import NeuroBenchDataset

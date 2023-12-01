@@ -77,16 +77,20 @@ class WISDMDataLoader(LightningDataModule):
                 self.ds_test = TensorDataset(x_test, y_test)
 
     def train_dataloader(self):
-        return DataLoader(self.ds_train, batch_size=self.batch_size, shuffle=True, num_workers=8, drop_last=False)
+        return DataLoader(self.ds_train, batch_size=self.batch_size, shuffle=True, num_workers=8, drop_last=False,
+                          persistent_workers=True)
 
     def val_dataloader(self):
-        return DataLoader(self.ds_val, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False)
+        return DataLoader(self.ds_val, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False,
+                          persistent_workers=True)
 
     def test_dataloader(self):
-        return DataLoader(self.ds_test, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False)
+        return DataLoader(self.ds_test, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False,
+                          persistent_workers=True)
 
     def predict_dataloader(self):
-        return DataLoader(self.ds_test, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False)
+        return DataLoader(self.ds_test, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False,
+                          persistent_workers=True)
 
     def teardown(self, stage: str):
         ...

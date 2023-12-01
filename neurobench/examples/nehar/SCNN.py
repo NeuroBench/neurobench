@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 
 
-class CSNN(nn.Module):
+class SCNN(nn.Module):
     def __init__(self):
         super().__init__()
 

@@ -1,7 +1,7 @@
 from pytorch_lightning import LightningModule
 from pytorch_lightning import Trainer
 from neurobench.datasets import WISDMDataLoader
-from CSNN import CSNN
+from SCNN import SCNN
 import torch.nn as nn
 import torch
 
@@ -9,7 +9,7 @@ import torch
 class SpikingNetwork(LightningModule):
     def __init__(self, lr):
         super().__init__()
-        self.model = CSNN()
+        self.model = SCNN()
         self.loss_fn = nn.CrossEntropyLoss()
         self.running_length = 0
         self.running_total = 0
@@ -91,7 +91,7 @@ if __name__ == '__main__':
     num_steps = data_module.num_steps
     #
     spiking_network = SpikingNetwork(lr=lr)
-    trainer = Trainer(accelerator='gpu', max_epochs=100, num_sanity_val_steps=0, enable_progress_bar=False,
+    trainer = Trainer(accelerator='auto', max_epochs=100, num_sanity_val_steps=0, enable_progress_bar=False,
                       enable_checkpointing=True, enable_model_summary=True,
                       )
     trainer.fit(model=spiking_network, datamodule=data_module)

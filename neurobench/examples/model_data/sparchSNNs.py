@@ -85,6 +85,7 @@ class SNN(nn.Module):
         dropout=0.0,
         normalization="batchnorm",
         use_bias=False,
+        use_readout_bias = True,
         bidirectional=False,
         use_readout_layer=True,
     ):
@@ -102,6 +103,7 @@ class SNN(nn.Module):
         self.dropout = dropout
         self.normalization = normalization
         self.use_bias = use_bias
+        self.use_readout_bias = use_readout_bias
         self.bidirectional = bidirectional
         self.use_readout_layer = use_readout_layer
         self.is_snn = True
@@ -148,7 +150,7 @@ class SNN(nn.Module):
                     batch_size=self.batch_size,
                     dropout=self.dropout,
                     normalization=self.normalization,
-                    use_bias=self.use_bias,
+                    use_bias=self.use_readout_bias,
                 )
             )
 

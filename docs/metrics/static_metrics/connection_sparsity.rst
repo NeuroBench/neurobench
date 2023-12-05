@@ -9,3 +9,11 @@ Connection sparsity is the proportion of non-zero synaptic weights in a network.
 
 Implementation Notes
 --------------------
+The layers that are supported include:
+    - Linear
+    - Conv1d, Conv2d, Conv3d
+    - RNN, RNNBase, RNNCell
+    - LSTM, LSTMBase, LSTMCell
+    - GRU, GRUBase, GRUCell
+
+We go through the network, extract instances of these layers, count the number of weights and count the number of zero weights.

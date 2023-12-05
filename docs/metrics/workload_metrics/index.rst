@@ -1,5 +1,5 @@
 ================
-Data Metrics
+Workload Metrics
 ================
 
 .. toctree::

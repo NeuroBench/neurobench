@@ -6,4 +6,4 @@ Metrics
    :maxdepth: 1
 
    static_metrics/index
-   data_metrics/index
+   workload_metrics/index

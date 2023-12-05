@@ -8,3 +8,4 @@ This is not a metric calculated by the harness but is required for official Neur
 
 Implementation Notes
 --------------------
+This is not a metric calculated by the harness but is required for official NeuroBench submission.

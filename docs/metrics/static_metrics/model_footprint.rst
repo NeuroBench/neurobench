@@ -1,5 +1,5 @@
 ===================
-Model Size
+Model Footprint
 ===================
 
 Definition
@@ -8,3 +8,4 @@ A measure of the memory footprint, in bytes, required to represent a model, whic
 
 Implementation Notes
 --------------------
+This sums the Torch model's buffers and parameters. If the model uses explicit memory buffering, the buffering must be implemented as a Torch buffer. 

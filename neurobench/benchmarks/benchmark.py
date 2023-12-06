@@ -154,7 +154,7 @@ class Benchmark_Closed_Loop():
         dataset_len = nr_interactions
         
         batch_num = 0
-        reward = []
+        rewards = []
         
         for _ in tqdm(range(nr_interactions)):
             env = self.env
@@ -165,7 +165,7 @@ class Benchmark_Closed_Loop():
             # state = env.set_state(constant_state)
 
             t_sim = 0
-            rewards = []
+            reward_tot = 0
             times = []
             terminal = False
 
@@ -180,8 +180,7 @@ class Benchmark_Closed_Loop():
                     state = alg(state)
 
                 # get network outputs on given state
-                output = self.agent(state.unsqueeze(0))
-
+                output = self.agent(state.unsqueeze(0).unsqueeze(0))
 
                 # Postprocessing output to get action
                 for alg in self.postprocessors:
@@ -190,21 +189,21 @@ class Benchmark_Closed_Loop():
                 # perform action
                 obs, reward, terminal, _, _ = env.step(output)
 
-
+                reward_tot += reward
                 if not terminal:
                     state = obs
 
                 t_sim += 1
-            rewards.append(reward)
-            times.append(t_sim)
-            reward = reward
+                times.append(t_sim)
+            rewards.append(reward_tot)
+            
 
             # Data metrics
             # we need a data term to compute the synaptic operations, only necessary for averaging
-            data = torch.tensor([rewards,times]).unsqueeze(0)
+            data = [torch.tensor(times),reward_tot]
             batch_results = {}
             for m in self.data_metrics.keys():
-                batch_results[m] = self.data_metrics[m](self.agent, reward, t_sim)
+                batch_results[m] = self.data_metrics[m](self.agent, _, data)
 
             for m, v in batch_results.items():
                 # AccumulatedMetrics are computed after all batches complete

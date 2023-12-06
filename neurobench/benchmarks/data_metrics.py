@@ -1,5 +1,6 @@
 import torch
 import numpy as np
+import matplotlib.pyplot as plt
 from .utils.metric_utils import check_shape, make_binary_copy, single_layer_MACs
 from ..benchmarks.hooks import ActivationHook, LayerHook
 
@@ -190,6 +191,7 @@ class synaptic_operations(AccumulatedMetric):
                 hook.register_hook()
         # ops_per_sample = ops / data[0].size(0)
         self.total_samples += data[0].size(0)
+
         return self.compute()
     
     def compute(self):
@@ -339,18 +341,34 @@ class COCO_mAP(AccumulatedMetric):
 
 
 
-class reward(AccumulatedMetric):
+class reward_score(AccumulatedMetric):
     '''
     Accumulate rewards over interactions.
     '''
     def __init__(self):
         self.rewards = []
 
-    def __call__(self, model, reward, data):
-        self.rewards.append(reward)
+    def __call__(self, model, pred, data):
+        self.rewards.append(data[1])
 
-    def compute(self):
-        return np.mean(self.rewards)
+    def compute(self, plot=True):
+        avg = np.mean(self.rewards)
+        std = np.std(self.rewards)
+
+        sorted_rewards = sorted(self.rewards)
+        num_lowest = int(len(sorted_rewards) * 0.05)
+        lowest_rewards = sorted_rewards[:num_lowest]
+        risk = np.mean(lowest_rewards)
+
+        if plot:
+            # Plot histogram of rewards
+            plt.hist(self.rewards, bins=75)
+            plt.title('Histogram of Rewards')
+            plt.xlabel('Reward')
+            plt.ylabel('Frequency')
+            plt.show()
+        
+        return {'avg': avg, 'std': std, 'risk': risk}
     
 class average_time(AccumulatedMetric):
     '''
@@ -359,8 +377,8 @@ class average_time(AccumulatedMetric):
     def __init__(self):
         self.times = []
 
-    def __call__(self, model, reward, time):
-        self.times.append(time)
+    def __call__(self, model, pred, data):
+        self.times.append(data[0])
 
     def compute(self):
         return np.mean(self.times)

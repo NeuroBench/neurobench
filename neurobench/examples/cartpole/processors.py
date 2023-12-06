@@ -4,8 +4,9 @@ def discrete_Actor_Critic(output):
     '''returns action based on output
     output expected to be 
     critic, actor'''
+    # actor is batch, timestep, actions
     # find probabilities of certain actions
-    policy = output[1]
+    policy = output[1].squeeze(0)
     prob = F.softmax(policy, dim=-1)
 
     # choose the action and detach from computational graph

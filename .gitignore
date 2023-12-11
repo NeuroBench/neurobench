@@ -179,3 +179,5 @@ neurobench/datasets/DVSGesture
 
 # mackey-glass
 neurobench/examples/model_data/esn.pth
+
+*.code-workspace

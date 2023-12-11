@@ -4,10 +4,10 @@ import snntorch as snn
 import snntorch.surrogate as surrogate
 from neurobench.models import SNNTorchModel, TorchModel
 # from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity,
-# from neurobench.benchmarks.data_metrics import activation_sparsity, classification_accuracy, MSE, sMAPE, r2, 
+# from neurobench.benchmarks.workload_metrics import activation_sparsity, classification_accuracy, MSE, sMAPE, r2, 
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity
-from neurobench.benchmarks.data_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activations_connections, synaptic_operations, number_neuron_updates
+from neurobench.benchmarks.workload_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activations_connections, synaptic_operations, number_neuron_updates
 from torch.profiler import profile, record_function, ProfilerActivity
 
 # Pytest for model_size from benchmarks/static_metrics
@@ -103,7 +103,7 @@ def test_connection_sparsity():
     print('Passed connection sparsity')
 
 
-#Pytest for classification_accuracy from benchmarks/data_metrics
+#Pytest for classification_accuracy from benchmarks/workload_metrics
 def test_classification_accuracy():
     # dummy model
     model = SNNTorchModel(net = nn.Module())
@@ -127,7 +127,7 @@ def test_classification_accuracy():
     preds = torch.arange(1, batch_size+1)
     assert round(classification_accuracy(model, preds, data), 1) == 1.0
 
-#Pytest for MSE from benchmarks/data_metrics
+#Pytest for MSE from benchmarks/workload_metrics
 def test_MSE():
     # dummy model
     model = SNNTorchModel(net = nn.Module())
@@ -144,7 +144,7 @@ def test_MSE():
 
     assert round(MSE(model, preds, data), 3) == round(correct, 3)
 
-#Pytest for sMAPE from benchmarks/data_metrics
+#Pytest for sMAPE from benchmarks/workload_metrics
 def test_sMAPE():
     # dummy model
     model = SNNTorchModel(net = nn.Module())
@@ -163,7 +163,7 @@ def test_sMAPE():
 
     assert round(sMAPE(model, preds, data), 3) == round(correct, 3)
 
-#Pytest for r2 from benchmarks/data_metrics
+#Pytest for r2 from benchmarks/workload_metrics
 def test_r2():
     # dummy model
     model = SNNTorchModel(net = nn.Module())

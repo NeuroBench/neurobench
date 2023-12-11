@@ -80,9 +80,45 @@ the evolution of the signal can be altered by a number of different parameters. 
 
 More information about the dataset and the benchmark task in the Mackey-Glass tutorial.
 
-
-
 .. automodule:: neurobench.datasets.mackey_glass
+    :special-members: __init__, __getitem__
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Multi-Lingual Spoken Word Corpus
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MLCommons Multilingual Spoken Words Corpus is a large and growing audio dataset of spoken words in 50 languages for academic
+research and commercial applications in keyword spotting and spoken term search, licensed under CC-BY 4.0. The dataset contains
+more than 340,000 keywords, totaling 23.4 million 1-second spoken examples (over 6,000 hours).
+
+The NeuroBench harness does not use the full MSWC dataset. For more information on the subset used, see the NeuroBench paper.
+
+More information about the dataset and the benchmark task in the MSWC tutorial.
+
+.. automodule:: neurobench.datasets.MSWC
+    :special-members: __init__, __getitem__
+    :members:
+    :undoc-members:
+    :show-inheritance:
+
+
+Wireless Sensor Data Mining
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The "WISDM Smartphone and Smartwatch Activity and Biometrics Dataset" includes data
+collected from 51 subjects, each of whom were asked to perform 18 tasks for 3 minutes
+each. Each subject had a smartwatch placed on his/her dominant hand and a smartphone
+in their pocket. The data collection was controlled by a custom-made app that ran
+on the smartphone and smartwatch. The sensor data that was collected was from the
+accelerometer and gyrocope on both the smartphone and smartwatch, yielding four 
+total sensors. The sensor data was collected at a rate of 20 Hz (i.e., every 50ms).
+
+More information about the dataset and the benchmark task in the NEHAR tutorial.
+
+.. automodule:: neurobench.datasets.WISDM_loader
     :special-members: __init__, __getitem__
     :members:
     :undoc-members:

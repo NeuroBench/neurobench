@@ -13,7 +13,7 @@ is planned.
 NeuroBench is a community-driven project, and we welcome further
 development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
-please see the `contributing guidelines <CONTRIBUTING.rst>`__.
+please see the `Contributing Guidelines <contributing.html>`__.
 
 NeuroBench Structure
 ---------------------
@@ -25,15 +25,15 @@ NeuroBench contains the following sections:
 
    * - **Section**
      - **Description**
-   * - `neurobench.benchmarks <docs/neurobench.benchmarks.rst>`__
+   * - `neurobench.benchmarks <neurobench.benchmarks.html>`__
      - Neurobench benchmarks, including data metrics and static metrics
-   * - `neurobench.datasets <docs/neurobench.datasets.rst>`__
+   * - `neurobench.datasets <neurobench.datasets.html>`__
      - Neurobench benchmark datasets
-   * - `neurobench.models <docs/neurobench.models.rst>`__
+   * - `neurobench.models <neurobench.models.html>`__
      - Neurobench framework for Torch and SNNTorch models
-   * - `neurobench.preprocessing <docs/neurobench.preprocessing.rst>`__
+   * - `neurobench.preprocessing <neurobench.preprocessing.html>`__
      - Preprocessing of data, conversion to spikes
-   * - `neurobench.accumulators <docs/neurobench.accumulators.rst>`__
+   * - `neurobench.accumulators <neurobench.accumulators.html>`__
      - Accumulators take the spiking output from the models and provide several methods of combining them
 
 Installation
@@ -52,23 +52,23 @@ The following benchmarks are currently available:
 
 v1.0 benchmarks
 ~~~~~~~~~~~~~~~
-- [Keyword Few-shot Class-incremental Learning (FSCIL)](neurobench/examples/mswc_fscil)
-- [Event Camera Object Detection](neurobench/examples/obj_detection)
-- [Non-human Primate (NHP) Motor Prediction](neurobench/examples/primate_reaching)
-- [Chaotic Function Prediction](neurobench/examples/mackey_glass)
+- `Keyword Few-shot Class-incremental Learning (FSCIL) <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/mswc_fscil>`__
+- `Event Camera Object Detection <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/obj_detection>`__
+- `Non-human Primate (NHP) Motor Prediction <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/primate_reaching>`__
+- `Chaotic Function Prediction <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/mackey_glass>`__
 
 Additional benchmarks
 ~~~~~~~~~~~~~~~~~~~~~
-- [DVS Gesture Recognition](neurobench/examples/dvs_gesture)
-- [Google Speech Commands (GSC) Classification](neurobench/examples/gsc)
-- [Neuromorphic Human Activity Recognition (HAR)](neurobench/examples/nehar)
+- `DVS Gesture Recognition <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/dvs_gesture>`__
+- `Google Speech Commands (GSC) Classification <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/gsc>`__
+- `Neuromorphic Human Activity Recognition (HAR) <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/nehar>`__
 
 
 Getting started
 ---------------
 
-Example benchmark scripts can be found under the ``neurobench/examples``
-folder.
+Example benchmark scripts can be found under the ``neurobench/examples`` folder. 
+(`https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/ <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/>`__)
 
 In general, the design flow for using the framework is as follows:
 
@@ -77,8 +77,7 @@ In general, the design flow for using the framework is as follows:
 3. Pass the model, evaluation split dataloader, pre-/post-processors,
    and a list of metrics to the ``Benchmark`` and ``run()``.
 
-Documentation for the framework interfaces can found in
-`API.md <API.md>`__.
+Documentation for the framework interfaces can found in the `API Overview <api.html>`__.
 
 Development
 -----------
@@ -123,7 +122,7 @@ Contributing
 ------------
 
 If you are interested in helping to build this framework, please see the
-`contributing guidelines <CONTRIBUTING.rst>`__.
+`Contribution Guidelines <contributing.html>`__.
 
 Citation
 --------

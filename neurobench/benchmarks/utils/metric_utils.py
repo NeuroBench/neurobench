@@ -28,7 +28,7 @@ def make_binary_copy(layer, all_ones = False):
 	layer_copy = copy.deepcopy(layer)
 
 	stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
-	recurrent_layers = (torch.nn.RNNBase)
+	# recurrent_layers = (torch.nn.RNNBase)
 	recurrent_cells  = (torch.nn.RNNCellBase)
 
 
@@ -70,7 +70,7 @@ def make_ones_copy(layer):
 	layer_copy = copy.deepcopy(layer)
 
 	stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
-	recurrent_layers = (torch.nn.RNNBase)
+	# recurrent_layers = (torch.nn.RNNBase)
 	recurrent_cells  = (torch.nn.RNNCellBase)
 
 
@@ -165,6 +165,7 @@ def binary_inputs(inputs, all_ones=False):
 def single_layer_MACs(inputs, layer, total=False):
 	""" Computes the MACs for a single layer.
 		returns effective operations if total=False, else total operations (including zero operations)
+		Supported layers: Linear, Conv1d, Conv2d, Conv3d, RNNCellBase, LSTMCell, GRUCell
 	"""
 	macs = 0
 

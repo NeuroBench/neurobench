@@ -170,10 +170,10 @@ for repeat_id in range(args.repeat):
     model = TorchModel(lstm)
 
     static_metrics = ["model_size", "connection_sparsity"]
-    data_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
+    workload_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
 
     benchmark = Benchmark(model, test_set_loader, [], [],
-                          [static_metrics, data_metrics])
+                          [static_metrics, workload_metrics])
     results = benchmark.run()
     print(results)
     sMAPE_scores.append(results["sMAPE"])

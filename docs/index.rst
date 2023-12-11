@@ -10,6 +10,8 @@ NeuroBench Documentation
    readme
    tutorials/index
    metrics/index
+   contributing
+   api
    neurobench.benchmarks
    neurobench.datasets
    neurobench.models

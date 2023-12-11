@@ -40,10 +40,10 @@ for filename in all_files:
     model = TorchModel(net)
 
     static_metrics = ["model_size", "connection_sparsity"]
-    data_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
+    workload_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
 
     # Benchmark expects the following:
-    benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics])
+    benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics])
     results = benchmark.run()
     print(results)
 

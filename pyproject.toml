@@ -1,9 +1,10 @@
 [tool.poetry]
 name = "neurobench"
-version = "0.1.0"
+version = "1.0.0"
 description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
 authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
 readme = "README.md"
+exclude = ["docs", "tests", "neurobench/examples"]
 
 [tool.poetry.dependencies]
 python = "^3.9"

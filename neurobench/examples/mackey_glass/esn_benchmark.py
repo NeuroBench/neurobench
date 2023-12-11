@@ -91,9 +91,9 @@ for series_id in range(len(mg_parameters)):
         model = TorchModel(esn)
     
         static_metrics = ["model_size", "connection_sparsity"]
-        data_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
+        workload_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
     
-        benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics]) 
+        benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics]) 
         results = benchmark.run()
         print(results)
         sMAPE_scores.append(results["sMAPE"])

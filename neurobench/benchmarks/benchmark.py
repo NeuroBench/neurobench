@@ -2,7 +2,7 @@ import sys
 from contextlib import redirect_stdout
 from tqdm import tqdm
 
-from . import static_metrics, data_metrics
+from . import static_metrics, workload_metrics
 
 class Benchmark():
     """ Top-level benchmark class for running benchmarks.
@@ -24,7 +24,7 @@ class Benchmark():
         self.postprocessors = postprocessors
 
         self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
-        self.data_metrics = {m: getattr(data_metrics, m) for m in metric_list[1]}
+        self.workload_metrics = {m: getattr(workload_metrics, m) for m in metric_list[1]}
 
     def run(self, quiet=False, verbose: bool = False, 
             dataloader=None, preprocessors=None, postprocessors=None):
@@ -50,18 +50,18 @@ class Benchmark():
                 results[m] = self.static_metrics[m](self.model)
 
             # add hooks to the model
-            data_metrics.detect_activations_connections(self.model)
+            workload_metrics.detect_activations_connections(self.model)
 
             dataloader = dataloader if dataloader is not None else self.dataloader
             preprocessors = preprocessors if preprocessors is not None else self.preprocessors
             postprocessors = postprocessors if postprocessors is not None else self.postprocessors
 
             # Init/re-init stateful data metrics
-            for m in self.data_metrics.keys():
-                if isinstance(self.data_metrics[m],type) and issubclass(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                    self.data_metrics[m] = self.data_metrics[m]()
-                elif isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric): # new benchmark run, reset metric state
-                    self.data_metrics[m].reset()
+            for m in self.workload_metrics.keys():
+                if isinstance(self.workload_metrics[m],type) and issubclass(self.workload_metrics[m], workload_metrics.AccumulatedMetric):
+                    self.workload_metrics[m] = self.workload_metrics[m]()
+                elif isinstance(self.workload_metrics[m], workload_metrics.AccumulatedMetric): # new benchmark run, reset metric state
+                    self.workload_metrics[m].reset()
 
             dataset_len = len(dataloader.dataset)
 
@@ -85,12 +85,12 @@ class Benchmark():
 
                 # Data metrics
                 batch_results = {}
-                for m in self.data_metrics.keys():
-                    batch_results[m] = self.data_metrics[m](self.model, preds, data)
+                for m in self.workload_metrics.keys():
+                    batch_results[m] = self.workload_metrics[m](self.model, preds, data)
 
                 for m, v in batch_results.items():
                     # AccumulatedMetrics are computed after all batches complete
-                    if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+                    if isinstance(self.workload_metrics[m], workload_metrics.AccumulatedMetric):
                         continue
                     # otherwise accumulate via mean
                     else:
@@ -104,9 +104,9 @@ class Benchmark():
                 self.model.reset_hooks()
 
                 if verbose:
-                    for m in self.data_metrics.keys():
-                        if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                            results[m] = self.data_metrics[m].compute()
+                    for m in self.workload_metrics.keys():
+                        if isinstance(self.workload_metrics[m], workload_metrics.AccumulatedMetric):
+                            results[m] = self.workload_metrics[m].compute()
                     print(f'\nBatch num {batch_num + 1}/{len(dataloader)}')
                     print(results)
 
@@ -114,8 +114,8 @@ class Benchmark():
 
             # compute AccumulatedMetrics after all batches if they are not calculated at every iteration
             if not verbose:
-                for m in self.data_metrics.keys():
-                    if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                        results[m] = self.data_metrics[m].compute()
+                for m in self.workload_metrics.keys():
+                    if isinstance(self.workload_metrics[m], workload_metrics.AccumulatedMetric):
+                        results[m] = self.workload_metrics[m].compute()
 
         return results

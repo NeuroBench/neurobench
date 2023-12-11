@@ -1,7 +1,7 @@
 import torch
 import numpy as np
 from .utils.metric_utils import check_shape, make_binary_copy, single_layer_MACs
-from ..benchmarks.hooks import ActivationHook, LayerHook
+from .hooks import ActivationHook, LayerHook
 
 class AccumulatedMetric:
     """ Abstract class for a metric which must save state between batches.

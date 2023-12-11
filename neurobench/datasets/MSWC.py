@@ -4,6 +4,7 @@ import os
 from torch import Tensor
 from torchaudio.datasets.utils import _load_waveform
 import torch
+from neurobench.datasets.utils import download_url, extract_gzip_file
 
 import csv
 import json
@@ -246,8 +247,9 @@ class MSWC(Dataset):
 
     The subset of data used for this task, as well as the supporting files for base class and incremental 
     splits, will be hosted and available shortly. If you are interested in using this dataset beforehand, 
-    please email jyik@g.harvard.edu for dataset download.
-    
+    please email jyik@g.harvard.edu for dataset download, or download via Google Drive
+    https://drive.google.com/file/d/1tRJUEUUY8yRX-7S3EUg41zih2LqpToXw/view?usp=sharing 
+
     The data should be organized as follows:
     data/
     MSWC/
@@ -260,6 +262,7 @@ class MSWC(Dataset):
                  language: Optional[str] = None, incremental: Optional[bool] = False
                  ):
         """ Initialization will create the new base eval splits if needed .
+        If root directory does not exist, dataset will automatically be downloaded.
         
         Args:
             root (str): Path of MSWC dataset folder where the Metadata.json file and en/ folders should be.
@@ -268,6 +271,23 @@ class MSWC(Dataset):
             language (str): Language to use for evaluation task.
         """
         self.root = root
+
+        # check if root directory exist and if it is not empty
+        if not os.path.isdir(root) or not os.listdir(root):
+
+# `Replace with your folder ID or direct link
+
+            print('Downloading dataset...')
+            download_url(url=' https://drive.google.com/file/d/1tRJUEUUY8yRX-7S3EUg41zih2LqpToXw/view?usp=sharing', file_path=root,filename='mswc')
+            print('Download complete.\n')
+            print('Extracting dataset...')
+            print(os.listdir('data'))
+            target = 'data'
+            extract_gzip_file(gzip_file_path='data/MSWC/mswc', output_path=target)
+            os.remove('data/MSWC/mswc')
+            os.remove('data/._MSWC')
+
+            print('Extraction complete.')
 
         if subset == 'base':
             self.subset = 'base'
@@ -292,6 +312,8 @@ class MSWC(Dataset):
             self.subset = 'evaluation'
             self.procedure = None
             split = self.subset
+            if language==None:
+                language=''
             split_path = os.path.join(root, language, f'{split}.csv')
             self.return_path = True
 

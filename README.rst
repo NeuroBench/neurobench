@@ -15,7 +15,6 @@ development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
 please see the `contributing guidelines <CONTRIBUTING.rst>`__.
 
-
 NeuroBench Structure
 ---------------------
 
@@ -37,14 +36,8 @@ NeuroBench contains the following sections:
    * - `neurobench.accumulators <docs/neurobench.accumulators.rst>`__
      - Accumulators take the spiking output from the models and provide several methods of combining them
 
-
-
-
 Installation
 ------------
-
-Typical
-~~~~~~~
 
 Install from PyPI:
 
@@ -52,8 +45,43 @@ Install from PyPI:
 
    pip install neurobench
 
+Benchmarks
+----------
+
+The following benchmarks are currently available:
+
+v1.0 benchmarks
+~~~~~~~~~~~~~~~
+- [Keyword Few-shot Class-incremental Learning (FSCIL)](neurobench/examples/mswc_fscil)
+- [Event Camera Object Detection](neurobench/examples/obj_detection)
+- [Non-human Primate (NHP) Motor Prediction](neurobench/examples/primate_reaching)
+- [Chaotic Function Prediction](neurobench/examples/mackey_glass)
+
+Additional benchmarks
+~~~~~~~~~~~~~~~~~~~~~
+- [DVS Gesture Recognition](neurobench/examples/dvs_gesture)
+- [Google Speech Commands (GSC) Classification](neurobench/examples/gsc)
+- [Neuromorphic Human Activity Recognition (HAR)](neurobench/examples/nehar)
+
+
+Getting started
+---------------
+
+Example benchmark scripts can be found under the ``neurobench/examples``
+folder.
+
+In general, the design flow for using the framework is as follows:
+
+1. Train a network using the train split from a particular dataset.
+2. Wrap the network in a ``NeuroBenchModel``.
+3. Pass the model, evaluation split dataloader, pre-/post-processors,
+   and a list of metrics to the ``Benchmark`` and ``run()``.
+
+Documentation for the framework interfaces can found in
+`API.md <API.md>`__.
+
 Development
-~~~~~~~~~~~
+-----------
 
 If you clone the repo directly for development, poetry can be used to
 maintain a virtualenv consistent with a deployment environment. In the
@@ -75,22 +103,6 @@ via:
    poetry run python neurobench/examples/primate_reaching/benchmark.py
 
 The examples may not yet have trained models or a full set of metrics.
-
-Getting started
----------------
-
-Example benchmark scripts can be found under the ``neurobench/examples``
-folder.
-
-In general, the design flow for using the framework is as follows:
-
-1. Train a network using the train split from a particular dataset.
-2. Wrap the network in a ``NeuroBenchModel``.
-3. Pass the model, evaluation split dataloader, pre-/post-processors,
-   and a list of metrics to the ``Benchmark`` and ``run()``.
-
-Documentation for the framework interfaces can found in
-`API.md <API.md>`__.
 
 Developers
 ----------

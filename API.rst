@@ -1,4 +1,4 @@
-NeuroBench API: Developent Version
+API Overview
 ==================================
 
 This is a brief overview of the state of the NeuroBench API, the

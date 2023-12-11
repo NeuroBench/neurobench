@@ -1,36 +1,6 @@
 """
-This file contains code from PyTorch Vision (https://github.com/pytorch/vision),
-which is licensed under the following:
-
-BSD 3-Clause License
-
-Copyright (c) Soumith Chintala 2016, 
-All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-
-* Redistributions of source code must retain the above copyright notice, this
-  list of conditions and the following disclaimer.
-
-* Redistributions in binary form must reproduce the above copyright notice,
-  this list of conditions and the following disclaimer in the documentation
-  and/or other materials provided with the distribution.
-
-* Neither the name of the copyright holder nor the names of its
-  contributors may be used to endorse or promote products derived from
-  this software without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
-DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
-FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
-DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
-SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
-CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
-OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
-OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+This file contains code from PyTorch Vision (https://github.com/pytorch/vision) which is licensed under BSD 3-Clause License.
+These snippets are the Copyright (c) of Soumith Chintala 2016. All other code is the Copyright (c) of the NeuroBench Developers 2023.
 """
 
 from .dataset import NeuroBenchDataset
@@ -68,17 +38,6 @@ class PrimateReaching(NeuroBenchDataset):
 
         Once these .mat files are downloaded, store them in the same directory.
     """
-    url = "https://zenodo.org/record/583331/files/"
-
-    md5s = {
-        "indy_20170131_02.mat": "2790b1c869564afaa7772dbf9e42d784",
-        "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
-        "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
-        "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
-        "loco_20170217_02.mat": "739b70762d838f3a1f358733c426bb02",
-        "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
-    }
-
 
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
                  biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028,
@@ -106,6 +65,17 @@ class PrimateReaching(NeuroBenchDataset):
                 download (bool): If True, downloads the dataset from the internet and puts it in root 
                                  directory. If dataset is already downloaded, it will not be downloaded again.
         """
+        self.url = "https://zenodo.org/record/583331/files/"
+
+        self.md5s = {
+            "indy_20170131_02.mat": "2790b1c869564afaa7772dbf9e42d784",
+            "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
+            "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
+            "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
+            "loco_20170217_02.mat": "739b70762d838f3a1f358733c426bb02",
+            "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
+        }
+
         # The samples and labels of the dataset
         self.samples = None
         self.labels = None

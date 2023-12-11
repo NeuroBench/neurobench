@@ -1,5 +1,3 @@
-# this file should contain the code used for training the model used for the benchmark
-
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 import sys

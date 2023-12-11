@@ -1,14 +1,3 @@
-"""
-=====================================================================
-Project:      NeuroBench
-File:         echo_state_network.py
-Description:  Python code providing an implementation of Echo State Networks 
-Date:         20. July 2023
-=====================================================================
-Copyright stuff
-=====================================================================
-"""
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F

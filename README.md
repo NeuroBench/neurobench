@@ -12,10 +12,36 @@ Install from PyPI:
 pip install neurobench
 ```
 
-### Development
+## Benchmarks
+The following benchmarks are currently available:
+
+### v1.0 benchmarks
+- [Keyword Few-shot Class-incremental Learning (FSCIL)](neurobench/examples/mswc_fscil)
+- [Event Camera Object Detection](neurobench/examples/obj_detection)
+- [Non-human Primate (NHP) Motor Prediction](neurobench/examples/primate_reaching)
+- [Chaotic Function Prediction](neurobench/examples/mackey_glass)
+
+### Additional benchmarks
+- [DVS Gesture Recognition](neurobench/examples/dvs_gesture)
+- [Google Speech Commands (GSC) Classification](neurobench/examples/gsc)
+- [Neuromorphic Human Activity Recognition (HAR)](neurobench/examples/nehar)
+
+
+## Getting started
+Example benchmark scripts can be found under the `neurobench/examples` folder. 
+
+In general, the design flow for using the framework is as follows:
+      
+1. Train a network using the train split from a particular dataset.
+2. Wrap the network in a `NeuroBenchModel`.
+3. Pass the model, evaluation split dataloader, pre-/post-processors, and a list of metrics to the `Benchmark` and `run()`.
+
+Documentation for the framework interfaces can found in [API.md](API.md).
+
+## Development
 If you clone the repo directly for development, poetry can be used to maintain a virtualenv consistent with a deployment environment. In the root directory run:
 ```
-poetry install
+poetry install --with dev
 poetry run pytest tests/
 ```
 
@@ -33,19 +59,8 @@ neurobench/examples/dvs_gesture/DVS_gesture_tutorial.ipynb
 neurobench/examples/gsc/GSC_tutorial.ipynb
 ```
 
-## Getting started
-Example benchmark scripts can be found under the `neurobench/examples` folder. 
-
-In general, the design flow for using the framework is as follows:
-      
-1. Train a network using the train split from a particular dataset.
-2. Wrap the network in a `NeuroBenchModel`.
-3. Pass the model, evaluation split dataloader, pre-/post-processors, and a list of metrics to the `Benchmark` and `run()`.
-
-Documentation for the framework interfaces can found in [API.md](API.md).
-
 ## Developers
-NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, Biyan Zhou, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang, Anurag Kumar Mishra, Soikat Hasan Ahmed.
+NeuroBench is a collaboration between industry and academic engineers and researchers. This framework is currently maintained by [Jason Yik](https://www.linkedin.com/in/jasonlyik/), [Noah Pacik-Nelson](https://www.linkedin.com/in/noah-pacik-nelson/), and [Korneel Van den Berghe](https://www.linkedin.com/in/korneel-van-den-berghe/), and there have been technical contributions from many others. A non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes Bouhadjar, Paul Hueber, Vincent Sun, Biyan Zhou, George Vathakkattil Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang, Anurag Kumar Mishra, Soikat Hasan Ahmed, Tao Sun, Benedetto Leto, Aurora Micheli.
 
 ## Contributing
 If you are interested in helping to build this framework, please see the [contributing guidelines](CONTRIBUTING.md).

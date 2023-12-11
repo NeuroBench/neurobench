@@ -16,11 +16,3 @@ Speech2Spikes
     :members:
     :undoc-members:
     :show-inheritance:
-
-Primate Reaching
-^^^^^^^^^^^^^^^^
-.. automodule:: neurobench.preprocessing.primate_reaching
-    :special-members: __init__, __call__
-    :members:
-    :undoc-members:
-    :show-inheritance:

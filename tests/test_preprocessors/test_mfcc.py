@@ -25,6 +25,9 @@ class TestMFCCProcessor(unittest.TestCase):
             },
         }
 
+        # Data is expected in (batch, timesteps, features) format
+        self.sample_audio = self.sample_audio.permute(0, 1)
+
     def test_mfcc_non_tuple(self):
         mfcc = MFCCProcessor(**self.init_args)
         audio = [1, 2, 3]

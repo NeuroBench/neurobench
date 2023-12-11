@@ -71,7 +71,10 @@ class ActivationHook():
     def close(self):
         """ Remove the registered hook.
         """
-        self.hook.remove()
+        if self.hook:
+            self.hook.remove()
+        if self.hook_pre:
+            self.hook_pre.remove()
 
 class LayerHook():
     def __init__(self, layer) -> None:

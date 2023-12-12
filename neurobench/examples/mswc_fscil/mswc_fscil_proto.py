@@ -283,7 +283,6 @@ if __name__ == '__main__':
     else:
         model.net.output = proto_out
 
-
     del base_train_set
     del train_loader
 
@@ -363,6 +362,7 @@ if __name__ == '__main__':
 
             ### Computing new Protypical Weights ###
             data = None
+            
             for X_shot, y_shot in support:
                 if data is None:
                     data = X_shot

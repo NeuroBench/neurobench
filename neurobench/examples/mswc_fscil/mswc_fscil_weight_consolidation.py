@@ -1,11 +1,15 @@
+import os
+import json
+
 import torch
 import torch.nn.functional as F
 import numpy as np
 import copy
 from tqdm import tqdm
 
+import wandb
+
 from torch.utils.data import DataLoader, ConcatDataset
-import torchaudio.transforms as T
 
 from neurobench.datasets import MSWC
 from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot
@@ -20,7 +24,7 @@ from neurobench.preprocessing import MFCCProcessor
 from neurobench.preprocessing import S2SProcessor
 
 from weight_consolidation_utils import set_consolidate_weights, consolidate_weights, freeze_below, eval_below, examples_per_class, reset_weights
-
+from mswc_fscil_proto import squeeze, to_device, out2pred
 
 import argparse
 
@@ -29,17 +33,17 @@ def parse_arguments():
     
     parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
     parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Pre-trained model to use")
-    # parser.add_argument("--spiking", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
     parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
     parser.add_argument("--soft_delta", action='store_true',  help="Use Delta encoding with only jump between 2 timesteps counted")
     parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
 
     args = parser.parse_args()
+
     return args
 
 args = parse_arguments()
-ROOT = "//scratch/p306982/data/fscil/FSCIL_subset/" #"data/MSWC/"
+ROOT = "./FSCIL_subset/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
 NUM_REPEATS = 1
@@ -54,6 +58,7 @@ else:
     EVAL_LR = 0.3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 if device == torch.device("cuda"):
     PIN_MEMORY = True
 else:
@@ -87,12 +92,6 @@ else:
     )
 
 
-
-squeeze = lambda x: (x[0].squeeze(), x[1])
-out2pred = lambda x: torch.argmax(x, dim=-1)
-to_device = lambda x: (x[0].to(device), x[1].to(device))
-
-
 def pre_train(model):
 
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
@@ -105,17 +104,20 @@ def pre_train(model):
     mask[torch.arange(0,100, dtype=int)] = 0
     out_mask = lambda x: x - mask
 
-
     if SPIKING:
         lr = 0.001
     else:
         lr = 0.01
+
     optimizer = torch.optim.Adam(model.parameters(), lr=lr, weight_decay=0.0001)
     scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=20, gamma=0.1)
+
     for epoch in range(50):
         print(f"Epoch: {epoch+1}")
+
         model.train()
-        for batch_idx, (data, target) in tqdm(enumerate(pre_train_loader), total=len(base_train_set)//BATCH_SIZE):
+
+        for _, (data, target) in tqdm(enumerate(pre_train_loader), total=len(base_train_set)//BATCH_SIZE):
             data = data.to(device)
             target = target.to(device)
 
@@ -129,14 +131,13 @@ def pre_train(model):
             loss.backward()
             optimizer.step()
 
-        if epoch%5==0:
+        if epoch % 5 == 0:
             total_acc = 0
+
             for data in test_loader:
-            
                 data, target = squeeze(encode(to_device(data)))
 
                 pred = model(data)
-
                 pred = out2pred(out_mask(pred)).squeeze()
 
                 acc = float(torch.sum(pred==target))/BATCH_SIZE
@@ -144,25 +145,23 @@ def pre_train(model):
 
             wandb.log({"test_accuracy":total_acc})
             print(f"The test accuracy is {total_acc*100}%")
-        scheduler.step()
 
+        scheduler.step()
         scheduler.step()
     
     del base_train_set
     del pre_train_loader
 
-import wandb
 
 if __name__ == '__main__':
-
-
     wandb.login()
 
     wandb_run = wandb.init(
-    # Set the project where this run will be logged
-    project="MDWC FSCIL SNN Clean",
-    # Track hyperparameters and run metadata
-    config=args.__dict__)
+        # Set the project where this run will be logged
+        project="MDWC FSCIL SNN Clean",
+        # Track hyperparameters and run metadata
+        config=args.__dict__
+    )
 
     if PRE_TRAIN:
         ### Pre-training phase ###
@@ -176,11 +175,16 @@ if __name__ == '__main__':
                 bidirectional=False,
                 use_readout_layer=True,
                 ).to(device)
+            
             pre_train(model)
+
             name = "SPModel_clean"
+
             if args.soft_delta:
-                name +="softDT"
+                name += "softDT"
+
             torch.save(model, os.path.join(ROOT,name))
+            
             model = TorchModel(model)
             model.add_activation_module(RadLIFLayer)
         else:
@@ -188,8 +192,10 @@ if __name__ == '__main__':
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
 
             pre_train(model)
+
             name = "Model_bias"
             torch.save(model, os.path.join(ROOT,name))
+
             model = TorchModel(model)
 
     else:
@@ -208,7 +214,6 @@ if __name__ == '__main__':
             model = TorchModel(model)
 
     all_evals = []
-
     all_query = []
 
     for eval_iter in range(NUM_REPEATS):
@@ -248,12 +253,16 @@ if __name__ == '__main__':
 
         # Run session 0 benchmark on base classes
         print(f"Session: 0")
+
         pre_train_results = benchmark_all_test.run(postprocessors=[out_mask, out2pred, torch.squeeze])
+        
         print("Base results:", pre_train_results)
+        
         eval_accs.append(pre_train_results['classification_accuracy'])
         act_sparsity.append(pre_train_results['activation_sparsity'])
         syn_ops_dense.append(pre_train_results['synaptic_operations']['Dense'])
         syn_ops_macs.append(pre_train_results['synaptic_operations']['Effective_MACs'])
+        
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
@@ -266,11 +275,11 @@ if __name__ == '__main__':
         # Saves shifted versions of 
         eval_model.net.saved_weights = {}
         pre_train_class = range(100)
+
         if SPIKING:
             consolidate_weights(eval_model.net, eval_model.net.snn[-1].W, pre_train_class)
         else:
             consolidate_weights(eval_model.net, eval_model.net.output, pre_train_class)
-
 
         few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
 
@@ -285,10 +294,9 @@ if __name__ == '__main__':
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
-
             ### Few Shot Learning phase ###
             eval_model.net.train()
-            #eval_model.lat_features.eval()
+
             if SPIKING:
                 eval_model.net.snn[:-1].eval()
                 freeze_below(eval_model.net, "none", only_conv=False)
@@ -305,13 +313,11 @@ if __name__ == '__main__':
 
             # Set prior centered weights again after eventual resetting of all weights
             set_consolidate_weights(eval_model.net, eval_model.net.snn[-1].W) 
-            
 
             cur_class = support[0][1].tolist()
             eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
 
             for n in range(EVAL_EPOCHS):
-
                 # Update weigts over successive shots
                 for X_shot, y_shot in support:
                     few_shot_optimizer.zero_grad()
@@ -333,7 +339,6 @@ if __name__ == '__main__':
                     consolidate_weights(eval_model.net, eval_model.net.output, cur_class)
                     set_consolidate_weights(eval_model.net, eval_model.net.output)
 
-
             ### Testing phase ###
             eval_model.net.eval()
 
@@ -353,9 +358,6 @@ if __name__ == '__main__':
             session_results = benchmark_all_test.run(dataloader = full_session_test_loader, postprocessors=[out_mask, out2pred, torch.squeeze])
             print("Session results:", session_results)
             
-            # session_acc = session_results['classification_accuracy']
-            # print(f"The session accuracy is {session_acc*100}%")
-            print("Session results:", session_results)
             eval_accs.append(session_results['classification_accuracy'])
             act_sparsity.append(session_results['activation_sparsity'])
             syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
@@ -368,28 +370,28 @@ if __name__ == '__main__':
             print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
             query_accs.append(query_results['classification_accuracy'])
             wandb.log({"query_accuracy":query_accs[-1]}, commit=True)
-            # query_acc = query_results['classification_accuracy']
-            # print(f"The accuracy on new classes is {query_acc*100}%")
-
 
         all_evals.append(eval_accs)
         all_query.append(query_accs)
-        # mean_accuracy = np.mean(eval_accs)
-        # print(f"The total mean accuracy is {mean_accuracy*100}%")
+
+        mean_accuracy = np.mean(eval_accs)
+        print(f"The total mean accuracy is {mean_accuracy*100}%")
 
         # Print all data
-        # print(f"Eval Accs: {eval_accs}")
-        # print(f"Query Accs: {query_accs}")
-        # print(f"Act Sparsity: {act_sparsity}")
-        # print(f"Syn Ops Dense: {syn_ops_dense}")
-        # print(f"Syn Ops MACs: {syn_ops_macs}")
-
+        print(f"Eval Accs: {eval_accs}")
+        print(f"Query Accs: {query_accs}")
+        print(f"Act Sparsity: {act_sparsity}")
+        print(f"Syn Ops Dense: {syn_ops_dense}")
+        print(f"Syn Ops MACs: {syn_ops_macs}")
 
     results = {"all": all_evals, "query": all_query}
-    import json
+
     name = "eval_"
+
     if SPIKING:
         name += "SPIKING_"
+
     name += str(args.pt_model)+str(EVAL_LR)+"lr.json"
+
     with open(os.path.join(ROOT,name), "w") as f:
         json.dump(results, f)

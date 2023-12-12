@@ -39,9 +39,9 @@ postprocessors = [convert_to_label]
 model = TorchModel(net)
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
-benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, data_metrics])
+benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, workload_metrics])
 results = benchmark.run()
 print(results)
 

@@ -96,10 +96,10 @@ preprocessors = []
 postprocessors = []
 
 static_metrics = ["model_size", "connection_sparsity"]
-data_metrics = ["activation_sparsity", "COCO_mAP", "synaptic_operations"]
+workload_metrics = ["activation_sparsity", "COCO_mAP", "synaptic_operations"]
 
 
-benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, data_metrics])
+benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, workload_metrics])
 results = benchmark.run()
 print(results)
 

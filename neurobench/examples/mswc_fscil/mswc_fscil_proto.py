@@ -40,7 +40,6 @@ def parse_arguments():
     parser.add_argument("--pt_model", type=str, default="mswc_rsnn_proto", help="Pre-trained model to use")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
     parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
-    parser.add_argument("--soft_delta", action='store_true',  help="Use Delta encoding with only jump between 2 timesteps counted")
     parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
     parser.add_argument("--pt_epochs", type=int, default=50,  help="Apply normalization to newly learned weights in addition to centering them")
     parser.add_argument("--out_bias", action='store_true',  help="Run pre-training")
@@ -79,7 +78,7 @@ n_mels = 20
 n_mfcc = 20
 
 if SPIKING:
-    encode = S2SProcessor(device, transpose=False, soft_delta=args.soft_delta)
+    encode = S2SProcessor(device, transpose=False)
     config_change = {"sample_rate": 48000,
                      "hop_length": 240}
     encode.configure(threshold=1.0, **config_change)
@@ -198,8 +197,6 @@ if __name__ == '__main__':
 
             if args.out_bias:
                 name += "_bias"
-            if args.soft_delta:
-                name += "softDT"
 
             torch.save(model.state_dict(), os.path.join(ROOT,name))
 

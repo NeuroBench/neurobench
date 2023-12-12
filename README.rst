@@ -52,17 +52,16 @@ The following benchmarks are currently available:
 
 v1.0 benchmarks
 ~~~~~~~~~~~~~~~
-- [Keyword Few-shot Class-incremental Learning (FSCIL)](neurobench/examples/mswc_fscil)
-- [Event Camera Object Detection](neurobench/examples/obj_detection)
-- [Non-human Primate (NHP) Motor Prediction](neurobench/examples/primate_reaching)
-- [Chaotic Function Prediction](neurobench/examples/mackey_glass)
+- `Keyword Few-shot Class-incremental Learning (FSCIL) <neurobench/examples/mswc_fscil>`__
+- `Event Camera Object Detection <neurobench/examples/obj_detection>`__
+- `Non-human Primate (NHP) Motor Prediction <neurobench/examples/primate_reaching>`__
+- `Chaotic Function Prediction <neurobench/examples/mackey_glass>`__
 
 Additional benchmarks
 ~~~~~~~~~~~~~~~~~~~~~
-- [DVS Gesture Recognition](neurobench/examples/dvs_gesture)
-- [Google Speech Commands (GSC) Classification](neurobench/examples/gsc)
-- [Neuromorphic Human Activity Recognition (HAR)](neurobench/examples/nehar)
-
+- `DVS Gesture Recognition <neurobench/examples/dvs_gesture>`__
+- `Google Speech Commands (GSC) Classification <neurobench/examples/gsc>`__
+- `Neuromorphic Human Activity Recognition (HAR) <neurobench/examples/nehar>`__
 
 Getting started
 ---------------

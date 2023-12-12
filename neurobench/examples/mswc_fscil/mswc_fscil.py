@@ -1,11 +1,3 @@
-#
-# NOTE: This task is still under development.
-#
-
-import sys
-sys.path.append("/home3/p306982/Simulations/fscil/algorithms_benchmarks/")
-import os
-
 import torch
 import torch.nn.functional as F
 import numpy as np
@@ -14,8 +6,6 @@ from tqdm import tqdm
 
 from torch.utils.data import DataLoader, ConcatDataset
 import torchaudio.transforms as T
-
-# from torch_mate.data.utils import IncrementalFewShot
 
 from neurobench.datasets import MSWC
 from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot

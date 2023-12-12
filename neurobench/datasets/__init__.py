@@ -1,4 +1,5 @@
 from .dataset import *
+from .utils import *
 from ..utils import _lazy_import
 
 def SpeechCommands(*args, **kwargs):
@@ -16,5 +17,9 @@ def DVSGesture(*args, **kwargs):
 def MackeyGlass(*args, **kwargs):
     return _lazy_import("neurobench.datasets", ".mackey_glass", "MackeyGlass")(*args, **kwargs)
 
+def WISDMDataLoader(*args, **kwargs):
+    return _lazy_import("neurobench.datasets", ".WISDM_loader", "WISDMDataLoader")(*args, **kwargs)
+
 def MSWC(*args, **kwargs):
     return _lazy_import("neurobench.datasets", ".MSWC", "MSWC")(*args, **kwargs)
+

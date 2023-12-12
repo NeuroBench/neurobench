@@ -9,8 +9,6 @@ from torch.utils.data import Dataset, IterableDataset, BatchSampler, RandomSampl
 
 from tqdm import tqdm
 
-from torch_mate.data.samplers import InfiniteClassSampler, DataSampler
-
 import os
 from torch import Tensor
 from torchaudio.datasets.utils import _load_waveform

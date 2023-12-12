@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 
+import numpy as np
+
 ## Define model ##
 # The model defined here is a vanilla Fully Connected Network
 class ANNModel2D(nn.Module):
@@ -102,29 +104,24 @@ class ANNModel3D(nn.Module):
 
     def forward(self, x):
         predictions = []
-        
         seq_length = x.shape[0]
         for seq in range(seq_length):
             current_seq = x[seq, :, :]
             self.data_buffer = torch.cat((self.data_buffer, current_seq), dim=0)
 
-            if self.data_buffer.shape[0] <= self.bin_window_size:
-                predictions.append(torch.zeros(1, self.output_dim))
-            else:
-                if self.data_buffer.shape[0] > self.bin_window_size:
-                    self.data_buffer = self.data_buffer[1:, :]
+            if self.data_buffer.shape[0] > self.bin_window_size:
+                self.data_buffer = self.data_buffer[1:, :]
 
-                # Accumulate
-                spikes = self.data_buffer.clone()
-                
-                acc_spikes = torch.zeros((self.num_steps, self.input_dim))
-                for i in range(self.num_steps):
-                    # Check the logic here...
-                    temp = torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0)
-                    acc_spikes[i, :] = temp
+            # Accumulate
+            spikes = self.data_buffer.clone()
+            
+            acc_spikes = torch.zeros((self.num_steps, self.input_dim))
+            for i in range(self.num_steps):
+                temp = torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0)
+                acc_spikes[i, :] = temp
 
-                pred = self.single_forward(acc_spikes)
-                predictions.append(pred)
+            pred = self.single_forward(acc_spikes)
+            predictions.append(pred)
 
         predictions = torch.stack(predictions).squeeze(dim=1)
 

@@ -1,4 +1,40 @@
+"""
+This file contains code from PyTorch Vision (https://github.com/pytorch/vision),
+which is licensed under the following:
+
+BSD 3-Clause License
+
+Copyright (c) Soumith Chintala 2016, 
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+* Redistributions of source code must retain the above copyright notice, this
+  list of conditions and the following disclaimer.
+
+* Redistributions in binary form must reproduce the above copyright notice,
+  this list of conditions and the following disclaimer in the documentation
+  and/or other materials provided with the distribution.
+
+* Neither the name of the copyright holder nor the names of its
+  contributors may be used to endorse or promote products derived from
+  this software without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+"""
+
 from .dataset import NeuroBenchDataset
+from .utils import check_integrity, download_url
 from torch.utils.data import Dataset
 import os
 import torch
@@ -6,6 +42,7 @@ import math
 import numpy as np
 import h5py
 from scipy.signal import convolve2d
+from urllib.error import URLError
 
 # The spikes recorded in the Primate Reaching datasets have an interval of 4ms.
 SAMPLING_RATE = 4e-3
@@ -23,7 +60,7 @@ class PrimateReaching(NeuroBenchDataset):
         2. indy_20160630_01.mat
         3. indy_20160622_01.mat
         4. loco_20170301_05.mat
-        5. loco_20170217_02.mat
+        5. loco_20170215_02.mat
         6. loco_20170210_03.mat
 
         The description of the structure of the dataset can be found on the website
@@ -31,9 +68,23 @@ class PrimateReaching(NeuroBenchDataset):
 
         Once these .mat files are downloaded, store them in the same directory.
     """
+    url = "https://zenodo.org/record/583331/files/"
+
+    md5s = {
+        "indy_20170131_02.mat": "2790b1c869564afaa7772dbf9e42d784",
+        "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
+        "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
+        "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
+        "loco_20170217_02.mat": "739b70762d838f3a1f358733c426bb02",
+        "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
+    }
+
+
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
-                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028, max_segment_length=2000,
-                 split_num=1, remove_segments_inactive=False):
+                 biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028,
+                 max_segment_length=2000, split_num=1, remove_segments_inactive=False, 
+                 download= False):
+
         """
             Initialises the Dataset for the Primate Reaching Task.
 
@@ -52,16 +103,21 @@ class PrimateReaching(NeuroBenchDataset):
                 split_num (int): The number of chunks to break the timeseries into. Default is 1 (no splits).
                 remove_segments_inactive (bool): Whether to remove segments longer than max_segment_length,
                                                  which represent subject inactivity. Default is False.
+                download (bool): If True, downloads the dataset from the internet and puts it in root 
+                                 directory. If dataset is already downloaded, it will not be downloaded again.
         """
         # The samples and labels of the dataset
         self.samples = None
         self.labels = None
 
         # used for input data file management
-        self.filename = filename
-        self.file_path = os.path.join(file_path, self.filename) if '.mat' in self.filename else \
-            os.path.join(file_path, self.filename + ".mat")
+        self.filename = filename if filename[-4:] == '.mat' else filename + ".mat"
+        self.file_path = os.path.join(file_path, self.filename)
 
+        if download:
+            print("downloading ....")
+            self.download()
+        
         # test filepath
         assert os.path.exists(self.file_path)
 
@@ -88,7 +144,7 @@ class PrimateReaching(NeuroBenchDataset):
 
         # Defines the maximum length of a segment.
         self.max_segment_length = max_segment_length
-        assert self.max_segment_length > 0
+        assert self.max_segment_length >= 0
 
         self.split_num = split_num
 
@@ -107,8 +163,10 @@ class PrimateReaching(NeuroBenchDataset):
         if self.delay > 0:
             self.apply_delay()
 
-        if self.max_segment_length > 0 and remove_segments_inactive:
-            self.remove_segments_by_length()
+        if remove_segments_inactive and self.max_segment_length > 0:
+            self.valid_segments = self.remove_segments_by_length()
+        else:
+            self.valid_segments = np.arange(self.time_segments.shape[0])
         
         self.split_data()
 
@@ -122,7 +180,31 @@ class PrimateReaching(NeuroBenchDataset):
         # compute indices of congruent binning windows
         mask = idx - np.arange(self.num_steps) * self.ratio
         return self.samples[:, mask].transpose(0, 1), self.labels[:, idx]
+    
+    def _check_exists(self, file_path, md5) -> bool:
+        return check_integrity(file_path, md5) 
+    
+    
+    def download(self):
+        """Download the Primate Reaching data if it doesn't exist already."""
+        md5 = self.md5s[self.filename]
+        
+        if self._check_exists(self.file_path, md5):
+            print(f"The dataset already exists!")
+            return
 
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        
+        # download file
+        url = f"{self.url}{self.filename}"
+        try:
+            print(f"Downloading {url}")
+            download_url(url, self.file_path, md5=md5)
+        except URLError as error:
+            print(f"Failed to download (trying next):\n{error}")
+        finally:
+            print()
+        
     def load_data(self):
         """
             Load the data from the matlab file and spike data 
@@ -214,13 +296,13 @@ class PrimateReaching(NeuroBenchDataset):
         for split_no in range(split_num):
             for i in range(sub_length):
                 # Each segment's Dimension is: No_of_Probes * No_of_Recording
-                if i < train_len:
+                if i < train_len and i in self.valid_segments:
                     self.ind_train += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                      self.time_segments[split_no * sub_length + i, 1], stride))
-                elif train_len <= i < train_len + val_len:
+                elif train_len <= i < train_len + val_len and i in self.valid_segments:
                     self.ind_val += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                    self.time_segments[split_no * sub_length + i, 1], stride))
-                else:
+                elif i in self.valid_segments:
                     self.ind_test += list(np.arange(offset + self.time_segments[split_no * sub_length + i, 0],
                                                     self.time_segments[split_no * sub_length + i, 1], stride))
 
@@ -229,8 +311,7 @@ class PrimateReaching(NeuroBenchDataset):
             remove the segments where its duration exceeds the limit set by
             max_segment_length
         """
-        self.time_segments = self.time_segments[self.time_segments[:, 1] - self.time_segments[:, 0] <
-                                                self.max_segment_length, :]
+        return np.nonzero(self.time_segments[:, 1] - self.time_segments[:, 0] < self.max_segment_length)[0]
 
     @staticmethod
     def split_into_segments(indices):

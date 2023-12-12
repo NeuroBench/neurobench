@@ -208,7 +208,7 @@ if __name__ == '__main__':
             if args.soft_delta:
                 name += "softDT"
 
-            torch.save(model, os.path.join(ROOT,name))
+            torch.save(model.state_dict(), os.path.join(ROOT,name))
 
             model = TorchModel(model)
             model.add_activation_module(RadLIFLayer)
@@ -218,20 +218,36 @@ if __name__ == '__main__':
 
             pre_train(model)
 
+            name = "Model_bias"
+            torch.save(model.state_dict(), os.path.join(ROOT,name))
+
             model = TorchModel(model)
     else:
         ### Loading Pre-trained model ###
 
         if SPIKING:
-            model = torch.load("/home3/p306982/Simulations/fscil/algorithms_benchmarks/neurobench/examples/mswc_fscil/model_data/"+args.pt_model, map_location=device)
+            model = SNN(
+                input_shape=(BATCH_SIZE, 201, 20),
+                neuron_type="RadLIF",
+                layer_sizes=[1024, 1024, 200],
+                normalization="batchnorm",
+                dropout=0.1,
+                bidirectional=False,
+                use_readout_layer=True,
+                ).to(device)
+            
+            state_dict = torch.load(os.path.join(ROOT,args.pt_model),
+                                map_location=device)
+            model.load_state_dict(state_dict)
             model = TorchModel(model)
+            
             model.add_activation_module(RadLIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            load_dict = torch.load("/home3/p306982/Simulations/fscil/algorithms_benchmarks/neurobench/examples/mswc_fscil/model_data/mswc_cnn_proto", 
-                                map_location=device).state_dict()
-            model.load_state_dict(load_dict)
+            state_dict = torch.load(os.path.join(ROOT,args.pt_model),
+                                map_location=device)
+            model.load_state_dict(state_dict)
             model = TorchModel(model)
 
     all_evals = []

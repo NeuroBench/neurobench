@@ -243,55 +243,56 @@ if __name__ == '__main__':
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
     train_loader = DataLoader(base_train_set, batch_size=500, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
-    # if SPIKING:
-    #     output = model.net.snn[-1].W
-    #     proto_out = nn.Linear(1024, 200, bias=True).to(device)
-    #     proto_out.weight.data = output.weight.data
-    # else:
-    #     output = model.net.output
-    #     proto_out = nn.Linear(512, 200, bias=True).to(device)
-    #     proto_out.weight.data = output.weight.data
+    if SPIKING:
+        output = model.net.snn[-1].W
+        proto_out = nn.Linear(output.weight.shape[1], 200, bias=True).to(device)
+        proto_out.weight.data = output.weight.data
+    else:
+        output = model.net.output
+        proto_out = nn.Linear(512, 200, bias=True).to(device)
+        proto_out.weight.data = output.weight.data
 
 
-    # # protos = {}
+    # protos = {}
 
 
-    # for data, target in train_loader:
+    for data, target in train_loader:
 
-    #     data, target = encode((data.to(device), target.to(device)))
-    #     data = data.squeeze()
-    #     class_id = target[0]
+        data, target = encode((data.to(device), target.to(device)))
+        data = data.squeeze()
+        class_id = target[0]
 
-    #     if SPIKING:
-    #         features = model.net.snn[0](data)
-    #         features = model.net.snn[1](features)
+        if SPIKING:
+            features = data
+            for layer in model.net.snn[:-1]:
+                features = layer(features)
 
-    #         mean = torch.sum(features, dim=[0,1])/500
-    #         proto_out.weight.data[class_id] = 2*mean
-    #         proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())/features.shape[1]
+            mean = torch.sum(features, dim=[0,1])/500
+            proto_out.weight.data[class_id] = 2*mean
+            proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())/features.shape[1]
 
-    #     else:
-    #         features = model.net(data, features_out=True)
+        else:
+            features = model.net(data, features_out=True)
 
-    #         mean = torch.sum(features, dim=0)/500
-    #         proto_out.weight.data[class_id] = 2*mean
-    #         proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())
-
-
-
-    #     del data
-    #     del features
-    #     del mean
+            mean = torch.sum(features, dim=0)/500
+            proto_out.weight.data[class_id] = 2*mean
+            proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())
 
 
-    # if SPIKING:
-    #     model.net.snn[-1].W = proto_out
-    # else:
-    #     model.net.output = proto_out
+
+        del data
+        del features
+        del mean
 
 
-    # del base_train_set
-    # del train_loader
+    if SPIKING:
+        model.net.snn[-1].W = proto_out
+    else:
+        model.net.output = proto_out
+
+
+    del base_train_set
+    del train_loader
 
     for eval_iter in range(NUM_REPEATS):
         print(f"Evaluation Iteration: 0")
@@ -365,37 +366,37 @@ if __name__ == '__main__':
             cur_class = support[0][1].tolist()
             eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
 
+            ### Computing new Protypical Weights ###
+            data = None
+            for X_shot, y_shot in support:
+                if data is None:
+                    data = X_shot
+                    target = y_shot
+                else:
+                    data = torch.cat((data,X_shot), 0)
+                    target = torch.cat((target,y_shot), 0)
 
-            # data = None
-            # for X_shot, y_shot in support:
-            #     if data is None:
-            #         data = X_shot
-            #         target = y_shot
-            #     else:
-            #         data = torch.cat((data,X_shot), 0)
-            #         target = torch.cat((target,y_shot), 0)
+            data, target = encode((data.to(device), target.to(device)))
+            data = data.squeeze()
 
-            # data, target = encode((data.to(device), target.to(device)))
-            # data = data.squeeze()
+            if SPIKING:
+                features = eval_model.net.snn[0](data)
+                features = eval_model.net.snn[1](features)
 
-            # if SPIKING:
-            #     features = eval_model.net.snn[0](data)
-            #     features = eval_model.net.snn[1](features)
-
-            # else:
-            #     features = eval_model.net(data, features_out=True)
+            else:
+                features = eval_model.net(data, features_out=True)
 
 
-            # if SPIKING:
-            #     for index, class_id  in enumerate(query_classes[-10:]):
-            #         mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
-            #         eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
-            #         eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
-            # else:
-            #     for index, class_id  in enumerate(query_classes[-10:]):
-            #         mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
-            #         eval_model.net.output.weight.data[class_id] = 2*mean
-            #         eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())
+            if SPIKING:
+                for index, class_id  in enumerate(query_classes[-10:]):
+                    mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
+                    eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
+                    eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
+            else:
+                for index, class_id  in enumerate(query_classes[-10:]):
+                    mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
+                    eval_model.net.output.weight.data[class_id] = 2*mean
+                    eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())
 
             ### Testing phase ###
             eval_model.net.eval()

@@ -18,8 +18,8 @@ from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot
 from neurobench.examples.mswc_fscil.M5 import M5
 from neurobench.models import TorchModel
 
-from neurobench.examples.model_data.sparchSNNs import SNN
-from neurobench.examples.model_data.sparchSNNs import RadLIFLayer
+from neurobench.examples.mswc_fscil.sparchSNNs import SNN
+from neurobench.examples.mswc_fscil.sparchSNNs import RadLIFLayer
 
 from neurobench.benchmarks import Benchmark
 from neurobench.preprocessing import MFCCProcessor

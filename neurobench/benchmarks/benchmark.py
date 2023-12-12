@@ -41,7 +41,7 @@ class Benchmark():
         print("Running benchmark")
         
         # add hooks to the model
-        data_metrics.detect_activations_connections(self.model)
+        # data_metrics.detect_activations_connections(self.model)
 
         # Static metrics
         results = {}
@@ -97,14 +97,14 @@ class Benchmark():
                         results[m] += v * batch_size / dataset_len
             
             # delete hook contents
-            self.model.reset_hooks()
+            # self.model.reset_hooks()
 
             batch_num += 1
                 
 
         # compute AccumulatedMetrics after all batches
-        for m in self.data_metrics.keys():
-            if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
-                results[m] = self.data_metrics[m].compute()
+        # for m in self.data_metrics.keys():
+        #     if isinstance(self.data_metrics[m], data_metrics.AccumulatedMetric):
+        #         results[m] = self.data_metrics[m].compute()
 
         return results

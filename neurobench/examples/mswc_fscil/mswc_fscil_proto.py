@@ -37,7 +37,6 @@ import argparse
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
     
-    parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
     parser.add_argument("--pt_model", type=str, default="mswc_rsnn_proto", help="Pre-trained model to use")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
     parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
@@ -45,8 +44,9 @@ def parse_arguments():
     parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
     parser.add_argument("--pt_epochs", type=int, default=50,  help="Apply normalization to newly learned weights in addition to centering them")
     parser.add_argument("--out_bias", action='store_true',  help="Run pre-training")
-    parser.add_argument("--feat_size", type=int, default=1024,  help="Apply normalization to newly learned weights in addition to centering them")
-    parser.add_argument("--spiking", action='store_true',  help="Run pre-training")
+    parser.add_argument("--feat_size", nargs="+", type=int, help="List of hidden layers dimensions")
+    parser.add_argument("--spiking", action='store_true',  help="Use spiking model")
+    parser.add_argument("--s2s_thr", type=float, default=1.0,  help="Speech2Spike Delta Encoding Threshold")
 
     args = parser.parse_args()
     return args
@@ -62,11 +62,6 @@ PRE_TRAIN = args.pre_train
 EVAL_EPOCHS = 1
 EVAL_SHOTS = 5
 EPOCHS = args.pt_epochs
-
-if SPIKING:
-    EVAL_LR = args.eval_lr
-else:
-    EVAL_LR = 0.3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 if device == torch.device("cuda"):
@@ -85,7 +80,7 @@ if SPIKING:
     encode = S2SProcessor(device, transpose=False, soft_delta=args.soft_delta)
     config_change = {"sample_rate": 48000,
                      "hop_length": 240}
-    encode.configure(threshold=1.0, **config_change)
+    encode.configure(threshold=args.s2s_thr, **config_change)
 else:
     encode = MFCCProcessor(
         sample_rate=48000,
@@ -107,6 +102,61 @@ squeeze = lambda x: (x[0].squeeze(), x[1])
 out2pred = lambda x: torch.argmax(x, dim=-1)
 to_device = lambda x: (x[0].to(device), x[1].to(device))
 
+def proto_convert(model2convert):
+
+    model = copy.deepcopy(model2convert)
+    import torch.nn as nn
+    base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
+    train_loader = DataLoader(base_train_set, batch_size=500, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+
+    if SPIKING:
+        output = model.snn[-1].W
+        proto_out = nn.Linear(output.weight.shape[1], 200, bias=True).to(device)
+        proto_out.weight.data = output.weight.data
+    else:
+        output = model.output
+        proto_out = nn.Linear(512, 200, bias=True).to(device)
+        proto_out.weight.data = output.weight.data
+
+
+    for data, target in train_loader:
+
+        data, target = encode((data.to(device), target.to(device)))
+        data = data.squeeze()
+        class_id = target[0]
+
+        if SPIKING:
+            features = data
+            for layer in model.snn[:-1]:
+                features = layer(features)
+
+            mean = torch.sum(features, dim=[0,1])/500
+            proto_out.weight.data[class_id] = 2*mean
+            proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())/features.shape[1]
+
+        else:
+            features = model(data, features_out=True)
+
+            mean = torch.sum(features, dim=0)/500
+            proto_out.weight.data[class_id] = 2*mean
+            proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())
+
+
+
+        del data
+        del features
+        del mean
+
+    if SPIKING:
+        model.snn[-1].W = proto_out
+    else:
+        model.output = proto_out
+
+
+    del base_train_set
+    del train_loader
+
+    return model
 
 def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
     test_model.eval()
@@ -166,14 +216,21 @@ def pre_train(model):
 
         if epoch%5==0:
             train_acc = test(model, mask, set=base_train_set, wandb_log="train_accuracy", wandb_commit=False)
+            
+            proto_model = proto_convert(model)
+            proto_acc = test(proto_model, mask, wandb_log="proto_accuracy", wandb_commit=False)
+
             test_acc = test(model, mask)
             print(f"The train accuracy is {train_acc*100}%")
+            print(f"The proto accuracy is {proto_acc*100}%")
             print(f"The test accuracy is {test_acc*100}%")
         scheduler.step()
 
     
     del base_train_set
     del pre_train_loader
+
+
 
 import wandb
 
@@ -194,7 +251,7 @@ if __name__ == '__main__':
             model = SNN(
                 input_shape=(BATCH_SIZE, 201, 20),
                 neuron_type="RadLIF",
-                layer_sizes=[1024, args.feat_size, 200],
+                layer_sizes=[1024]+ args.feat_size+[200],
                 normalization="batchnorm",
                 dropout=0.1,
                 bidirectional=False,
@@ -202,7 +259,7 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             pre_train(model)
-            name = "SPModel_clean_"+str(EPOCHS)+"ep_"+str(args.feat_size)+"feats_"
+            name = "SPModel_clean_"+str(EPOCHS)+"ep_"+str(args.feat_size)+"feats_"+str(args.s2s_thr)+"s2s_thr"
             if args.out_bias:
                 name +="_bias"
             if args.soft_delta:
@@ -239,59 +296,10 @@ if __name__ == '__main__':
     all_syn_ops_macs = []
     all_syn_ops_acs = []
 
-    import torch.nn as nn
-    base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
-    train_loader = DataLoader(base_train_set, batch_size=500, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+    model = TorchModel(proto_convert(model.net))
+    if SPIKING:
+        model.add_activation_module(RadLIFLayer)
 
-    # if SPIKING:
-    #     output = model.net.snn[-1].W
-    #     proto_out = nn.Linear(1024, 200, bias=True).to(device)
-    #     proto_out.weight.data = output.weight.data
-    # else:
-    #     output = model.net.output
-    #     proto_out = nn.Linear(512, 200, bias=True).to(device)
-    #     proto_out.weight.data = output.weight.data
-
-
-    # # protos = {}
-
-
-    # for data, target in train_loader:
-
-    #     data, target = encode((data.to(device), target.to(device)))
-    #     data = data.squeeze()
-    #     class_id = target[0]
-
-    #     if SPIKING:
-    #         features = model.net.snn[0](data)
-    #         features = model.net.snn[1](features)
-
-    #         mean = torch.sum(features, dim=[0,1])/500
-    #         proto_out.weight.data[class_id] = 2*mean
-    #         proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())/features.shape[1]
-
-    #     else:
-    #         features = model.net(data, features_out=True)
-
-    #         mean = torch.sum(features, dim=0)/500
-    #         proto_out.weight.data[class_id] = 2*mean
-    #         proto_out.bias.data[class_id] = -torch.matmul(mean, mean.t())
-
-
-
-    #     del data
-    #     del features
-    #     del mean
-
-
-    # if SPIKING:
-    #     model.net.snn[-1].W = proto_out
-    # else:
-    #     model.net.output = proto_out
-
-
-    # del base_train_set
-    # del train_loader
 
     for eval_iter in range(NUM_REPEATS):
         print(f"Evaluation Iteration: 0")
@@ -314,8 +322,8 @@ if __name__ == '__main__':
         eval_model.net.eval()
 
         # Metrics
-        static_metrics = ["model_size", "connection_sparsity"]
-        data_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+        static_metrics = [] #"model_size", "connection_sparsity"]
+        data_metrics = ["classification_accuracy"] #, "activation_sparsity", "synaptic_operations"]
 
         # Define benchmark object
         benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
@@ -334,10 +342,10 @@ if __name__ == '__main__':
         pre_train_results = benchmark_all_test.run(postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
         # print("Base results:", pre_train_results)
         eval_accs.append(pre_train_results['classification_accuracy'])
-        act_sparsity.append(pre_train_results['activation_sparsity'])
-        syn_ops_dense.append(pre_train_results['synaptic_operations']['Dense'])
-        syn_ops_macs.append(pre_train_results['synaptic_operations']['Effective_MACs'])
-        syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
+        # act_sparsity.append(pre_train_results['activation_sparsity'])
+        # syn_ops_dense.append(pre_train_results['synaptic_operations']['Dense'])
+        # syn_ops_macs.append(pre_train_results['synaptic_operations']['Effective_MACs'])
+        # syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
@@ -347,8 +355,6 @@ if __name__ == '__main__':
                                     support_query_split=(100,100),
                                     samples_per_class=200)
 
-
-        few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
@@ -366,36 +372,36 @@ if __name__ == '__main__':
             eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
 
 
-            # data = None
-            # for X_shot, y_shot in support:
-            #     if data is None:
-            #         data = X_shot
-            #         target = y_shot
-            #     else:
-            #         data = torch.cat((data,X_shot), 0)
-            #         target = torch.cat((target,y_shot), 0)
+            data = None
+            for X_shot, y_shot in support:
+                if data is None:
+                    data = X_shot
+                    target = y_shot
+                else:
+                    data = torch.cat((data,X_shot), 0)
+                    target = torch.cat((target,y_shot), 0)
 
-            # data, target = encode((data.to(device), target.to(device)))
-            # data = data.squeeze()
+            data, target = encode((data.to(device), target.to(device)))
+            data = data.squeeze()
 
-            # if SPIKING:
-            #     features = eval_model.net.snn[0](data)
-            #     features = eval_model.net.snn[1](features)
+            if SPIKING:
+                features = eval_model.net.snn[0](data)
+                features = eval_model.net.snn[1](features)
 
-            # else:
-            #     features = eval_model.net(data, features_out=True)
+            else:
+                features = eval_model.net(data, features_out=True)
 
 
-            # if SPIKING:
-            #     for index, class_id  in enumerate(query_classes[-10:]):
-            #         mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
-            #         eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
-            #         eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
-            # else:
-            #     for index, class_id  in enumerate(query_classes[-10:]):
-            #         mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
-            #         eval_model.net.output.weight.data[class_id] = 2*mean
-            #         eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())
+            if SPIKING:
+                for index, class_id  in enumerate(query_classes[-10:]):
+                    mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
+                    eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
+                    eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
+            else:
+                for index, class_id  in enumerate(query_classes[-10:]):
+                    mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
+                    eval_model.net.output.weight.data[class_id] = 2*mean
+                    eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())
 
             ### Testing phase ###
             eval_model.net.eval()
@@ -420,10 +426,10 @@ if __name__ == '__main__':
             # print(f"The session accuracy is {session_acc*100}%")
             # print("Session results:", session_results)
             eval_accs.append(session_results['classification_accuracy'])
-            act_sparsity.append(session_results['activation_sparsity'])
-            syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
-            syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
-            syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
+            # act_sparsity.append(session_results['activation_sparsity'])
+            # syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
+            # syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
+            # syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
             wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
 
@@ -438,21 +444,13 @@ if __name__ == '__main__':
 
         all_evals.append(eval_accs)
         all_query.append(query_accs)
-        all_act_sparsity.append(act_sparsity)
-        all_syn_ops_dense.append(syn_ops_dense)
-        all_syn_ops_macs.append(syn_ops_macs)
-        all_syn_ops_acs.append(syn_ops_acs)
-        # mean_accuracy = np.mean(eval_accs)
-        # print(f"The total mean accuracy is {mean_accuracy*100}%")
+        # all_act_sparsity.append(act_sparsity)
+        # all_syn_ops_dense.append(syn_ops_dense)
+        # all_syn_ops_macs.append(syn_ops_macs)
+        # all_syn_ops_acs.append(syn_ops_acs)
 
-        # Print all data
-        # print(f"Eval Accs: {eval_accs}")
-        # print(f"Query Accs: {query_accs}")
-        # print(f"Act Sparsity: {act_sparsity}")
-        # print(f"Syn Ops Dense: {syn_ops_dense}")
-        # print(f"Syn Ops MACs: {syn_ops_macs}")
 
-    metrics = {"act_sparsity":all_act_sparsity, "syn_ops_dense":all_syn_ops_dense, "syn_ops_macs":all_syn_ops_macs, "syn_ops_acs":all_syn_ops_acs}
+    # metrics = {"act_sparsity":all_act_sparsity, "syn_ops_dense":all_syn_ops_dense, "syn_ops_macs":all_syn_ops_macs, "syn_ops_acs":all_syn_ops_acs}
     results = {"all": all_evals, "query": all_query}
     import json
     metrics_file = "metrics_proto_"+str(NUM_REPEATS)+"reps_"
@@ -464,5 +462,5 @@ if __name__ == '__main__':
     metrics_file += str(args.pt_model)+".json"
     with open(os.path.join(ROOT,name), "w") as f:
         json.dump(results, f)
-    with open(os.path.join(ROOT,metrics_file), "w") as f:
-        json.dump(metrics, f)
+    # with open(os.path.join(ROOT,metrics_file), "w") as f:
+    #     json.dump(metrics, f)

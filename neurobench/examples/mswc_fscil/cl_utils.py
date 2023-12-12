@@ -287,7 +287,7 @@ def consolidate_norm(model, norm, cur_clas):
 
             model.saved_norm['weights'][c] = w
             model.saved_norm['biases'][c] = b
-
+##
 def consolidate_weights(model, output, cur_clas, normalize=0):
     """ Mean-shift for the target layer weights"""
 
@@ -313,7 +313,7 @@ def consolidate_weights(model, output, cur_clas, normalize=0):
                 # else:
                 model.saved_weights[c] = new_w
 
-
+##
 def set_consolidate_weights(model, output):
     """ set trained weights """
 
@@ -331,7 +331,7 @@ def set_consolidate_norm(model, norm):
             norm.weight[c].data = torch.full((1,),float(model.saved_norm['weights'][c]))
             norm.bias[c].data = torch.full((1,),float(model.saved_norm['biases'][c]))
 
-
+###
 def reset_weights(model, output, cur_clas):
     """ reset weights"""
 
@@ -353,7 +353,7 @@ def random_reset_weights(model, cur_clas):
                 torch.from_numpy(model.saved_weights[c])
             )
 
-
+##
 def examples_per_class(train_y, Nmax_classes, shots):
     count = {i:0 for i in range(Nmax_classes)}
     for y in train_y:
@@ -387,7 +387,7 @@ def set_bn_to(m, name="", phase="train"):
                 target_attr.eval()
         else:
             set_bn_to(target_attr, target_name, phase)
-
+####
 def eval_below(model, eval_below_layer, only_conv=False):
     # tells whether we want to set model in eval or not
     for name, module in model.named_children():
@@ -402,7 +402,7 @@ def eval_below(model, eval_below_layer, only_conv=False):
         else:
             module.eval()
             # print("Freezing parameter " + name)
-
+##
 def freeze_below(model, freeze_below_layer, only_conv=False):
     # tells whether we want to use gradients for a given parameter
     for name, param in model.named_parameters():

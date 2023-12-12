@@ -37,7 +37,6 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
     
-    parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
     parser.add_argument("--pt_model", type=str, default="mswc_rsnn_proto", help="Pre-trained model to use")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
     parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
@@ -64,11 +63,6 @@ PRE_TRAIN = args.pre_train
 EVAL_EPOCHS = 1
 EVAL_SHOTS = 5
 EPOCHS = args.pt_epochs
-
-if SPIKING:
-    EVAL_LR = args.eval_lr
-else:
-    EVAL_LR = 0.3
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -358,8 +352,6 @@ if __name__ == '__main__':
                                     query_shots=100,
                                     support_query_split=(100,100),
                                     samples_per_class=200)
-
-        few_shot_optimizer = torch.optim.SGD(eval_model.net.parameters(), lr=EVAL_LR, momentum=0.9, weight_decay=0.0005)
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):

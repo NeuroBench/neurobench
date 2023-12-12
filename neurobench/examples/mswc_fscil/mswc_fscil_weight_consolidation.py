@@ -93,7 +93,6 @@ else:
 
 
 def pre_train(model):
-
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
     pre_train_loader = DataLoader(base_train_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, shuffle=True, pin_memory=PIN_MEMORY)
     

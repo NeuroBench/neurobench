@@ -38,8 +38,7 @@ def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
     
     parser.add_argument("--eval_lr", type=float, default=0.01, help="Learning rate for evaluation learning")
-    parser.add_argument("--pt_model", type=str, default="SPmodel_shorttrain", help="Pre-trained model to use")
-    # parser.add_argument("--spiking", type=str, default="SPmodel_shorttrain", help="Learning rate for evaluation learning")
+    parser.add_argument("--pt_model", type=str, default="mswc_rsnn_proto", help="Pre-trained model to use")
     parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
     parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
     parser.add_argument("--soft_delta", action='store_true',  help="Use Delta encoding with only jump between 2 timesteps counted")
@@ -228,7 +227,7 @@ if __name__ == '__main__':
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            load_dict = torch.load("//scratch/p306982/data/fscil/FSCIL_subset/Model_bias",  ##"/home3/p306982/Simulations/fscil/algorithms_benchmarks/neurobench/examples/mswc_fscil/model_data/mswc_mfcc_cnn", 
+            load_dict = torch.load("/home3/p306982/Simulations/fscil/algorithms_benchmarks/neurobench/examples/mswc_fscil/model_data/mswc_cnn_proto", 
                                 map_location=device).state_dict()
             model.load_state_dict(load_dict)
             model = TorchModel(model)

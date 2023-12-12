@@ -246,7 +246,7 @@ if __name__ == '__main__':
 
     if SPIKING:
         output = model.net.snn[-1].W
-        proto_out = nn.Linear(1024, 200, bias=True).to(device)
+        proto_out = nn.Linear(output.weight.shape[1], 200, bias=True).to(device)
         proto_out.weight.data = output.weight.data
     else:
         output = model.net.output

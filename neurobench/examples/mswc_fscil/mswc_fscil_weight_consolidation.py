@@ -236,10 +236,10 @@ if __name__ == '__main__':
 
         # Metrics
         static_metrics = ["model_size", "connection_sparsity"]
-        data_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+        workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
         # Define benchmark object
-        benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
+        benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
                             preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
         benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
@@ -287,7 +287,7 @@ if __name__ == '__main__':
             print(f"Session: {session+1}")
 
             # Define benchmark object
-            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, data_metrics], dataloader=test_loader, 
+            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,

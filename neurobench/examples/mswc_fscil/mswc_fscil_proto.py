@@ -259,8 +259,9 @@ if __name__ == '__main__':
         class_id = target[0]
 
         if SPIKING:
-            features = model.net.snn[0](data)
-            features = model.net.snn[1](features)
+            features = data
+            for layer in model.net.snn[:-1]:
+                features = layer(features)
 
             mean = torch.sum(features, dim=[0,1])/500
             proto_out.weight.data[class_id] = 2*mean

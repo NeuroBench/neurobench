@@ -27,6 +27,7 @@ from mswc_fscil_proto import squeeze, to_device, out2pred
 
 import argparse
 
+
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
     
@@ -40,7 +41,10 @@ def parse_arguments():
 
     return args
 
+
 args = parse_arguments()
+
+MODEL_SAVE_DIR = "./model_data/"
 ROOT = "./FSCIL_subset/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
@@ -177,7 +181,7 @@ if __name__ == '__main__':
 
             name = "SPModel_clean"
 
-            torch.save(model.state_dict(), os.path.join(ROOT,name))
+            torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
             
             model = TorchModel(model)
             model.add_activation_module(RadLIFLayer)
@@ -188,7 +192,7 @@ if __name__ == '__main__':
             pre_train(model)
 
             name = "Model_bias"
-            torch.save(model.state_dict(), os.path.join(ROOT,name))
+            torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
 
             model = TorchModel(model)
 
@@ -206,7 +210,7 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             
-            state_dict = torch.load(os.path.join(ROOT,args.pt_model),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,args.pt_model),
                                 map_location=device)
             model.load_state_dict(state_dict)
             model = TorchModel(model)
@@ -215,7 +219,7 @@ if __name__ == '__main__':
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            state_dict = torch.load(os.path.join(ROOT,args.pt_model),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,args.pt_model),
                                 map_location=device)
             model.load_state_dict(state_dict)
             model = TorchModel(model)
@@ -400,5 +404,5 @@ if __name__ == '__main__':
 
     name += str(args.pt_model)+str(EVAL_LR)+"lr.json"
 
-    with open(os.path.join(ROOT,name), "w") as f:
+    with open(os.path.join(MODEL_SAVE_DIR,name), "w") as f:
         json.dump(results, f)

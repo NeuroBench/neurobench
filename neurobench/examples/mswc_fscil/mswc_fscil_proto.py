@@ -22,8 +22,7 @@ from neurobench.examples.mswc_fscil.sparchSNNs import SNN
 from neurobench.examples.mswc_fscil.sparchSNNs import RadLIFLayer
 
 from neurobench.benchmarks import Benchmark
-from neurobench.preprocessing import MFCCProcessor
-from neurobench.preprocessing import S2SProcessor
+from neurobench.preprocessing import MFCCProcessor, S2SProcessor
 
 from weight_consolidation_utils import examples_per_class
 

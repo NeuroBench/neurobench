@@ -20,8 +20,7 @@ from neurobench.examples.mswc_fscil.sparchSNNs import SNN
 from neurobench.examples.mswc_fscil.sparchSNNs import RadLIFLayer
 
 from neurobench.benchmarks import Benchmark
-from neurobench.preprocessing import MFCCProcessor
-from neurobench.preprocessing import S2SProcessor
+from neurobench.preprocessing import MFCCProcessor, S2SProcessor
 
 from weight_consolidation_utils import set_consolidate_weights, consolidate_weights, freeze_below, eval_below, examples_per_class, reset_weights
 from mswc_fscil_proto import squeeze, to_device, out2pred
@@ -215,7 +214,7 @@ if __name__ == '__main__':
                                 map_location=device)
             model.load_state_dict(state_dict)
             model = TorchModel(model)
-            
+
             model.add_activation_module(RadLIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 

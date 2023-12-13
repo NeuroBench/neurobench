@@ -6,21 +6,11 @@ from neurobench.datasets import PrimateReaching
 from neurobench.datasets import DVSGesture
 from neurobench.datasets import MackeyGlass
 from neurobench.datasets import WISDMDataLoader
-from neurobench.datasets import MSWC
 from torch.utils.data import DataLoader
 
 import torch
-dataset_path = "data/"
 
-def test_mswc():
-    path = dataset_path + "MSWC/"
-    # test downloading
-    MSWC(path, subset="base", procedure='training')
-    # try:
-    #     assert os.path.exists(path)
-    # except AssertionError:
-    #     raise FileExistsError(f"Can't find {path}")
-    # ds = MSWC(path, subset="base", language="en")
+dataset_path = "data/"
 
 
 def test_nehar():
@@ -44,6 +34,7 @@ def test_nehar():
     assert isinstance(wisdm.test_dataloader(), torch.utils.data.DataLoader)
 
     wisdm = WISDMDataLoader(path)
+
     wisdm.setup('test')
     assert isinstance(wisdm.ds_test, torch.utils.data.TensorDataset)
     assert wisdm.ds_val is None
@@ -120,8 +111,6 @@ def test_mackey_glass():
     assert(torch.eq(mg[0][1], mg[1][0][-1])) # ensure target from previous timestep is appended to lookback window
 
 def test_mackey_glass_load():
-    mg = MackeyGlass()
-
     filepath = dataset_path + "mackey_glass/mg_17.npy"
     try:
         assert os.path.exists(filepath)
@@ -229,8 +218,3 @@ def test_primate_reaching():
     assert next(iter(train_set_loader))[1].shape == (1, 2)
     assert next(iter(test_set_loader))[0].shape == (1, 250, 96)
     assert next(iter(test_set_loader))[1].shape == (1, 2)
-
-
-if __name__ == "__main__":
-    test_mackey_glass_load()
-    test_mswc()

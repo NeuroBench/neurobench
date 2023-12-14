@@ -361,9 +361,6 @@ if __name__ == '__main__':
 
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
-            
-            cur_class = support[0][1].tolist()
-            eval_model.net.cur_j = examples_per_class(cur_class, 200, 5)
 
             ### Computing new Protypical Weights ###
             data = None

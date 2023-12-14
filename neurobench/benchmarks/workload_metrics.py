@@ -54,7 +54,7 @@ def detect_activations_connections(model):
         hook.close()
     model.activation_hooks = []
     model.connection_hooks = []
-
+    
     supported_layers = model.supported_layers
     
     # recurrent_supported_layers = (torch.nn.RNNBase)

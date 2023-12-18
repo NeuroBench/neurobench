@@ -360,7 +360,7 @@ if __name__ == '__main__':
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
-            ### Computing new Protypical Weights ###
+            ### Computing new Prototypical Weights ###
             data = None
             
             for X_shot, y_shot in support:
@@ -378,16 +378,14 @@ if __name__ == '__main__':
                 features = eval_model.net.snn[0](data)
                 features = eval_model.net.snn[1](features)
 
-            else:
-                features = eval_model.net(data, features_out=True)
-
-            if SPIKING:
-                for index, class_id  in enumerate(query_classes[-10:]):
+                for index, class_id in enumerate(query_classes[-10:]):
                     mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
                     eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
                     eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
             else:
-                for index, class_id  in enumerate(query_classes[-10:]):
+                features = eval_model.net(data, features_out=True)
+
+                for index, class_id in enumerate(query_classes[-10:]):
                     mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
                     eval_model.net.output.weight.data[class_id] = 2*mean
                     eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())

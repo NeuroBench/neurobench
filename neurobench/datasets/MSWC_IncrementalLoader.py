@@ -105,7 +105,7 @@ class IncrementalFewShot(IterableDataset):
         for class_index in cumulative_classes[language]:
             query_indices = np.random.choice(self.indices_per_lang[language][class_index][1], self.query_shots, replace=False)
 
-            self.cumulative_query += [(dataset[j][2], dataset[j][3], class_index) for j in query_indices]
+            self.cumulative_query += [(dataset[j][3], class_index, dataset[j][2]) for j in query_indices]
 
         query_set = MSWC_query(self.cumulative_query)
 

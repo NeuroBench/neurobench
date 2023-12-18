@@ -3,10 +3,6 @@ import numpy as np
 import torch
 import math
 from jitcdde import jitcdde, y, t, jitcdde_lyap
-import os
-from neurobench.datasets.utils import download_url, extract_gzip_file
-import zipfile
-import gdown
 
 '''
 The jitcdde package used to generate the MackeyGlass time-series can vary based 
@@ -14,7 +10,8 @@ on platform, due to lower level integration solvers. In order to ensure that you
 are using the same data as the authors, please download the time-series from here:
 
 mackey_glass_data.tar
-https://drive.google.com/file/d/1EjMKclSdQzkhFblqCHegp9CzcYogkX3j/view?usp=sharing
+https://drive.google.com/file/d/1lFQsof74x-bBjqkBysVGPKiovqLl51fj/view?usp=sharing
+
 TODO: update the hosting of this data (431 KB)
 '''
 
@@ -22,7 +19,6 @@ class MackeyGlass(Dataset):
     """ Dataset for the Mackey-Glass task.
     """
     def __init__(self, 
-                 root: str = 'data/mackey_glass',
                  file=None,
                  tau=17,  
                  lyaptime=197,
@@ -41,7 +37,6 @@ class MackeyGlass(Dataset):
         Initializes the Mackey-Glass dataset.
 
         Args:
-            root (str): root directory of dataset, if not provided or directory is empty, will download and extract dataset from https://drive.google.com/file/d/1EjMKclSdQzkhFblqCHegp9CzcYogkX3j/view?usp=sharing
             file (str): path to .npy file containing Mackey-Glass time-series. If this is provided, then tau, lyaptime, constant_past, nmg, beta, gamma are ignored.
             tau (float): parameter of the Mackey-Glass equation
             lyaptime (float): Lyapunov time of the time-series
@@ -58,27 +53,6 @@ class MackeyGlass(Dataset):
         """
 
         super().__init__()
-        self.root = root
-
-        # check if root directory exist and if it is not empty
-        if not os.path.isdir(root) or not os.listdir(root):
-
-# `Replace with your folder ID or direct link
-            folder_link = 'https://drive.google.com/file/d/1EjMKclSdQzkhFblqCHegp9CzcYogkX3j/view?usp=sharing'
-
-            print('Downloading dataset...')
-            download_url(url='https://drive.google.com/file/d/1EjMKclSdQzkhFblqCHegp9CzcYogkX3j/view?usp=sharing', file_path=root,filename='Mackey_Glass')
-            print('Download complete.\n')
-            print('Extracting dataset...')
-            print(os.listdir('data'))
-            target = 'data'
-            extract_gzip_file(gzip_file_path='data/Mackey_Glass', output_path=target)
-            os.remove('data/Mackey_Glass')
-            os.remove('data/Mackey_Glass')
-
-            print('Extraction complete.')
-            # file = 'data/mackey_glass'
-
 
         # Parameters
         self.tau = tau
@@ -114,8 +88,8 @@ class MackeyGlass(Dataset):
         if file is not None:
             self.load_data(file)
         else:
-            print('Generating data...\nNote that the generated data may be different than the data generated on a different machine. Please use pregenerated data by specifying root and file (will automatically download).)')
             self.generate_data()
+
         # Generate train/test indices
         self.split_data()
         

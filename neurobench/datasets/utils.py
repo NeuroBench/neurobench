@@ -32,41 +32,14 @@ CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
 OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
-import tarfile
-import os
-import sys
-import re
-import hashlib
-import urllib
-from urllib.parse import urlparse
-from torch.utils.model_zoo import tqdm
-from typing import Optional, Tuple, List, Dict, Union
-import bz2
-import contextlib
-import gzip
-import hashlib
-import itertools
-import lzma
-import os
-import os.path
-import pathlib
-import re
-import sys
-import tarfile
-import urllib
-import urllib.error
-import urllib.request
-import warnings
-import zipfile
-from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
-from urllib.parse import urlparse
 
-import numpy as np
-import requests
-import torch
+import os
+import sys
+import re
+import hashlib
+import urllib
+from urllib.parse import urlparse
 from torch.utils.model_zoo import tqdm
-import gzip
-import shutil
 
 USER_AGENT = "neurobench"
 
@@ -74,7 +47,7 @@ USER_AGENT = "neurobench"
 def _save_response_content(
     content,
     destination,
-    length: Optional[int] = None,
+    length,
 ):
     with open(destination, "wb") as fh, tqdm(total=length) as pbar:
         for chunk in content:
@@ -132,108 +105,7 @@ def check_integrity(fpath, md5):
     return check_md5(fpath, md5)
 
 
-def _get_google_drive_file_id(url: str) -> Optional[str]:
-    parts = urlparse(url)
-
-    if re.match(r"(drive|docs)[.]google[.]com", parts.netloc) is None:
-        return None
-
-    match = re.match(r"/file/d/(?P<id>[^/]*)", parts.path)
-    if match is None:
-        return None
-
-    return match.group("id")
-
-def _extract_gdrive_api_response(response, chunk_size: int = 32 * 1024) -> Tuple[bytes, Iterator[bytes]]:
-    content = response.iter_content(chunk_size)
-    first_chunk = None
-    # filter out keep-alive new chunks
-    while not first_chunk:
-        first_chunk = next(content)
-    content = itertools.chain([first_chunk], content)
-
-    try:
-        match = re.search("<title>Google Drive - (?P<api_response>.+?)</title>", first_chunk.decode())
-        api_response = match["api_response"] if match is not None else None
-    except UnicodeDecodeError:
-        api_response = None
-    return api_response, content
-
-def extract_gzip_file(gzip_file_path, output_path):
-    with tarfile.open(gzip_file_path, 'r:gz') as tar:
-        tar.extractall(path=output_path)
-
-def download_file_from_google_drive(file_id: str, root: str, filename: Optional[str] = None, md5: Optional[str] = None):
-    """Download a Google Drive file from  and place it in root.
-
-    Args:
-        file_id (str): id of file to be downloaded
-        root (str): Directory to place downloaded file in
-        filename (str, optional): Name to save the file under. If None, use the id of the file.
-        md5 (str, optional): MD5 checksum of the download. If None, do not check
-    """
-    # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
-
-    root = os.path.expanduser(root)
-    if not filename:
-        filename = file_id
-    fpath = os.path.join(root, filename)
-
-    os.makedirs(root, exist_ok=True)
-
-    if check_integrity(fpath, md5):
-        print(f"Using downloaded {'and verified ' if md5 else ''}file: {fpath}")
-        return
-
-    url = "https://drive.google.com/uc"
-    params = dict(id=file_id, export="download")
-    with requests.Session() as session:
-        response = session.get(url, params=params, stream=True)
-
-        for key, value in response.cookies.items():
-            if key.startswith("download_warning"):
-                token = value
-                break
-        else:
-            api_response, content = _extract_gdrive_api_response(response)
-            token = "t" if api_response == "Virus scan warning" else None
-
-        if token is not None:
-            response = session.get(url, params=dict(params, confirm=token), stream=True)
-            api_response, content = _extract_gdrive_api_response(response)
-
-        if api_response == "Quota exceeded":
-            raise RuntimeError(
-                f"The daily quota of the file {filename} is exceeded and it "
-                f"can't be downloaded. This is a limitation of Google Drive "
-                f"and can only be overcome by trying again later."
-            )
-
-        _save_response_content(content, fpath)
-
-    # In case we deal with an unhandled GDrive API response, the file should be smaller than 10kB and contain only text
-    if os.stat(fpath).st_size < 10 * 1024:
-        with contextlib.suppress(UnicodeDecodeError), open(fpath) as fh:
-            text = fh.read()
-            # Regular expression to detect HTML. Copied from https://stackoverflow.com/a/70585604
-            if re.search(r"</?\s*[a-z-][^>]*\s*>|(&(?:[\w\d]+|#\d+|#x[a-f\d]+);)", text):
-                warnings.warn(
-                    f"We detected some HTML elements in the downloaded file. "
-                    f"This most likely means that the download triggered an unhandled API response by GDrive. "
-                    f"Please report this to torchvision at https://github.com/pytorch/vision/issues including "
-                    f"the response:\n\n{text}"
-                )
-
-    if md5 and not check_md5(fpath, md5):
-        raise RuntimeError(
-            f"The MD5 checksum of the download file {fpath} does not match the one on record."
-            f"Please delete the file and try again. "
-            f"If the issue persists, please report this to torchvision at https://github.com/pytorch/vision/issues."
-        )
-
-
-\
-def download_url(url, file_path,filename=None, md5=None, max_redirect_hops=3):
+def download_url(url, file_path, md5=None, max_redirect_hops=3):
     """Download a file from a url and place it in root.
 
     Args:
@@ -253,12 +125,9 @@ def download_url(url, file_path,filename=None, md5=None, max_redirect_hops=3):
     url = _get_redirect_url(url, max_hops=max_redirect_hops)
 
     # # check if file is located on Google Drive
-    file_id = _get_google_drive_file_id(url)
-    root = os.path.dirname(file_path)
-    if filename is None:
-        filename = os.path.basename(file_path)
-    if file_id is not None:
-        return download_file_from_google_drive(file_id, root, filename, md5)
+    # file_id = _get_google_drive_file_id(url)
+    # if file_id is not None:
+    #     return download_file_from_google_drive(file_id, root, filename, md5)
 
     # download the file
     try:

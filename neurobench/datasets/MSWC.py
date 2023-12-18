@@ -6,11 +6,6 @@ from torchaudio.datasets.utils import _load_waveform
 import torch
 from neurobench.datasets.utils import download_url, extract_gzip_file
 
-import csv
-import json
-import numpy as np
-import matplotlib.pyplot as plt
-
 from torch.utils.data import Dataset
 
 FSCIL_KEYWORDS = ['surrounding',
@@ -272,11 +267,8 @@ class MSWC(Dataset):
         """
         self.root = root
 
-        # check if root directory exist and if it is not empty
+        # Check if root directory exist and if it is not empty
         if not os.path.isdir(root) or not os.listdir(root):
-
-# `Replace with your folder ID or direct link
-
             print('Downloading dataset...')
             download_url(url=' https://drive.google.com/file/d/1tRJUEUUY8yRX-7S3EUg41zih2LqpToXw/view?usp=sharing', file_path=root,filename='mswc')
             print('Download complete.\n')
@@ -356,7 +348,7 @@ class MSWC(Dataset):
         Returns:
             int: The number of samples in the dataset.
         """
-        return(len(self._walker))
+        return len(self._walker)
 
 
 
@@ -366,7 +358,6 @@ class MSWC_query(Dataset):
     """
 
     def __init__(self, walker):
-
         self._walker = walker
 
     def __getitem__(self, index: int):

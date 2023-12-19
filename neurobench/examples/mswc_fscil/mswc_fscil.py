@@ -60,6 +60,7 @@ SPIKING = args.spiking
 PRE_TRAIN = args.pre_train
 EVAL_EPOCHS = 1
 EVAL_SHOTS = 5
+EVAL_WAYS = 10
 EPOCHS = args.pt_epochs
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -291,6 +292,9 @@ if __name__ == '__main__':
     del base_train_set
     del train_loader
 
+    # Get base test set for evaluation
+    base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
+
     for eval_iter in range(NUM_REPEATS):
         print(f"Evaluation Iteration: 0")
         ### Evaluation phase ###
@@ -304,8 +308,6 @@ if __name__ == '__main__':
         syn_ops_macs = []
         syn_ops_acs = []
 
-        # Get base test set for evaluation
-        base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
         test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
         # Define an arbitrary resampling as an example of pre-processor to feed to the Benchmark object
@@ -343,7 +345,7 @@ if __name__ == '__main__':
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
-        few_shot_dataloader = IncrementalFewShot(n_way=10, k_shot=EVAL_SHOTS, 
+        few_shot_dataloader = IncrementalFewShot(n_way=EVAL_WAYS, k_shot=EVAL_SHOTS, 
                                     root = ROOT,
                                     query_shots=100,
                                     support_query_split=(100,100),
@@ -378,15 +380,15 @@ if __name__ == '__main__':
                 features = eval_model.net.snn[0](data)
                 features = eval_model.net.snn[1](features)
 
-                for index, class_id in enumerate(query_classes[-10:]):
-                    mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
+                for index, class_id in enumerate(query_classes[-EVAL_WAYS:]):
+                    mean = torch.sum(features[[i*EVAL_WAYS+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
                     eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
                     eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
             else:
                 features = eval_model.net(data, features_out=True)
 
-                for index, class_id in enumerate(query_classes[-10:]):
-                    mean = torch.sum(features[[i*10+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
+                for index, class_id in enumerate(query_classes[-EVAL_WAYS:]):
+                    mean = torch.sum(features[[i*EVAL_WAYS+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
                     eval_model.net.output.weight.data[class_id] = 2*mean
                     eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())
 

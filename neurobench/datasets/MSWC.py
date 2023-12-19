@@ -345,7 +345,7 @@ class MSWC_query(Dataset):
         """Initialization of the dataset.
 
         Args:
-            walker (list): List of tuples with data (dirname, filename, class_index)
+            walker (list): List of tuples with data (filename, class_index, dirname)
         """
         
         self._walker = walker

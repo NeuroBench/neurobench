@@ -3,15 +3,15 @@ import torch.nn as nn
 import snntorch as snn
 import snntorch.surrogate as surrogate
 from neurobench.models import SNNTorchModel, TorchModel
-# from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity,
+# from neurobench.benchmarks.static_metrics import footprint, parameter_count, connection_sparsity,
 # from neurobench.benchmarks.workload_metrics import activation_sparsity, classification_accuracy, MSE, sMAPE, r2, 
 from neurobench.models import SNNTorchModel
-from neurobench.benchmarks.static_metrics import model_size, parameter_count, connection_sparsity
+from neurobench.benchmarks.static_metrics import footprint, parameter_count, connection_sparsity
 from neurobench.benchmarks.workload_metrics import classification_accuracy, MSE, sMAPE, r2, activation_sparsity, detect_activations_connections, synaptic_operations, number_neuron_updates
 from torch.profiler import profile, record_function, ProfilerActivity
 
-# Pytest for model_size from benchmarks/static_metrics
-def test_model_size():
+# Pytest for footprint from benchmarks/static_metrics
+def test_footprint():
     beta = 0.9
     spike_grad = surrogate.fast_sigmoid()
     net = nn.Sequential(
@@ -26,7 +26,7 @@ def test_model_size():
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
     )
     model = SNNTorchModel(net)
-    assert model_size(model) == 583900
+    assert footprint(model) == 583900
 
 # Pytest for parameter_count from benchmarks/static_metrics
 def test_parameter_count():

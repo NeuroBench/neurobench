@@ -24,7 +24,7 @@ model = SNNTorchModel(net)
 # postprocessors
 postprocessors = [choose_max_count]
 
-static_metrics = ["model_size", "connection_sparsity"]
+static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["synaptic_operations", "activation_sparsity"]
 
 benchmark = Benchmark(model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics])

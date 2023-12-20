@@ -25,7 +25,7 @@ if __name__ == '__main__':
     # # # postprocessors
     postprocessors = [choose_max_count]
     # #
-    static_metrics = ["model_size"]
+    static_metrics = ["footprint"]
     workload_metrics = ["classification_accuracy"]
     # #
     benchmark = Benchmark(model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics])

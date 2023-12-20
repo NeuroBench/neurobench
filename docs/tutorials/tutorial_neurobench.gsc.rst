@@ -74,7 +74,7 @@ Next specify the metrics which you want to calculate. The available metrics (V1.
 
 **Static Metrics:**
 
-- model_size
+- footprint
 - connection_sparsity
 - frequency
 
@@ -90,7 +90,7 @@ More explanation on the metrics can be found on `neurobench.ai <https://neuroben
 
 .. code:: python
 
-   static_metrics = ["model_size"]
+   static_metrics = ["footprint"]
    data_metrics = ["classification_accuracy"]
 
 Next, we instantiate the benchmark. We have to specify the model, the dataloader, the preprocessors, the postprocessor and the list of the static and data metrics which we want to measure:

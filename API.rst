@@ -196,7 +196,7 @@ or they can be stateful subclasses of AccumulatedMetric.
    test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
    processors = [Processor1(), Processor2()]
    accumulators = [Accumulator1()]
-   static_metrics = ["model_size", "connection_sparsity"]
+   static_metrics = ["footprint", "connection_sparsity"]
    data_metrics = ["accuracy", "activation_sparsity"]
 
    benchmark = Benchmark(

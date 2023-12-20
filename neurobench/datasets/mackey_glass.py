@@ -2,6 +2,7 @@ from neurobench.datasets.dataset import Dataset
 import numpy as np
 import torch
 import math
+import os
 from jitcdde import jitcdde, y, t, jitcdde_lyap
 
 '''
@@ -85,7 +86,7 @@ class MackeyGlass(Dataset):
         self.mackeyglass_specification = [ self.beta * y(0,t-self.tau) / (1 + y(0,t-self.tau)**self.nmg) - self.gamma*y(0) ]
 
         # Generate time-series
-        if file is not None:
+        if os.path.isfile(file):
             self.load_data(file)
         else:
             self.generate_data()

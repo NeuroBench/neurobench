@@ -248,7 +248,8 @@ def get_mswc_item(item, dirname, return_path):
 
 class MSWC(Dataset):
     """ 
-    Subset version of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/)
+    Subset version (https://huggingface.co/datasets/NeuroBench/mswc_fscil_subset)
+    of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/)
     for a few-shot class-incremental learning (FSCIL) task consisting of 200 voice commands keywords:
     - 100 base classes available for pre-training with:
         - 500 train samples
@@ -257,16 +258,17 @@ class MSWC(Dataset):
     - 100 evaluation classes to do class-incremental learning on with 200 samples each.
 
     The subset of data used for this task, as well as the supporting files for base class and incremental 
-    splits, will be hosted and available shortly. If you are interested in using this dataset beforehand, 
-    please email jyik@g.harvard.edu for dataset download.
+    splits, is hosted on Huggingface at the first link above.
     
-    The data should be organized as follows:
-    data/
-    MSWC/
-        base_[test,train,val].csv
-        language/ (for all languages in general or FSCIL dataset)
-            clips/
-            *.csv
+    The data just needs to be downloaded, for instance in a _data_ folder inside the main neurobench folder. 
+    In this case, it should have the following format.
+    neurobench/
+        data/
+            MSWC/
+                base_[test,train,val].csv
+                language/ (for all languages in general or FSCIL dataset)
+                    clips/
+                    evaluation.csv
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
                  language: Optional[str] = None, incremental: Optional[bool] = False

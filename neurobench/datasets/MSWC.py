@@ -214,7 +214,7 @@ FOLDER_AUDIO = "clips"
 def _load_list(split_path: Union[str, Path]) -> List[Tuple[str, str, bool, str, str]]:
     walker = []
 
-    with open(split_path, 'r') as f:
+    with open(split_path, 'r', encoding='utf-8') as f:
         for line in f:
             path, word, lang = line.strip().split(',')
             

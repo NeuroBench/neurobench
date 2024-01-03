@@ -2,7 +2,7 @@ from torch import nn
 import torch
 from neurobench.benchmarks.hooks import ActivationHook
 
-from neurobench.benchmarks.utils.metric_utils import activation_modules
+from neurobench.utils import activation_modules
 
 
 class NeuroBenchModel:

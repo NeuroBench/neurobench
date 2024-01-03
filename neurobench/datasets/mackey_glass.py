@@ -94,7 +94,7 @@ class MackeyGlass(Dataset):
         if download and not os.path.exists(self.file_path):
             print("downloading ....")
             self.download()
-        # Generate time-series
+        # Load or generate time-series
         if os.path.exists(self.file_path) is not None:
             self.load_data(self.file_path)
         else:

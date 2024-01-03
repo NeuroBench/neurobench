@@ -1,26 +1,23 @@
-from typing import Callable, List, Optional, Tuple, Union, Dict
+"""
+This file contains code based on torch-mate: https://github.com/V0XNIHILI/torch-mate
+"""
 
-from itertools import repeat, chain
+from typing import List, Optional, Tuple, Union, Dict
 
 import random
 import numpy as np
 import torch
-from torch.utils.data import Dataset, IterableDataset, BatchSampler, RandomSampler
+from torch.utils.data import IterableDataset
 
 from tqdm import tqdm
 
-import os
-from torch import Tensor
-from torchaudio.datasets.utils import _load_waveform
-from neurobench.datasets.MSWC import MSWC
-from neurobench.datasets.MSWC import MSWC_query
+from neurobench.datasets.MSWC import MSWC, MSWC_query
 
 
 SAMPLE_RATE = 48000
 
 
 def get_indices_per_class(languages, root, support_query_split: Optional[Tuple[int, int]] = None, samples_per_class: Optional[int] = None) -> Union[Dict[int, List[int]], Dict[int, Tuple[List[int], List[int]]]]:
-    
     indices_per_lang = {}
     for lang in languages:
         indices_per_lang[lang] = {}
@@ -83,12 +80,6 @@ class IncrementalFewShot(IterableDataset):
         self.languages = inc_languages
         self.root = root
 
-    # def reset(self):
-    #     """Reset sampler for new iteration of dataset
-    #     """
-    #     self.classes_to_sample_from = list(set(self.indices_per_class.keys()))
-
-
     def __iter__(self):
         """Get a batch of samples for a k-shot n-way task.
 
@@ -97,10 +88,8 @@ class IncrementalFewShot(IterableDataset):
         """
 
         cumulative_classes = {}
-
-        k_shot = self.k_shot
-
         self.cumulative_query = []
+
         for lang in random.sample(self.languages, len(self.languages)):
             dataset = MSWC(root=self.root, subset="evaluation", language=lang)
 
@@ -108,39 +97,39 @@ class IncrementalFewShot(IterableDataset):
             cumulative_classes[lang] = support_classes
 
             # Yields iterative sessions
-            out = self._inner_iter(lang, dataset, support_classes, cumulative_classes, self.n_way, k_shot)
+            out = self._inner_iter(lang, dataset, support_classes, cumulative_classes)
             del dataset
             yield out
 
-
-    def _inner_iter(self, language, dataset, support_classes, cumulative_classes, n_way, k_shot):
-        X_train_samples = [[] for _ in range(k_shot)]
-        y_train_samples = [[] for _ in range(k_shot)]
-
-        for i, class_index in enumerate(support_classes):
-            support_indices = np.random.choice(self.indices_per_lang[language][class_index][0], k_shot, replace=False)
-            for i, index in enumerate(support_indices):
-                data, real_class, _, _ = dataset[index]
-                y_train_samples[i].append(real_class)
-                X_train_samples[i].append(data)
-            
-            
-        for i, class_index in enumerate(cumulative_classes[language]):
+    def _inner_iter(self, language, dataset, support_classes, cumulative_classes):
+        for class_index in cumulative_classes[language]:
             query_indices = np.random.choice(self.indices_per_lang[language][class_index][1], self.query_shots, replace=False)
 
-            self.cumulative_query += [(dataset[j][2], dataset[j][3], class_index) for j in query_indices]
+            self.cumulative_query += [(dataset[j][3], class_index, dataset[j][2]) for j in query_indices]
 
+        query_set = MSWC_query(self.cumulative_query)
 
+        X_train_samples = [[] for _ in range(self.k_shot)]
+        y_train_samples = [[] for _ in range(self.k_shot)]
+
+        # For every class
+        for class_index in support_classes:
+            support_indices = np.random.choice(self.indices_per_lang[language][class_index][0], self.k_shot, replace=False)
+
+            # For every (support) shot/sample
+            for j, index in enumerate(support_indices):
+                data, real_class, _, _ = dataset[index]
+                y_train_samples[j].append(real_class)
+                X_train_samples[j].append(data)
+            
         support = []
         for x, y in zip(X_train_samples, y_train_samples):
             shot = (torch.stack(x),torch.tensor(y, dtype=torch.long))
             support.append(shot)
 
-        query_set = MSWC_query(self.cumulative_query)
         query_classes = []
         for lang_class in cumulative_classes.values():
             query_classes.extend(lang_class)
-
 
         out = (support, query_set, query_classes)
 

@@ -12,7 +12,7 @@ def Gen4DetectionDataLoader(*args, **kwargs):
     return _lazy_import("neurobench.datasets", ".megapixel_automotive", "Gen4DetectionDataLoader")(*args, **kwargs)
 
 def DVSGesture(*args, **kwargs):
-    return _lazy_import("neurobench.datasets", ".DVSGesture_loader", "DVSGesture")(*args, **kwargs)
+    return _lazy_import("neurobench.datasets", ".dvs_gesture", "DVSGesture")(*args, **kwargs)
 
 def MackeyGlass(*args, **kwargs):
     return _lazy_import("neurobench.datasets", ".mackey_glass", "MackeyGlass")(*args, **kwargs)

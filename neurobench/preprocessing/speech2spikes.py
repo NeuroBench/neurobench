@@ -120,7 +120,7 @@ class S2SProcessor(NeuroBenchProcessor):
             tensors = tensors.transpose(1, 2)
         tensors = self.transform(tensors)
         tensors = torch.log(tensors)
-        tensors = tensor_to_events(tensors, device=self.device)
+        tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
         
         if kwargs:

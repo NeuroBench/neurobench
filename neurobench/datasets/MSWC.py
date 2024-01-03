@@ -5,11 +5,6 @@ from torch import Tensor
 from torchaudio.datasets.utils import _load_waveform
 import torch
 
-import csv
-import json
-import numpy as np
-import matplotlib.pyplot as plt
-
 from torch.utils.data import Dataset
 
 FSCIL_KEYWORDS = ['surrounding',
@@ -234,6 +229,23 @@ def _load_list(split_path: Union[str, Path]) -> List[Tuple[str, str, bool, str, 
     return walker
 
 
+def get_mswc_item(item, dirname, return_path):
+    waveform = _load_waveform(dirname, item[0], SAMPLE_RATE)
+
+    if waveform.size()[1] != SAMPLE_RATE:
+        full_size = torch.zeros((1,SAMPLE_RATE))
+        full_size[:, :waveform.size()[1]] = waveform
+        waveform = full_size
+
+    # Data is expected to be (timesteps, features)
+    waveform = waveform.permute(1,0)
+
+    if return_path:
+        return (waveform, item[1], dirname, item[0])
+    else:
+        return (waveform, item[1])
+
+
 class MSWC(Dataset):
     """ 
     Subset version of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/)
@@ -287,7 +299,6 @@ class MSWC(Dataset):
             else:
                 self.return_path = False
                 
-
         elif subset == 'evaluation':
             self.subset = 'evaluation'
             self.procedure = None
@@ -313,20 +324,8 @@ class MSWC(Dataset):
         item = self._walker[index]
 
         dirname = os.path.join(self.root, item[2], FOLDER_AUDIO)
-        waveform = _load_waveform(dirname, item[0], SAMPLE_RATE)
 
-        if waveform.size()[1] != SAMPLE_RATE:
-            full_size = torch.zeros((1,SAMPLE_RATE))
-            full_size[:, :waveform.size()[1]] = waveform
-            waveform = full_size
-
-        # Data is expected to be (timesteps, features)
-        waveform = waveform.permute(1,0)
-
-        if self.return_path:
-            return (waveform, item[1], dirname, item[0])
-        else:
-            return (waveform, item[1])
+        return get_mswc_item(item, dirname, self.return_path)
 
     def __len__(self):
         """ Returns the number of samples in the dataset.
@@ -334,8 +333,7 @@ class MSWC(Dataset):
         Returns:
             int: The number of samples in the dataset.
         """
-        return(len(self._walker))
-
+        return len(self._walker)
 
 
 class MSWC_query(Dataset):
@@ -344,7 +342,12 @@ class MSWC_query(Dataset):
     """
 
     def __init__(self, walker):
+        """Initialization of the dataset.
 
+        Args:
+            walker (list): List of tuples with data (filename, class_index, dirname)
+        """
+        
         self._walker = walker
 
     def __getitem__(self, index: int):
@@ -359,18 +362,7 @@ class MSWC_query(Dataset):
         """
         item = self._walker[index]
 
-        dirname = item[0]
-        waveform = _load_waveform(dirname, item[1], SAMPLE_RATE)
-
-        if waveform.size()[1] != SAMPLE_RATE:
-            full_size = torch.zeros((1,SAMPLE_RATE))
-            full_size[:, :waveform.size()[1]] = waveform
-            waveform = full_size
-
-        # Data is expected to be (timesteps, features)
-        waveform = waveform.permute(1,0)
-
-        return (waveform, item[2])
+        return get_mswc_item(item, item[2], False)
 
     def __len__(self):
         """ Returns the number of samples in the dataset.
@@ -378,4 +370,4 @@ class MSWC_query(Dataset):
         Returns:
             int: The number of samples in the dataset.
         """
-        return(len(self._walker))
+        return len(self._walker)

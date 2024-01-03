@@ -90,7 +90,7 @@ for series_id in range(len(mg_parameters)):
     
         model = TorchModel(esn)
     
-        static_metrics = ["model_size", "connection_sparsity"]
+        static_metrics = ["footprint", "connection_sparsity"]
         workload_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics]) 

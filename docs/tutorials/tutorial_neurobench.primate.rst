@@ -68,7 +68,7 @@ In the context of predictive modeling, time series prediction is a task that ent
 
    .. code:: python
 
-      static_metrics = ["model_size"]
+      static_metrics = ["footprint"]
       data_metrics = ["r2", "activation_sparsity"]
 
 .. container:: cell code

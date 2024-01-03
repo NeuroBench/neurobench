@@ -44,7 +44,7 @@ for filename in all_files:
     model = TorchModel(net)
     model.add_activation_module(snn.SpikingNeuron)
 
-    static_metrics = ["model_size", "connection_sparsity"]
+    static_metrics = ["footprint", "connection_sparsity"]
     workload_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
 
     # Benchmark expects the following:
@@ -52,7 +52,7 @@ for filename in all_files:
     results = benchmark.run()
     print(results)
 
-    footprint.append(results['model_size'])
+    footprint.append(results['footprint'])
     connection_sparsity.append(results['connection_sparsity'])
     activation_sparsity.append(results['activation_sparsity'])
     dense.append(results['synaptic_operations']['Dense'])

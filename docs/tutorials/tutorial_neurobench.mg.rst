@@ -124,7 +124,7 @@ The Mackey Glass task is a synthetic dataset generated when calling the MackeyGl
               test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
               # Wrap the model
               model = TorchModel(net)
-              static_metrics = ["model_size", "connection_sparsity"]
+              static_metrics = ["footprint", "connection_sparsity"]
               data_metrics = ["sMAPE", "activation_sparsity"]
               benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics])
               results = benchmark.run()

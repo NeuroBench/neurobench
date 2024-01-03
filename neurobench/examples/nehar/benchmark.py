@@ -1,4 +1,4 @@
-from neurobench.datasets import WISDMDataLoader
+from neurobench.datasets import WISDM
 from training import SpikingNetwork
 from neurobench.accumulators.accumulator import choose_max_count
 from neurobench.benchmarks import Benchmark
@@ -9,7 +9,7 @@ if __name__ == '__main__':
     batch_size = 256
     lr = 1.e-3
     dataset_path = "./data/nehar/watch_subset2_40.npz"
-    data_module = WISDMDataLoader(path=dataset_path, batch_size=batch_size)
+    data_module = WISDM(path=dataset_path, batch_size=batch_size)
     data_module.setup('test')
 
     num_inputs = data_module.num_inputs

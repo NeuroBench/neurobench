@@ -10,7 +10,10 @@ import tarfile
 '''
 The jitcdde package used to generate the MackeyGlass time-series can vary based 
 on platform, due to lower level integration solvers. In order to ensure that you
-are using the same data as the authors, please download the time-series from here:
+are using the same data as the authors, please use the downloaded version, which
+will be automatically downloaded.
+
+https://huggingface.co/datasets/NeuroBench/mackey_glass
 '''
 
 

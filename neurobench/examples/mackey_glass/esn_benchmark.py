@@ -19,7 +19,7 @@ if single_series:
     mg_parameters = mg_parameters[mg_parameters.tau == 17]
 
 # Load hyperparameters of echo state networks found via the random search
-esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/echo_state_network_hyperparameters.csv")
+esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/model_data/echo_state_network_hyperparameters.csv")
 
 # benchmark run over 14 different series
 sMAPE_scores = []

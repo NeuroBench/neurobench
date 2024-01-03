@@ -6,7 +6,6 @@ from neurobench.models import SNNTorchModel
 
 
 if __name__ == '__main__':
-    breakpoint()
     batch_size = 256
     lr = 1.e-3
     dataset_path = "./data/nehar/watch_subset2_40.npz"

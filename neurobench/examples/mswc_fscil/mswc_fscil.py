@@ -9,7 +9,11 @@ import torch.nn.functional as F
 import copy
 from tqdm import tqdm
 
-import wandb
+try:
+    import wandb
+    loaded_wandb = True
+except:
+    loaded_wandb = False
 
 from torch.utils.data import DataLoader, ConcatDataset
 
@@ -33,16 +37,17 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
+    parser = argparse.ArgumentParser(description="Argument Parser")
     
-    parser.add_argument("--pt_model", type=str, default="mswc_rsnn_proto", help="Pre-trained model to use")
-    parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
-    parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
+    parser.add_argument("--spiking", action='store_true',  help="Whether to use SNN or ANN")
+    parser.add_argument("--num_repeats", type=int, default=1,  help="Pre-training epochs")
+
+    # Set these parameters if training a new model from scratch on the base classes
     parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
-    parser.add_argument("--pt_epochs", type=int, default=50,  help="Apply normalization to newly learned weights in addition to centering them")
-    parser.add_argument("--out_bias", action='store_true',  help="Run pre-training")
-    parser.add_argument("--feat_size", type=int, default=1024,  help="Apply normalization to newly learned weights in addition to centering them")
-    parser.add_argument("--spiking", action='store_true',  help="Run pre-training")
+    parser.add_argument("--pt_epochs", type=int, default=50,  help="Pre-training epochs")
+    parser.add_argument("--out_bias", action='store_true',  help="Use bias in output layer, for prototype network method")
+    parser.add_argument("--feat_size", type=int, default=1024,  help="Hidden feature size")
+    
 
     args = parser.parse_args()
 
@@ -51,19 +56,19 @@ def parse_arguments():
 
 args = parse_arguments()
 
-MODEL_SAVE_DIR = "./model_data/"
-ROOT = "./FSCIL_subset/"
-NUM_WORKERS = 8
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+MODEL_SAVE_DIR = "neurobench/examples/mswc_fscil/model_data/"
+ROOT = "data/MSWC/"
+NUM_WORKERS = 8 if device == torch.device("cuda") else 0
 BATCH_SIZE = 256
-NUM_REPEATS = 5
+NUM_REPEATS = args.num_repeats
 SPIKING = args.spiking
 PRE_TRAIN = args.pre_train
 EVAL_EPOCHS = 1
 EVAL_SHOTS = 5
 EVAL_WAYS = 10
-EPOCHS = args.pt_epochs
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EPOCHS = args.pt_epochs # if pre training from scratch
 
 if device == torch.device("cuda"):
     PIN_MEMORY = True
@@ -78,7 +83,7 @@ n_mels = 20
 n_mfcc = 20
 
 if SPIKING:
-    encode = S2SProcessor(device, transpose=False)
+    encode = S2SProcessor(device, transpose=True)
     config_change = {"sample_rate": 48000,
                      "hop_length": 240}
     encode.configure(threshold=1.0, **config_change)
@@ -115,7 +120,8 @@ def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
     pre_train_results = benchmark.run()
     test_accuracy = pre_train_results['classification_accuracy']
 
-    wandb.log({wandb_log:test_accuracy}, commit=wandb_commit)
+    if loaded_wandb:
+        wandb.log({wandb_log:test_accuracy}, commit=wandb_commit)
 
     return test_accuracy
 
@@ -168,14 +174,15 @@ def pre_train(model):
 
 
 if __name__ == '__main__':
-    wandb.login()
+    if loaded_wandb:
+        wandb.login()
 
-    wandb_run = wandb.init(
-        # Set the project where this run will be logged
-        project="MSWC_FSCIL_SNN",
-        # Track hyperparameters and run metadata
-        config=args.__dict__
-    )
+        wandb_run = wandb.init(
+            # Set the project where this run will be logged
+            project="MSWC_FSCIL_SNN",
+            # Track hyperparameters and run metadata
+            config=args.__dict__
+        )
 
     if PRE_TRAIN:
         ### Pre-training phase ###
@@ -193,7 +200,7 @@ if __name__ == '__main__':
             
             pre_train(model)
 
-            name = "SPModel_clean_"+str(EPOCHS)+"ep_"+str(args.feat_size)+"feats_"
+            name = "SNN_"+str(EPOCHS)+"ep_"+str(args.feat_size)+"feats_"
 
             if args.out_bias:
                 name += "_bias"
@@ -208,7 +215,7 @@ if __name__ == '__main__':
 
             pre_train(model)
 
-            name = "Model_bias"
+            name = "ANN_"+str(EPOCHS)+"ep"
             torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
 
             model = TorchModel(model)
@@ -226,7 +233,7 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,args.pt_model),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,'mswc_rsnn_proto'),
                                 map_location=device)
             model.load_state_dict(state_dict)
             model = TorchModel(model)
@@ -235,7 +242,7 @@ if __name__ == '__main__':
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,args.pt_model),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,'mswc_cnn_proto'),
                                 map_location=device)
             model.load_state_dict(state_dict)
             model = TorchModel(model)
@@ -259,7 +266,9 @@ if __name__ == '__main__':
         proto_out = nn.Linear(512, 200, bias=True).to(device)
         proto_out.weight.data = output.weight.data
 
-    for data, target in train_loader:
+    # Compute prototype weights for base classes
+    print("Computing prototype weights for base classes")
+    for data, target in tqdm(train_loader):
         data, target = encode((data.to(device), target.to(device)))
         data = data.squeeze()
         class_id = target[0]
@@ -410,20 +419,24 @@ if __name__ == '__main__':
             # Run benchmark to evaluate accuracy of this specific session
             session_results = benchmark_all_test.run(dataloader = full_session_test_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
             print("Session results:", session_results)
-            
+
             eval_accs.append(session_results['classification_accuracy'])
             act_sparsity.append(session_results['activation_sparsity'])
             syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
             syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
             syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
-            wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
+
+            if loaded_wandb:
+                wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
 
             # Run benchmark on query classes only
             query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
             print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
             query_accs.append(query_results['classification_accuracy'])
-            wandb.log({"query_accuracy":query_accs[-1]}, commit=True)
+
+            if loaded_wandb:
+                wandb.log({"query_accuracy":query_accs[-1]}, commit=True)
 
         all_evals.append(eval_accs)
         all_query.append(query_accs)
@@ -449,11 +462,11 @@ if __name__ == '__main__':
     name = "eval_proto_"+str(NUM_REPEATS)+"reps_"
 
     if SPIKING:
-        name += "SPIKING_"
-        metrics_file += "SPIKING_"
+        name += "SNN"
+        metrics_file += "SNN"
 
-    name += str(args.pt_model)+".json"
-    metrics_file += str(args.pt_model)+".json"
+    name += ".json"
+    metrics_file += ".json"
 
     with open(os.path.join(MODEL_SAVE_DIR,name), "w") as f:
         json.dump(results, f)

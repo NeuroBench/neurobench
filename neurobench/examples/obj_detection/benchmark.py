@@ -21,7 +21,6 @@ args = parser.parse_args()
 # dataloader itself takes about 7 minutes for loading, with model evaluation and score calculation is about 20 minutes on i9-12900KF, RTX3080
 test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi channel",
         split="testing",
-        label_map_path="neurobench/datasets/label_map_dictionary.json",
         batch_size = args.batch_size,
         num_tbins = 12,
         preprocess_function_name="multi_channel_timesurface",

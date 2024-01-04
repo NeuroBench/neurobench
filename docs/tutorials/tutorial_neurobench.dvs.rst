@@ -46,7 +46,7 @@ For this tutorial, we will make use of the example architecture that is included
    # this is the network we will be using in this tutorial
    from neurobench.examples.dvs_gesture.CSNN import Conv_SNN
 
-To get started, we will load our desired dataset in a dataloader. Note that upon initializing the dataset, several preprocessing methods can be applied to the dataset itself, avoiding the need for further preprocessing in the benchmark itself.
+To get started, we will load our desired dataset in a dataloader. Note that upon initializing the dataset, several preprocessing methods can be applied to the dataset itself, avoiding the need for further preprocessing in the benchmark.
 
 .. code:: python
 
@@ -87,6 +87,10 @@ Next specify the metrics which you want to calculate. The available metrics (V1.
 - activation_sparsity
 - synaptic_operations
 - classification_accuracy
+- coco_map
+- mse
+- r2
+- smape
 
 Note that the Model Excecution Rate is not returned by the famework, but reported by the user. Execution rate, in Hz, of the model computation based on forward inference passes per second, measured in the time-stepped simulation timescale. More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`. 
 

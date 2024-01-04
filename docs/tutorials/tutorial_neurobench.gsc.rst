@@ -84,6 +84,10 @@ Next specify the metrics which you want to calculate. The available metrics (V1.
 - activation_sparsity
 - synaptic_operations
 - classification_accuracy
+- coco_map
+- mse
+- r2
+- smape
 
 More accuracy metrics are available, for which the user is recommended to consult the documentation. Note that the Model Excecution Rate is not returned by the famework, but reported by the user. Execution rate, in Hz, of the model computation based on forward inference passes per second, measured in the time-stepped simulation timescale. More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`. 
 

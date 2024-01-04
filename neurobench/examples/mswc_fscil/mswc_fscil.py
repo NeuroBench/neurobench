@@ -31,7 +31,7 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 
 
 def parse_arguments():
-    parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
+    parser = argparse.ArgumentParser(description="Argument Parser")
     
     parser.add_argument("--spiking", action='store_true',  help="Run pre-training")
 
@@ -42,9 +42,11 @@ def parse_arguments():
 
 args = parse_arguments()
 
-MODEL_SAVE_DIR = "neurobench/examples/mswc_fscil/model_data/" ## CHANGE BACK "./model_data/"
-ROOT = "neurobench/data/MSWC/"   ### CHANGE "../../data/MSWC/"
-NUM_WORKERS = 8
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
+MODEL_SAVE_DIR = "neurobench/examples/mswc_fscil/model_data/"
+ROOT = "data/MSWC/"
+NUM_WORKERS = 8 if device == torch.device("cuda") else 0
 BATCH_SIZE = 256
 NUM_REPEATS = 1
 SPIKING = args.spiking
@@ -52,9 +54,7 @@ PRE_TRAIN = False
 EVAL_EPOCHS = 1
 EVAL_SHOTS = 5
 EVAL_WAYS = 10
-EPOCHS = 50
-
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+EPOCHS = 50 # if pre training from scratch
 
 if device == torch.device("cuda"):
     PIN_MEMORY = True
@@ -69,7 +69,7 @@ n_mels = 20
 n_mfcc = 20
 
 if SPIKING:
-    encode = S2SProcessor(device, transpose=False)
+    encode = S2SProcessor(device, transpose=True)
     config_change = {"sample_rate": 48000,
                      "hop_length": 240}
     encode.configure(threshold=1.0, **config_change)
@@ -228,7 +228,9 @@ if __name__ == '__main__':
         proto_out = nn.Linear(512, 200, bias=True).to(device)
         proto_out.weight.data = output.weight.data
 
-    for data, target in train_loader:
+    # Compute prototype weights for base classes
+    print("Computing prototype weights for base classes")
+    for data, target in tqdm(train_loader):
         data, target = encode((data.to(device), target.to(device)))
         data = data.squeeze()
         class_id = target[0]
@@ -379,7 +381,7 @@ if __name__ == '__main__':
             # Run benchmark to evaluate accuracy of this specific session
             session_results = benchmark_all_test.run(dataloader = full_session_test_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
             print("Session results:", session_results)
-            
+
             eval_accs.append(session_results['classification_accuracy'])
             act_sparsity.append(session_results['activation_sparsity'])
             syn_ops_dense.append(session_results['synaptic_operations']['Dense'])

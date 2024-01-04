@@ -9,8 +9,6 @@ import torch.nn.functional as F
 import copy
 from tqdm import tqdm
 
-import wandb
-
 from torch.utils.data import DataLoader, ConcatDataset
 
 from neurobench.datasets import MSWC
@@ -35,13 +33,6 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser for Deep Learning Parameters")
     
-    parser.add_argument("--pt_model", type=str, default="mswc_rsnn_proto", help="Pre-trained model to use")
-    parser.add_argument("--reset", type=str, default="none", choices=["zero", "random"], help="Save pre trained model")
-    parser.add_argument("--normalize", type=float, default=0,  help="Apply normalization to newly learned weights in addition to centering them")
-    parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
-    parser.add_argument("--pt_epochs", type=int, default=50,  help="Apply normalization to newly learned weights in addition to centering them")
-    parser.add_argument("--out_bias", action='store_true',  help="Run pre-training")
-    parser.add_argument("--feat_size", type=int, default=1024,  help="Apply normalization to newly learned weights in addition to centering them")
     parser.add_argument("--spiking", action='store_true',  help="Run pre-training")
 
     args = parser.parse_args()
@@ -51,17 +42,17 @@ def parse_arguments():
 
 args = parse_arguments()
 
-MODEL_SAVE_DIR = "./model_data/"
-ROOT = "./FSCIL_subset/"
+MODEL_SAVE_DIR = "neurobench/examples/mswc_fscil/model_data/" ## CHANGE BACK "./model_data/"
+ROOT = "neurobench/data/MSWC/"   ### CHANGE "../../data/MSWC/"
 NUM_WORKERS = 8
 BATCH_SIZE = 256
-NUM_REPEATS = 5
+NUM_REPEATS = 1
 SPIKING = args.spiking
-PRE_TRAIN = args.pre_train
+PRE_TRAIN = False
 EVAL_EPOCHS = 1
 EVAL_SHOTS = 5
 EVAL_WAYS = 10
-EPOCHS = args.pt_epochs
+EPOCHS = 50
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -98,7 +89,7 @@ else:
     )
 
 
-def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
+def test(test_model, mask, set=None):
     test_model.eval()
 
     if set is not None:
@@ -114,8 +105,6 @@ def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
 
     pre_train_results = benchmark.run()
     test_accuracy = pre_train_results['classification_accuracy']
-
-    wandb.log({wandb_log:test_accuracy}, commit=wandb_commit)
 
     return test_accuracy
 
@@ -155,7 +144,7 @@ def pre_train(model):
             optimizer.step()
 
         if epoch % 5 == 0:
-            train_acc = test(model, mask, set=base_train_set, wandb_log="train_accuracy", wandb_commit=False)
+            train_acc = test(model, mask, set=base_train_set)
             test_acc = test(model, mask)
 
             print(f"The train accuracy is {train_acc*100}%")
@@ -168,14 +157,6 @@ def pre_train(model):
 
 
 if __name__ == '__main__':
-    wandb.login()
-
-    wandb_run = wandb.init(
-        # Set the project where this run will be logged
-        project="MSWC_FSCIL_SNN",
-        # Track hyperparameters and run metadata
-        config=args.__dict__
-    )
 
     if PRE_TRAIN:
         ### Pre-training phase ###
@@ -183,22 +164,15 @@ if __name__ == '__main__':
             model = SNN(
                 input_shape=(BATCH_SIZE, 201, 20),
                 neuron_type="RadLIF",
-                layer_sizes=[1024, args.feat_size, 200],
+                layer_sizes=[1024, 1024, 200],
                 normalization="batchnorm",
                 dropout=0.1,
                 bidirectional=False,
-                use_readout_bias=args.out_bias,
+                use_readout_bias=False,
                 use_readout_layer=True,
                 ).to(device)
             
             pre_train(model)
-
-            name = "SPModel_clean_"+str(EPOCHS)+"ep_"+str(args.feat_size)+"feats_"
-
-            if args.out_bias:
-                name += "_bias"
-
-            torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
 
             model = TorchModel(model)
             model.add_activation_module(RadLIFLayer)
@@ -207,9 +181,6 @@ if __name__ == '__main__':
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
 
             pre_train(model)
-
-            name = "Model_bias"
-            torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
 
             model = TorchModel(model)
     else:
@@ -226,18 +197,16 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,args.pt_model),
+            model = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto"),
                                 map_location=device)
-            model.load_state_dict(state_dict)
             model = TorchModel(model)
             
             model.add_activation_module(RadLIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,args.pt_model),
+            model = torch.load(os.path.join(MODEL_SAVE_DIR,"mswc_cnn_proto"),
                                 map_location=device)
-            model.load_state_dict(state_dict)
             model = TorchModel(model)
 
     all_evals = []
@@ -417,13 +386,11 @@ if __name__ == '__main__':
             syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
             syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
-            wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
 
             # Run benchmark on query classes only
             query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
             print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
             query_accs.append(query_results['classification_accuracy'])
-            wandb.log({"query_accuracy":query_accs[-1]}, commit=True)
 
         all_evals.append(eval_accs)
         all_query.append(query_accs)
@@ -441,22 +408,3 @@ if __name__ == '__main__':
         print(f"Act Sparsity: {act_sparsity}")
         print(f"Syn Ops Dense: {syn_ops_dense}")
         print(f"Syn Ops MACs: {syn_ops_macs}")
-
-    metrics = {"act_sparsity":all_act_sparsity, "syn_ops_dense":all_syn_ops_dense, "syn_ops_macs":all_syn_ops_macs, "syn_ops_acs":all_syn_ops_acs}
-    results = {"all": all_evals, "query": all_query}
-
-    metrics_file = "metrics_proto_"+str(NUM_REPEATS)+"reps_"
-    name = "eval_proto_"+str(NUM_REPEATS)+"reps_"
-
-    if SPIKING:
-        name += "SPIKING_"
-        metrics_file += "SPIKING_"
-
-    name += str(args.pt_model)+".json"
-    metrics_file += str(args.pt_model)+".json"
-
-    with open(os.path.join(MODEL_SAVE_DIR,name), "w") as f:
-        json.dump(results, f)
-
-    with open(os.path.join(MODEL_SAVE_DIR,metrics_file), "w") as f:
-        json.dump(metrics, f)

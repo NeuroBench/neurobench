@@ -44,8 +44,9 @@ args = parse_arguments()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-MODEL_SAVE_DIR = "neurobench/examples/mswc_fscil/model_data/"
-ROOT = "data/MSWC/"
+fscil_directory = os.path.dirname(os.path.abspath(__file__))
+MODEL_SAVE_DIR = os.path.join(fscil_directory, "model_data/")
+ROOT = os.path.join(fscil_directory, "../../data/MSWC/")
 NUM_WORKERS = 8 if device == torch.device("cuda") else 0
 BATCH_SIZE = 256
 NUM_REPEATS = 1
@@ -160,6 +161,7 @@ if __name__ == '__main__':
 
     if PRE_TRAIN:
         ### Pre-training phase ###
+        # Using same parameters as provided pre-trained models
         if SPIKING:
             model = SNN(
                 input_shape=(BATCH_SIZE, 201, 20),
@@ -175,6 +177,7 @@ if __name__ == '__main__':
             pre_train(model)
 
             model = TorchModel(model)
+            # Adding specific activation layer as activation module to allow for computational metric tracking
             model.add_activation_module(RadLIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
@@ -197,14 +200,18 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             
-            model = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto"),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto_dict"),
                                 map_location=device)
+            model.load_state_dict(state_dict)
+
+            # model = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto"),
+            #                     map_location=device)
             model = TorchModel(model)
             
             model.add_activation_module(RadLIFLayer)
         else:
-            model = M5(n_input=20, stride=2, n_channel=256, 
-                    n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
+            # model = M5(n_input=20, stride=2, n_channel=256, 
+            #         n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
             model = torch.load(os.path.join(MODEL_SAVE_DIR,"mswc_cnn_proto"),
                                 map_location=device)
             model = TorchModel(model)
@@ -216,9 +223,14 @@ if __name__ == '__main__':
     all_syn_ops_macs = []
     all_syn_ops_acs = []
 
+
+    ### Readout Prototypical Conversion ###
+
+    # Loading non-shuffled trainset to get all samples of each class per batch
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
     train_loader = DataLoader(base_train_set, batch_size=500, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
+    # Set-up new proto readout layer
     if SPIKING:
         output = model.net.snn[-1].W
         proto_out = nn.Linear(output.weight.shape[1], 200, bias=True).to(device)
@@ -255,6 +267,7 @@ if __name__ == '__main__':
         del features
         del mean
 
+    # Replace pre-trained readout with prototypical layer
     if SPIKING:
         model.net.snn[-1].W = proto_out
     else:
@@ -263,12 +276,14 @@ if __name__ == '__main__':
     del base_train_set
     del train_loader
 
+
+    ### Evaluation phase ###
+
     # Get base test set for evaluation
     base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
 
     for eval_iter in range(NUM_REPEATS):
         print(f"Evaluation Iteration: 0")
-        ### Evaluation phase ###
 
         eval_model = copy.deepcopy(model)
 
@@ -333,7 +348,7 @@ if __name__ == '__main__':
             benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
-            ### Computing new Prototypical Weights ###
+            ### Computing Prototypical Weights and Biases of new classes ###
             data = None
             
             for X_shot, y_shot in support:

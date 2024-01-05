@@ -11,7 +11,7 @@ from torch.utils.data import IterableDataset
 
 from tqdm import tqdm
 
-from neurobench.datasets.MSWC import MSWC, MSWC_query
+from neurobench.datasets.MSWC_dataset import MSWC, MSWC_query
 
 
 SAMPLE_RATE = 48000

@@ -85,7 +85,7 @@ class SNN(nn.Module):
         dropout=0.0,
         normalization="batchnorm",
         use_bias=False,
-        use_readout_bias = True,
+        use_readout_bias = False,
         bidirectional=False,
         use_readout_layer=True,
     ):

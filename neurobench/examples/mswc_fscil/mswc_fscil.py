@@ -101,7 +101,7 @@ def test(test_model, mask, set=None):
     
     out_mask = lambda x: x - mask
 
-    benchmark = Benchmark(test_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
+    benchmark = Benchmark(TorchModel(test_model), metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
                           preprocessors=[to_device, encode, squeeze], postprocessors=[out_mask, out2pred, torch.squeeze])
 
     pre_train_results = benchmark.run()
@@ -200,20 +200,20 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto_dict"),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto"),
                                 map_location=device)
             model.load_state_dict(state_dict)
 
-            # model = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto"),
-            #                     map_location=device)
-            model = TorchModel(model)
-            
+            model = TorchModel(model)  
             model.add_activation_module(RadLIFLayer)
         else:
-            # model = M5(n_input=20, stride=2, n_channel=256, 
-            #         n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            model = torch.load(os.path.join(MODEL_SAVE_DIR,"mswc_cnn_proto"),
+            model = M5(n_input=20, stride=2, n_channel=256, 
+                    n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
+
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_cnn_proto"),
                                 map_location=device)
+            model.load_state_dict(state_dict)
+
             model = TorchModel(model)
 
     all_evals = []

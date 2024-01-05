@@ -51,7 +51,6 @@ def get_indices_per_class(languages, root, support_query_split: Optional[Tuple[i
 class IncrementalFewShot(IterableDataset):
 
     def __init__(self,
-                 n_way: int,
                  k_shot: int,
                  root: str,
                  inc_languages: list = ['fa', 'eo', 'pt', 'eu', 'pl', 'cy', 'nl', 'ru', 'es', 'it'],
@@ -61,7 +60,7 @@ class IncrementalFewShot(IterableDataset):
         """Dataset for few shot learning.
 
         Args:
-            n_way (int): Number of classes in the query and query set.
+            n_way (int): Number of classes in the support and support set.
             k_shot (int, optional): Number of samples per class in the support set.
             root (str): Path of the folder where to find the dataset language folders.
             inc_languages (List[str], optional): List of languages 2 letters names to use as incremental sessions. 
@@ -73,7 +72,7 @@ class IncrementalFewShot(IterableDataset):
         self.support_query_split = support_query_split
         self.indices_per_lang = get_indices_per_class(inc_languages, root, self.support_query_split, samples_per_class)
 
-        self.n_way = n_way
+        self.n_way = 10 # Number of classes in the support and support sets. Fixed based on the dataset
         self.k_shot = k_shot
         self.query_shots = query_shots if query_shots != -1 else k_shot
 

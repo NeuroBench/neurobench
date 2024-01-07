@@ -306,9 +306,6 @@ if __name__ == '__main__':
         benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
                             preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
-        benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
-                            preprocessors=[to_device, encode, squeeze], postprocessors=[])
-
         # Define specific post-processing with masking on the base classes
         mask = torch.full((200,), float('inf')).to(device)
         mask[torch.arange(0,100, dtype=int)] = 0
@@ -340,11 +337,8 @@ if __name__ == '__main__':
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
             print(f"Session: {session+1}")
 
-            # Define benchmark object
-            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
-                                preprocessors=[to_device, encode, squeeze], postprocessors=[])
-
-            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
+            # Define benchmark object for new classes
+            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=None,
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
             ### Computing Prototypical Weights and Biases of new classes ###

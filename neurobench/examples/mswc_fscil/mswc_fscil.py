@@ -330,8 +330,7 @@ if __name__ == '__main__':
         few_shot_dataloader = IncrementalFewShot(k_shot=NUM_SHOTS, 
                                     root = ROOT,
                                     query_shots=100,
-                                    support_query_split=(100,100),
-                                    samples_per_class=200)
+                                    support_query_split=(100,100))
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):

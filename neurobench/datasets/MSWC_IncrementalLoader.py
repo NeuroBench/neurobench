@@ -9,12 +9,10 @@ import numpy as np
 import torch
 from torch.utils.data import IterableDataset
 
-from tqdm import tqdm
-
 from neurobench.datasets.MSWC_dataset import MSWC, MSWC_query
 
 
-def get_indices_per_class(languages, root, support_query_split: Optional[Tuple[int, int]] = None, samples_per_class: Optional[int] = None) -> Union[Dict[int, List[int]], Dict[int, Tuple[List[int], List[int]]]]:
+def get_indices_per_class(languages, root, samples_per_class: int, support_query_split: Optional[Tuple[int, int]] = None) -> Union[Dict[int, List[int]], Dict[int, Tuple[List[int], List[int]]]]:
     indices_per_lang = {}
     for lang in languages:
         indices_per_lang[lang] = {}
@@ -47,7 +45,6 @@ class IncrementalFewShot(IterableDataset):
         """Dataset for few shot learning.
 
         Args:
-            n_way (int): Number of classes in the support and support set.
             k_shot (int, optional): Number of samples per class in the support set.
             root (str): Path of the folder where to find the dataset language folders.
             inc_languages (List[str], optional): List of languages 2 letters names to use as incremental sessions. 
@@ -57,7 +54,7 @@ class IncrementalFewShot(IterableDataset):
 
         self.support_query_split = support_query_split
         self.samples_per_class = 200 # Number of samples per class to use. Used to simplify samples class indexing as the used dataset is ordered (class_0_sample_0, c0s1, c0s2, c1s0, c1s1, c1s2, ...).
-        self.indices_per_lang = get_indices_per_class(inc_languages, root, self.support_query_split, self.samples_per_class)
+        self.indices_per_lang = get_indices_per_class(inc_languages, root, self.samples_per_class, self.support_query_split)
 
         self.n_way = 10 # Number of classes in the support and support sets. Fixed based on the dataset
         self.k_shot = k_shot

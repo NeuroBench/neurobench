@@ -262,7 +262,7 @@ class MSWC(Dataset):
     
     The data just needs to be downloaded, for instance in a _data_ folder inside the main neurobench folder. 
     In this case, it should have the following format.
-    neurobench/
+    github_repo_root (neurobench)/
         data/
             MSWC/
                 base_[test,train,val].csv

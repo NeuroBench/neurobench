@@ -109,13 +109,65 @@ Next, we load our model. This example includes two possibilities, a hybrid model
 
 .. code:: python
 
-   # Loading the model
-   mode = "hybrid"  # "ann" or "hybrid"
-   if mode == "ann":
-       # Baseline ANN RED architecture
-       model = Vanilla(cin=6, cout=256, base=16)
-       box_coder = Anchors(num_levels=model.levels, anchor_list="PSEE_ANCHORS", variances=[0.1, 0.2])
-       head = BoxHead(model.cout, box_coder.num_anchors, 3 + 1, 0)
-       model = model.to('cuda')
-       head = head to('cuda')
-       model.load_state_dict(torch.load('neurobench'))
+    # Loading the model
+    mode = "hybrid" # "ann" or "hybrid
+    if mode == "ann":
+        # baseline ANN RED architecture
+        model = Vanilla(cin = 6, cout = 256, base = 16)
+        box_coder = Anchors(num_levels=model.levels, anchor_list="PSEE_ANCHORS", variances=[0.1, 0.2])
+        head = BoxHead(model.cout, box_coder.num_anchors, 3+1, 0)
+        model = model.to('cuda')
+        head = head.to('cuda')
+        model.load_state_dict(torch.load('neurobench/examples/obj_detection/model_data/save_models/25_ann_model.pth',map_location=torch.device('cuda')))
+        head.load_state_dict(torch.load('neurobench/examples/obj_detection/model_data/save_models/25_ann_pd.pth',map_location=torch.device('cuda')))
+    elif mode == "hybrid":
+        # hybrid SNN of above architecture
+        model = Vanilla_lif(cin = 6, cout = 256, base = 16)
+        box_coder = Anchors(num_levels=model.levels, anchor_list="PSEE_ANCHORS", variances=[0.1, 0.2])
+        head = BoxHead(model.cout, box_coder.num_anchors, 3+1, 0)
+        model = model.to('cuda')
+        head = head.to('cuda')
+        model.load_state_dict(torch.load('neurobench/examples/obj_detection/model_data/save_models/14_hybrid_model.pth',map_location=torch.device('cuda')))
+        head.load_state_dict(torch.load('neurobench/examples/obj_detection/model_data/save_models/14_hybrid_pd.pth',map_location=torch.device('cuda')))
+    else:
+        raise ValueError("mode must be ann or hybrid")
+
+    model = ObjDetectionModel(model, box_coder, head)
+
+Next, we load the preprocessors and postprocessors we would like to apply.
+
+.. code:: python
+    preprocessors = []
+    postprocessors = []
+
+Next specify the metrics which you want to calculate. The available metrics (V1.0 release) are:
+
+**Static Metrics:**
+
+- footprint
+- connection_sparsity
+- parameter_count
+- Model Excecution Rate
+
+**Data Metrics:**
+
+- activation_sparsity
+- synaptic_operations
+- classification_accuracy
+- coco_map
+- mse
+- r2
+- smape
+
+Note that the Model Excecution Rate is not returned by the famework, but reported by the user. Execution rate, in Hz, of the model computation based on forward inference passes per second, measured in the time-stepped simulation timescale. More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`. 
+
+.. code:: python
+    static_metrics = ["model_size", "connection_sparsity"]
+    workload_metrics = ["COCO_mAP"]
+
+Now you are ready to run the benchmark!
+
+.. code:: python
+    benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, workload_metrics])
+    results = benchmark.run()
+    print(results)

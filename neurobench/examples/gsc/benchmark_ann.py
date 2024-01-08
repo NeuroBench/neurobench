@@ -38,7 +38,7 @@ postprocessors = [convert_to_label]
 ## Define model ##
 model = TorchModel(net)
 
-static_metrics = ["model_size", "connection_sparsity"]
+static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, workload_metrics])
@@ -46,6 +46,6 @@ results = benchmark.run()
 print(results)
 
 # Results:
-# {'model_size': 109228, 'connection_sparsity': 0.0, 
+# {'footprint': 109228, 'connection_sparsity': 0.0,
 # 'classification_accuracy': 0.8653339397251905, 'activation_sparsity': 0.3854464619019532, 
 # 'synaptic_operations': {'Effective_MACs': 1749994.1556565198, 'Effective_ACs': 0.0, 'Dense': 1902179.0}}

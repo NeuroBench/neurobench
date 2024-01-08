@@ -299,7 +299,7 @@ if __name__ == '__main__':
         eval_model.net.eval()
 
         # Metrics
-        static_metrics = ["model_size", "connection_sparsity"]
+        static_metrics = ["footprint", "connection_sparsity"]
         workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
         # Define benchmark object

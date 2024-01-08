@@ -4,8 +4,10 @@ import os
 from torch import Tensor
 from torchaudio.datasets.utils import _load_waveform
 import torch
-
 from torch.utils.data import Dataset
+from .utils import download_url
+from urllib.error import URLError
+import tarfile
 
 FSCIL_KEYWORDS = ['surrounding',
  'appearance',
@@ -271,7 +273,7 @@ class MSWC(Dataset):
                     evaluation.csv
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
-                 language: Optional[str] = None, incremental: Optional[bool] = False
+                 language: Optional[str] = None, incremental: Optional[bool] = False, download=True
                  ):
         """ Initialization will create the new base eval splits if needed .
         
@@ -280,6 +282,8 @@ class MSWC(Dataset):
             subset (str): Return "base" or "evaluation" classes.
             procedure (str): For base subset, return "training", "testing" or "validation" samples.
             language (str): Language to use for evaluation task.
+            download (bool): If True, downloads the dataset from the internet and puts it in root
+                                 directory. If dataset is already downloaded, it will not be downloaded again.
         """
         self.root = root
 
@@ -311,7 +315,41 @@ class MSWC(Dataset):
         else:
             raise ValueError("subset must be one of \"base\" or \"evaluation\"")
 
+        self.file_path = split_path
+        self.url = 'https://huggingface.co/datasets/NeuroBench/mswc_fscil_subset/resolve/main/mswc_fscil.tar.gz'
+
+        if download and not os.path.exists(self.file_path):
+            print("downloading ....")
+            self.download()
+
         self._walker = _load_list(split_path)
+
+    def download(self):
+        """Download the Mackey Glass data if it doesn't exist already."""
+
+        if os.path.exists(self.file_path):
+            print(f"The dataset already exists!")
+            return
+
+        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+
+        # download file
+        file_path = f"{os.path.dirname(self.file_path)}/mswc_fscil.tar.gz"
+        try:
+            print(f"Downloading {self.url}")
+            download_url(self.url, file_path)
+        except URLError as error:
+            print(f"Failed to download (trying next):\n{error}")
+        finally:
+            print("Unzipping file...")
+            with tarfile.open(file_path, 'r:gz') as tar:
+                for member in tar.getmembers():
+                    path_parts = member.name.split(os.sep)
+                    if len(path_parts) > 1:  # Ensure it's not just the top-level directory
+                        # Reconstruct the path without the top-level directory
+                        member.name = os.path.join(*path_parts[1:])
+                        tar.extract(member, path=os.path.dirname(file_path))
+            print()
 
     def __getitem__(self, index: int) -> Tuple[Tensor, int]:
         """ Getter method to get waveform samples.

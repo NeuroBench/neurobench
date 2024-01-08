@@ -1,6 +1,6 @@
 from pytorch_lightning import LightningModule
 from pytorch_lightning import Trainer
-from neurobench.datasets import WISDMDataLoader
+from neurobench.datasets import WISDM
 from SCNN import SCNN
 import torch.nn as nn
 import torch
@@ -84,7 +84,7 @@ if __name__ == '__main__':
     batch_size = 256
     lr = 1.e-3
     dataset_path = "./dataset/watch_subset2_40.npz"
-    data_module = WISDMDataLoader(path=dataset_path, batch_size=batch_size)
+    data_module = WISDM(path=dataset_path, batch_size=batch_size)
 
     num_inputs = data_module.num_inputs
     num_outputs = data_module.num_outputs

@@ -169,7 +169,7 @@ for repeat_id in range(args.repeat):
     lstm.to(torch.device("cpu"))
     model = TorchModel(lstm)
 
-    static_metrics = ["model_size", "connection_sparsity"]
+    static_metrics = ["footprint", "connection_sparsity"]
     workload_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
 
     benchmark = Benchmark(model, test_set_loader, [], [],
@@ -184,7 +184,7 @@ for repeat_id in range(args.repeat):
     if loaded_wandb:
         wandb.log({"sMAPE_score_val": results["sMAPE"]})
 
-model_size = results["model_size"]
+footprint = results["footprint"]
 
 avg_sMAPE_score = sum(sMAPE_scores)/args.repeat
 connection_sparsity = sum(connection_sparsities)/args.repeat
@@ -196,7 +196,7 @@ if loaded_wandb:
     wandb.log({"sMAPE_score": avg_sMAPE_score})
     wandb.log({"connection_sparsity": connection_sparsity})
     wandb.log({"activation_sparsity": activation_sparsity})
-    wandb.log({"model_size": model_size})
+    wandb.log({"footprint": footprint})
 
 print(f"sMAPE score = {avg_sMAPE_score},\n"
       f"connection_sparsity = {connection_sparsity},\n"

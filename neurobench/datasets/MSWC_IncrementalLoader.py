@@ -79,7 +79,7 @@ class IncrementalFewShot(IterableDataset):
         for lang in random.sample(self.languages, len(self.languages)):
             dataset = MSWC(root=self.root, subset="evaluation", language=lang)
 
-            support_classes = random.sample(self.indices_per_lang[lang].keys(), self.n_way)
+            support_classes = random.sample(sorted(self.indices_per_lang[lang].keys()), self.n_way)
             cumulative_classes[lang] = support_classes
 
             # Yields iterative sessions

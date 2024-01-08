@@ -83,7 +83,7 @@ class PrimateReaching(NeuroBenchDataset):
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
                  biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028,
                  max_segment_length=2000, split_num=1, remove_segments_inactive=False, 
-                 download= False):
+                 download=True):
 
         """
             Initialises the Dataset for the Primate Reaching Task.

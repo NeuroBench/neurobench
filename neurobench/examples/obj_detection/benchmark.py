@@ -21,7 +21,6 @@ args = parser.parse_args()
 # dataloader itself takes about 7 minutes for loading, with model evaluation and score calculation is about 20 minutes on i9-12900KF, RTX3080
 test_set_dataloader = Gen4DetectionDataLoader(dataset_path="data/Gen 4 Multi channel",
         split="testing",
-        label_map_path="neurobench/datasets/label_map_dictionary.json",
         batch_size = args.batch_size,
         num_tbins = 12,
         preprocess_function_name="multi_channel_timesurface",
@@ -95,7 +94,7 @@ if mode == "hybrid":
 preprocessors = []
 postprocessors = []
 
-static_metrics = ["model_size", "connection_sparsity"]
+static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["activation_sparsity", "COCO_mAP", "synaptic_operations"]
 
 
@@ -106,6 +105,6 @@ print(results)
 # batch size of inference slightly affects the results.
 
 # Results - ANN, batch = 4
-# {'model_size': 91314912, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6339577418819095, 'COCO_mAP': 0.4286601323956029, 'synaptic_operations': {'Effective_MACs': 248423062860.16266, 'Effective_ACs': 0.0, 'Dense': 284070730752.0}}
+# {'footprint': 91314912, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6339577418819095, 'COCO_mAP': 0.4286601323956029, 'synaptic_operations': {'Effective_MACs': 248423062860.16266, 'Effective_ACs': 0.0, 'Dense': 284070730752.0}}
 # Results - Hybrid, batch = 4
-# {'model_size': 12133872, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6130047485397788, 'COCO_mAP': 0.27111120859281557, 'synaptic_operations': {'Effective_MACs': 37520084211.538666, 'Effective_ACs': 559864693.7093333, 'Dense': 98513107968.0}}
+# {'footprint': 12133872, 'connection_sparsity': 0.0, 'activation_sparsity': 0.6130047485397788, 'COCO_mAP': 0.27111120859281557, 'synaptic_operations': {'Effective_MACs': 37520084211.538666, 'Effective_ACs': 559864693.7093333, 'Dense': 98513107968.0}}

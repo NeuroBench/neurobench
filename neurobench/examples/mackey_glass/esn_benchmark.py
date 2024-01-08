@@ -19,7 +19,7 @@ if single_series:
     mg_parameters = mg_parameters[mg_parameters.tau == 17]
 
 # Load hyperparameters of echo state networks found via the random search
-esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/echo_state_network_hyperparameters.csv")
+esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/model_data/echo_state_network_hyperparameters.csv")
 
 # benchmark run over 14 different series
 sMAPE_scores = []
@@ -90,7 +90,7 @@ for series_id in range(len(mg_parameters)):
     
         model = TorchModel(esn)
     
-        static_metrics = ["model_size", "connection_sparsity"]
+        static_metrics = ["footprint", "connection_sparsity"]
         workload_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics]) 

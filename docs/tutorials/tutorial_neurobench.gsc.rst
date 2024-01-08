@@ -55,7 +55,7 @@ To get started, we will load our desired dataset in a dataloader:
 
    test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
-Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the time of writing this tutorial, (V1.0) snnTorch is the only supported framework, therefore, we will wrap our snnTorch model in the SNNTorchModel() wrapper.
+Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the time of writing this tutorial, (V1.0) snnTorch is the only supported framework, therefore, we will wrap our snnTorch model in the SNNTorchModel() wrapper. Note that any framework based on PyTorch can be wrapped in a TorchModel() wrapper, and the neuron layers can be added with add_activation_module().
 
 .. code:: python
 
@@ -74,23 +74,26 @@ Next specify the metrics which you want to calculate. The available metrics (V1.
 
 **Static Metrics:**
 
-- model_size
+- footprint
 - connection_sparsity
-- frequency
+- parameter_count
+- Model Excecution Rate
 
 **Data Metrics:**
 
 - activation_sparsity
-- multiply_accumulates
+- synaptic_operations
 - classification_accuracy
+- coco_map
+- mse
+- r2
+- smape
 
-More accuracy metrics are available, for which the user is recommended to consult the documentation
-
-More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`.
+More accuracy metrics are available, for which the user is recommended to consult the documentation. Note that the Model Excecution Rate is not returned by the famework, but reported by the user. Execution rate, in Hz, of the model computation based on forward inference passes per second, measured in the time-stepped simulation timescale. More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`. 
 
 .. code:: python
 
-   static_metrics = ["model_size"]
+   static_metrics = ["footprint"]
    data_metrics = ["classification_accuracy"]
 
 Next, we instantiate the benchmark. We have to specify the model, the dataloader, the preprocessors, the postprocessor and the list of the static and data metrics which we want to measure:

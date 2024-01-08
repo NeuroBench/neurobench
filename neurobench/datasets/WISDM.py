@@ -22,7 +22,7 @@ def convert_to_tensor(x, y):
     return torch.tensor(x, dtype=torch.float), torch.tensor(y, dtype=torch.long)
 
 
-class WISDMDataLoader(LightningDataModule):
+class WISDM(LightningDataModule):
     def __init__(self, path: str = "path/to/file", batch_size: int = 256):
         super().__init__()
         self.ds_test = None

@@ -43,6 +43,8 @@ Specifications
    Format:
        tensor: A PyTorch tensor of shape (batch, timesteps, features*), where features* can be any number of dimensions.
 
+   Note: See Known Errata below for special cases of data formatting.
+
 **Dataset:**
 ~~~~~~~~~~~~
 
@@ -196,7 +198,7 @@ or they can be stateful subclasses of AccumulatedMetric.
    test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
    processors = [Processor1(), Processor2()]
    accumulators = [Accumulator1()]
-   static_metrics = ["model_size", "connection_sparsity"]
+   static_metrics = ["footprint", "connection_sparsity"]
    data_metrics = ["accuracy", "activation_sparsity"]
 
    benchmark = Benchmark(
@@ -213,3 +215,5 @@ Known Errata
 
 Any anomalies that break the high-level API will be noted here but
 attempts will be made to keep this to a minimum.
+
+**Data formatting**: For the sequence-to-sequence prediction tasks (MackeyGlass and PrimateReaching), the dataset is one time series, and it is presented as [num points, 1, features]. Each of the data points is considered as a separate inference task for the model, so it is bundled into the zero dimension. When using a DataLoader, ensure that shuffle=False if your model is sequential.

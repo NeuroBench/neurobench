@@ -8,6 +8,7 @@ from torch.utils.data import Dataset
 from .utils import download_url
 from urllib.error import URLError
 import tarfile
+from tqdm import tqdm
 
 FSCIL_KEYWORDS = ['surrounding',
  'appearance',
@@ -278,7 +279,7 @@ class MSWC(Dataset):
         """ Initialization will create the new base eval splits if needed .
         
         Args:
-            root (str): Path of MSWC dataset folder where the Metadata.json file and en/ folders should be.
+            root (str): Path of data root folder where is or will be the MSWC/ folder containing the dataset.
             subset (str): Return "base" or "evaluation" classes.
             procedure (str): For base subset, return "training", "testing" or "validation" samples.
             language (str): Language to use for evaluation task.
@@ -286,6 +287,7 @@ class MSWC(Dataset):
                                  directory. If dataset is already downloaded, it will not be downloaded again.
         """
         self.root = root
+        self.dataset_folder = os.path.join(root, 'MSWC')
 
         if subset == 'base':
             self.subset = 'base'
@@ -299,7 +301,7 @@ class MSWC(Dataset):
                 raise ValueError("procedure must be one of \"training\", \"validation\", or \"testing\"")
 
             split = self.subset +'_' + self.procedure
-            split_path = os.path.join(root, f'{split}.csv')
+            split_path = os.path.join(self.dataset_folder, f'{split}.csv')
             if incremental:
                 self.return_path = True
             else:
@@ -309,32 +311,32 @@ class MSWC(Dataset):
             self.subset = 'evaluation'
             self.procedure = None
             split = self.subset
-            split_path = os.path.join(root, language, f'{split}.csv')
+            split_path = os.path.join(self.dataset_folder, language, f'{split}.csv')
             self.return_path = True
 
         else:
             raise ValueError("subset must be one of \"base\" or \"evaluation\"")
 
-        self.file_path = split_path
+
         self.url = 'https://huggingface.co/datasets/NeuroBench/mswc_fscil_subset/resolve/main/mswc_fscil.tar.gz'
 
-        if download and not os.path.exists(self.file_path):
+        if download and not os.path.exists(self.dataset_folder):
             print("downloading ....")
             self.download()
 
         self._walker = _load_list(split_path)
 
     def download(self):
-        """Download the Mackey Glass data if it doesn't exist already."""
+        """Download the MSWC FSCIL data if it doesn't exist already."""
 
-        if os.path.exists(self.file_path):
+        if os.path.exists(self.dataset_folder):
             print(f"The dataset already exists!")
             return
 
-        os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
+        os.makedirs(os.path.dirname(self.dataset_folder), exist_ok=True)
 
         # download file
-        file_path = f"{os.path.dirname(self.file_path)}/mswc_fscil.tar.gz"
+        file_path = f"{os.path.dirname(self.dataset_folder)}/mswc_fscil.tar.gz"
         try:
             print(f"Downloading {self.url}")
             download_url(self.url, file_path)
@@ -342,13 +344,16 @@ class MSWC(Dataset):
             print(f"Failed to download (trying next):\n{error}")
         finally:
             print("Unzipping file...")
+
             with tarfile.open(file_path, 'r:gz') as tar:
-                for member in tar.getmembers():
-                    path_parts = member.name.split(os.sep)
-                    if len(path_parts) > 1:  # Ensure it's not just the top-level directory
-                        # Reconstruct the path without the top-level directory
-                        member.name = os.path.join(*path_parts[1:])
-                        tar.extract(member, path=os.path.dirname(file_path))
+
+                total_files = len(tar.getmembers())
+
+                # Set up the tqdm progress bar
+                with tqdm(total=total_files, unit='file', desc='Extracting files') as progress_bar:
+                    for member in tar.getmembers():
+                        tar.extract(member, path=self.root)
+                        progress_bar.update(1)
             print()
 
     def __getitem__(self, index: int) -> Tuple[Tensor, int]:
@@ -363,7 +368,7 @@ class MSWC(Dataset):
         """
         item = self._walker[index]
 
-        dirname = os.path.join(self.root, item[2], FOLDER_AUDIO)
+        dirname = os.path.join(self.dataset_folder, item[2], FOLDER_AUDIO)
 
         return get_mswc_item(item, dirname, self.return_path)
 

@@ -32,9 +32,9 @@ NeuroBench contains the following sections:
    * - `neurobench.models <docs/neurobench.models.rst>`__
      - Neurobench framework for Torch and SNNTorch models
    * - `neurobench.preprocessing <docs/neurobench.preprocessing.rst>`__
-     - Preprocessing of data, conversion to spikes
-   * - `neurobench.accumulators <docs/neurobench.accumulators.rst>`__
-     - Accumulators take the spiking output from the models and provide several methods of combining them
+     - Pre-processing of data, conversion to spikes
+   * - `neurobench.postprocessing <docs/neurobench.postprocessing.rst>`__
+     - Post-processors take the spiking output from the models and provide several methods of combining them
 
 Installation
 ------------

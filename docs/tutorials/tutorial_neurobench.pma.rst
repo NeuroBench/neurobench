@@ -25,7 +25,7 @@ The task of object detection in event-based spatio-temporal data involves identi
 **Code Imports**
 ----------------
 
-First, we will import the relevant libraries. These include the datasets, preprocessors, and accumulators. To ensure your model is compatible with the NeuroBench framework, we will import the wrapper for snnTorch models, which will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
+First, we will import the relevant libraries. These include the datasets, preprocessors, and postprocessors. To ensure your model is compatible with the NeuroBench framework, we will import the wrapper for snnTorch models, which will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
 
 .. code:: python
 

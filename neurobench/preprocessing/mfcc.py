@@ -1,9 +1,9 @@
-from . import NeuroBenchProcessor
+from . import NeuroBenchPreProcessor
 from torchaudio.transforms import MFCC
 import torch
 
 
-class MFCCProcessor(NeuroBenchProcessor):
+class MFCCPreProcessor(NeuroBenchPreProcessor):
     """ Does MFCC computation on dataset using torchaudio.transforms.MFCC.
     Call expects loaded .wav data and targets as a tuple (data, targets).
     Expects sample_rate to be the same for all samples in data.
@@ -18,7 +18,7 @@ class MFCCProcessor(NeuroBenchProcessor):
         melkwargs: dict = None,
         device = None,
     ):
-        super(NeuroBenchProcessor).__init__()
+        super(NeuroBenchPreProcessor).__init__()
         """
         Args:
             sample_rate (int, optional): Sample rate of the audio signal. (Default: 16000)

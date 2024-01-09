@@ -22,7 +22,7 @@ The IBM Dynamic Vision Sensor (DVS) Gesture dataset is composed of recordings of
 
 The task is a classification task. The benchmark task is to use samples from the 23 initial subjects as training and generalize to samples from the remaining 6 subjects.
 
-First we will import the relevant libraries. These include the datasets, preprocessors and accumulators. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
+First we will import the relevant libraries. These include the datasets, preprocessors and postprocessors. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
 
 .. code:: python
 
@@ -37,7 +37,7 @@ First we will import the relevant libraries. These include the datasets, preproc
    from neurobench.datasets import DVSGesture
    from neurobench.models import SNNTorchModel
    from neurobench.benchmarks import Benchmark
-   from neurobench.accumulators.accumulator import aggregate, choose_max_count
+   from neurobench.postprocessing.postprocessor import aggregate, choose_max_count
 
 For this tutorial, we will make use of the example architecture that is included in the NeuroBench framework.
 
@@ -63,7 +63,7 @@ Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the
    # wrap in SNNTorchModel wrapper
    model = SNNTorchModel(net)
 
-Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessors and neurobench/accumulators respectively.
+Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessing and neurobench/postprocessing respectively.
 
 .. code:: python
 

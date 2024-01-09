@@ -1,6 +1,6 @@
 from neurobench.datasets import WISDM
 from training import SpikingNetwork
-from neurobench.accumulators.accumulator import choose_max_count
+from neurobench.postprocessing.postprocessor import choose_max_count
 from neurobench.benchmarks import Benchmark
 from neurobench.models import SNNTorchModel
 

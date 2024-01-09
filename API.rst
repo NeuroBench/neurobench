@@ -17,9 +17,9 @@ Overview
 +----------------+
 | Dataset        |
 +----------------+
-| Processor      |
+| PreProcessor   |
 +----------------+
-| Accumulator    |
+| PostProcessor  |
 +----------------+
 | Model          |
 +----------------+
@@ -58,8 +58,8 @@ Specifications
    Output:
        (data, targets, kwargs): kwargs is a dictionary of metadata.
 
-**Processor:**
-~~~~~~~~~~~~~~
+**Pre-processor:**
+~~~~~~~~~~~~~~~~~~
 
 Processing data / preprocessing.
 
@@ -72,17 +72,17 @@ Processing data / preprocessing.
 
 .. code:: python
 
-   class Processor(NeuroBenchProcessor):
+   class PreProcessor(NeuroBenchPreProcessor):
        def __init__(self):
            ...
        def __call__(self, dataset):
            ...
 
-   alg = Processor()
+   alg = PreProcessor()
    new_dataset = alg(dataset) # dataset: (data, targets)
 
-**Accumulator:**
-~~~~~~~~~~~~~~~~
+**Post-processor:**
+~~~~~~~~~~~~~~~~~~~
 
 Accumulating predictions / postprocessing.
 
@@ -91,17 +91,17 @@ Accumulating predictions / postprocessing.
    Input:
        preds: A PyTorch tensor.
    Output:
-       results: A PyTorch tensor. Accumulators may be chained together. Final shape is expected to match the data targets for comparison.
+       results: A PyTorch tensor. Post-processors may be chained together. Final shape is expected to match the data targets for comparison.
 
 .. code:: python
 
-    class Accumulator(NeuroBenchAccumulator):
+    class PostProcessor(NeuroBenchPostProcessor):
         def __init__(self):
             ...
         def __call__(self, preds):
             ...
 
-   alg = Accumulator()
+   alg = PostProcessor()
    model = NeuroBenchModel(...)
    preds = model(data) # data: (batch, timesteps, features*)
    results = alg(preds)
@@ -114,7 +114,7 @@ Accumulating predictions / postprocessing.
    Input:
        data: A PyTorch tensor of shape (batch, timesteps, features*)
    Output:
-       preds: A PyTorch tensor. Can either be the final shape to be compared with targets or an arbitrary shape to be postprocessed by Accumulator(s).
+       preds: A PyTorch tensor. Can either be the final shape to be compared with targets or an arbitrary shape to be postprocessed by Post-processors(s).
 
 .. code:: python
 
@@ -185,8 +185,8 @@ or they can be stateful subclasses of AccumulatedMetric.
    Input:
        model: The NeuroBenchModel to be tested.
        dataloader: A PyTorch DataLoader which loads the evaluation dataset.
-       processors: A list of Processors.
-       accumulators: A list of Accumulators.
+       pre-processors: A list of pre-processors.
+       post-processors: A list of post-processors.
        metric_list: [[static_metrics], [data_metrics]], where each are strings. The names of the metric will be used to call it from the metrics file. User defined metrics should be discouraged.
    Output:
        results: A dict of {metric: result}.
@@ -196,16 +196,16 @@ or they can be stateful subclasses of AccumulatedMetric.
    model = TorchModel(net)
    test_set = NeuroBenchDataset(...)
    test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
-   processors = [Processor1(), Processor2()]
-   accumulators = [Accumulator1()]
+   preprocessors = [PreProcessor1(), PreProcessor2()]
+   postprocessors = [PostProcessor1()]
    static_metrics = ["footprint", "connection_sparsity"]
    data_metrics = ["accuracy", "activation_sparsity"]
 
    benchmark = Benchmark(
        model, 
        test_set_loader,
-       processors,
-       accumulators, 
+       preprocessors,
+       postprocessors, 
        [static_metrics, data_metrics]
    )
    results = benchmark.run()

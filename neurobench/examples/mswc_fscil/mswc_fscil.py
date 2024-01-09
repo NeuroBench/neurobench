@@ -26,7 +26,7 @@ from neurobench.examples.mswc_fscil.sparchSNNs import SNN
 from neurobench.examples.mswc_fscil.sparchSNNs import RadLIFLayer
 
 from neurobench.benchmarks import Benchmark
-from neurobench.preprocessing import MFCCProcessor, S2SProcessor
+from neurobench.preprocessing import MFCCPreProcessor, S2SPreProcessor
 
 import argparse
 
@@ -83,12 +83,12 @@ n_mels = 20
 n_mfcc = 20
 
 if SPIKING:
-    encode = S2SProcessor(device, transpose=True)
+    encode = S2SPreProcessor(device, transpose=True)
     config_change = {"sample_rate": 48000,
                      "hop_length": 240}
     encode.configure(threshold=1.0, **config_change)
 else:
-    encode = MFCCProcessor(
+    encode = MFCCPreProcessor(
         sample_rate=48000,
         n_mfcc=n_mfcc,
         melkwargs={

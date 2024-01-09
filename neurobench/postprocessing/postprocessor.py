@@ -1,19 +1,19 @@
 import torch
 
-class NeuroBenchAccumulator():
-    """ Abstract class for NeuroBench accumulators. Accumulators take the spiking
+class NeuroBenchPostProcessor():
+    """ Abstract class for NeuroBench postprocessors. Postprocessors take the spiking
     output from the models and provide several methods of combining them.
-    Individual accumulators are responsible for implementing init and call 
+    Individual postprocessors are responsible for implementing init and call 
     functions.
     """
 
     def __init__(self, args):
-        """ Initialize accumulator with any parameters needed
+        """ Initialize postprocessor with any parameters needed
 
         Args:
-            args: A dictionary of arguments for the accumulator
+            args: A dictionary of arguments for the postprocessor
         """
-        raise NotImplementedError("Subclasses of NeuroBenchAccumulator should implement __init__")
+        raise NotImplementedError("Subclasses of NeuroBenchPostProcessor should implement __init__")
 
     def __call__(self, spikes):
         """ Process tensor of spiking data of format (batch, timesteps, ...) to 
@@ -23,7 +23,7 @@ class NeuroBenchAccumulator():
             spikes: A torch tensor of spikes output by a NeuroBenchModel of
                 shape (batch, timestep, ...)
         """
-        raise NotImplementedError("Subclasses of NeuroBenchAccumulator should implement __call__")
+        raise NotImplementedError("Subclasses of NeuroBenchPostProcessor should implement __call__")
 
 
 def choose_max_count(spikes):

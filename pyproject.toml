@@ -3,7 +3,7 @@ name = "neurobench"
 version = "1.0.0"
 description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
 authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
-readme = "README.md"
+readme = "README.rst"
 exclude = ["docs", "tests", "neurobench/examples"]
 
 [tool.poetry.dependencies]

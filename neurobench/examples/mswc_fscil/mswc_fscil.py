@@ -92,10 +92,10 @@ def test(test_model, mask, set=None):
     test_model.eval()
 
     if set is not None:
-        test_loader = DataLoader(set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     else:
         base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
-        test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     
     out_mask = lambda x: x - mask
 
@@ -293,7 +293,7 @@ if __name__ == '__main__':
         syn_ops_macs = []
         syn_ops_acs = []
 
-        test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
         # Define an arbitrary resampling as an example of pre-processor to feed to the Benchmark object
         eval_model.net.eval()

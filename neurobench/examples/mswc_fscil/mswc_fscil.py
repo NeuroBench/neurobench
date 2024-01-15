@@ -9,12 +9,6 @@ import torch.nn.functional as F
 import copy
 from tqdm import tqdm
 
-try:
-    import wandb
-    loaded_wandb = True
-except:
-    loaded_wandb = False
-
 from torch.utils.data import DataLoader, ConcatDataset
 
 from neurobench.datasets import MSWC
@@ -39,15 +33,7 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser")
     
-    parser.add_argument("--spiking", action='store_true',  help="Whether to use SNN or ANN")
-    parser.add_argument("--num_repeats", type=int, default=1,  help="Pre-training epochs")
-
-    # Set these parameters if training a new model from scratch on the base classes
-    parser.add_argument("--pre_train", action='store_true',  help="Run pre-training")
-    parser.add_argument("--pt_epochs", type=int, default=50,  help="Pre-training epochs")
-    parser.add_argument("--out_bias", action='store_true',  help="Use bias in output layer, for prototype network method")
-    parser.add_argument("--feat_size", type=int, default=1024,  help="Hidden feature size")
-    
+    parser.add_argument("--spiking", action='store_true',  help="Run pre-training")
 
     args = parser.parse_args()
 
@@ -58,17 +44,16 @@ args = parse_arguments()
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-MODEL_SAVE_DIR = "neurobench/examples/mswc_fscil/model_data/"
-ROOT = "data/MSWC/"
+fscil_directory = os.path.dirname(os.path.abspath(__file__))
+MODEL_SAVE_DIR = os.path.join(fscil_directory, "model_data/")
+ROOT = os.path.join(fscil_directory, "../../../data/")
 NUM_WORKERS = 8 if device == torch.device("cuda") else 0
 BATCH_SIZE = 256
-NUM_REPEATS = args.num_repeats
+NUM_REPEATS = 1
 SPIKING = args.spiking
-PRE_TRAIN = args.pre_train
-EVAL_EPOCHS = 1
-EVAL_SHOTS = 5
-EVAL_WAYS = 10
-EPOCHS = args.pt_epochs # if pre training from scratch
+PRE_TRAIN = False
+NUM_SHOTS = 5
+EPOCHS = 50 # if pre training from scratch
 
 if device == torch.device("cuda"):
     PIN_MEMORY = True
@@ -103,25 +88,22 @@ else:
     )
 
 
-def test(test_model, mask, set=None, wandb_log="accuracy", wandb_commit=True):
+def test(test_model, mask, set=None):
     test_model.eval()
 
     if set is not None:
-        test_loader = DataLoader(set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     else:
         base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
-        test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     
     out_mask = lambda x: x - mask
 
-    benchmark = Benchmark(test_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
+    benchmark = Benchmark(TorchModel(test_model), metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
                           preprocessors=[to_device, encode, squeeze], postprocessors=[out_mask, out2pred, torch.squeeze])
 
     pre_train_results = benchmark.run()
     test_accuracy = pre_train_results['classification_accuracy']
-
-    if loaded_wandb:
-        wandb.log({wandb_log:test_accuracy}, commit=wandb_commit)
 
     return test_accuracy
 
@@ -161,7 +143,7 @@ def pre_train(model):
             optimizer.step()
 
         if epoch % 5 == 0:
-            train_acc = test(model, mask, set=base_train_set, wandb_log="train_accuracy", wandb_commit=False)
+            train_acc = test(model, mask, set=base_train_set)
             test_acc = test(model, mask)
 
             print(f"The train accuracy is {train_acc*100}%")
@@ -174,49 +156,32 @@ def pre_train(model):
 
 
 if __name__ == '__main__':
-    if loaded_wandb:
-        wandb.login()
-
-        wandb_run = wandb.init(
-            # Set the project where this run will be logged
-            project="MSWC_FSCIL_SNN",
-            # Track hyperparameters and run metadata
-            config=args.__dict__
-        )
 
     if PRE_TRAIN:
         ### Pre-training phase ###
+        # Using same parameters as provided pre-trained models
         if SPIKING:
             model = SNN(
                 input_shape=(BATCH_SIZE, 201, 20),
                 neuron_type="RadLIF",
-                layer_sizes=[1024, args.feat_size, 200],
+                layer_sizes=[1024, 1024, 200],
                 normalization="batchnorm",
                 dropout=0.1,
                 bidirectional=False,
-                use_readout_bias=args.out_bias,
+                use_readout_bias=False,
                 use_readout_layer=True,
                 ).to(device)
             
             pre_train(model)
 
-            name = "SNN_"+str(EPOCHS)+"ep_"+str(args.feat_size)+"feats_"
-
-            if args.out_bias:
-                name += "_bias"
-
-            torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
-
             model = TorchModel(model)
+            # Adding specific activation layer as activation module to allow for computational metric tracking
             model.add_activation_module(RadLIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
 
             pre_train(model)
-
-            name = "ANN_"+str(EPOCHS)+"ep"
-            torch.save(model.state_dict(), os.path.join(MODEL_SAVE_DIR,name))
 
             model = TorchModel(model)
     else:
@@ -233,18 +198,21 @@ if __name__ == '__main__':
                 use_readout_layer=True,
                 ).to(device)
             
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,'mswc_rsnn_proto'),
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_rsnn_proto"),
                                 map_location=device)
             model.load_state_dict(state_dict)
-            model = TorchModel(model)
-            
+
+            model = TorchModel(model)  
+            # Adding specific activation layer as activation module to allow for computational metric tracking
             model.add_activation_module(RadLIFLayer)
         else:
             model = M5(n_input=20, stride=2, n_channel=256, 
                     n_output=200, input_kernel=4, pool_kernel=2, drop=True).to(device)
-            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR,'mswc_cnn_proto'),
+
+            state_dict = torch.load(os.path.join(MODEL_SAVE_DIR, "mswc_cnn_proto"),
                                 map_location=device)
             model.load_state_dict(state_dict)
+
             model = TorchModel(model)
 
     all_evals = []
@@ -254,9 +222,14 @@ if __name__ == '__main__':
     all_syn_ops_macs = []
     all_syn_ops_acs = []
 
+
+    ### Readout Prototypical Conversion ###
+
+    # Loading non-shuffled trainset to get all samples of each class per batch
     base_train_set = MSWC(root=ROOT, subset="base", procedure="training")
     train_loader = DataLoader(base_train_set, batch_size=500, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
+    # Set-up new proto readout layer
     if SPIKING:
         output = model.net.snn[-1].W
         proto_out = nn.Linear(output.weight.shape[1], 200, bias=True).to(device)
@@ -293,6 +266,7 @@ if __name__ == '__main__':
         del features
         del mean
 
+    # Replace pre-trained readout with prototypical layer
     if SPIKING:
         model.net.snn[-1].W = proto_out
     else:
@@ -301,12 +275,14 @@ if __name__ == '__main__':
     del base_train_set
     del train_loader
 
+
+    ### Evaluation phase ###
+
     # Get base test set for evaluation
     base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
 
     for eval_iter in range(NUM_REPEATS):
         print(f"Evaluation Iteration: 0")
-        ### Evaluation phase ###
 
         eval_model = copy.deepcopy(model)
 
@@ -317,7 +293,7 @@ if __name__ == '__main__':
         syn_ops_macs = []
         syn_ops_acs = []
 
-        test_loader = DataLoader(base_test_set, batch_size=256, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
+        test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
 
         # Define an arbitrary resampling as an example of pre-processor to feed to the Benchmark object
         eval_model.net.eval()
@@ -328,9 +304,6 @@ if __name__ == '__main__':
 
         # Define benchmark object
         benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
-                            preprocessors=[to_device, encode, squeeze], postprocessors=[])
-
-        benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
                             preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
         # Define specific post-processing with masking on the base classes
@@ -354,24 +327,20 @@ if __name__ == '__main__':
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
         # IncrementalFewShot Dataloader used in incremental mode to generate class-incremental sessions
-        few_shot_dataloader = IncrementalFewShot(n_way=EVAL_WAYS, k_shot=EVAL_SHOTS, 
+        few_shot_dataloader = IncrementalFewShot(k_shot=NUM_SHOTS, 
                                     root = ROOT,
                                     query_shots=100,
-                                    support_query_split=(100,100),
-                                    samples_per_class=200)
+                                    support_query_split=(100,100))
 
         # Iteration over incremental sessions
         for session, (support, query, query_classes) in enumerate(few_shot_dataloader):
             print(f"Session: {session+1}")
 
-            # Define benchmark object
-            benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
+            # Define benchmark object for new classes
+            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=None,
                                 preprocessors=[to_device, encode, squeeze], postprocessors=[])
 
-            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=test_loader,
-                                preprocessors=[to_device, encode, squeeze], postprocessors=[])
-
-            ### Computing new Prototypical Weights ###
+            ### Computing Prototypical Weights and Biases of new classes ###
             data = None
             
             for X_shot, y_shot in support:
@@ -385,19 +354,22 @@ if __name__ == '__main__':
             data, target = encode((data.to(device), target.to(device)))
             data = data.squeeze()
 
+            new_classes = y_shot.tolist()
+            Nways = len(y_shot) #Number of ways, should always be 10
+
             if SPIKING:
                 features = eval_model.net.snn[0](data)
                 features = eval_model.net.snn[1](features)
 
-                for index, class_id in enumerate(query_classes[-EVAL_WAYS:]):
-                    mean = torch.sum(features[[i*EVAL_WAYS+index for i in range(EVAL_SHOTS)]], dim=[0,1])/EVAL_SHOTS
+                for index, class_id in enumerate(new_classes):
+                    mean = torch.sum(features[[i*Nways+index for i in range(NUM_SHOTS)]], dim=[0,1])/NUM_SHOTS
                     eval_model.net.snn[-1].W.weight.data[class_id] = 2*mean
                     eval_model.net.snn[-1].W.bias.data[class_id] = -torch.matmul(mean, mean.t())/(features.shape[1])
             else:
                 features = eval_model.net(data, features_out=True)
 
-                for index, class_id in enumerate(query_classes[-EVAL_WAYS:]):
-                    mean = torch.sum(features[[i*EVAL_WAYS+index for i in range(EVAL_SHOTS)]], dim=0)/EVAL_SHOTS
+                for index, class_id in enumerate(new_classes):
+                    mean = torch.sum(features[[i*Nways+index for i in range(NUM_SHOTS)]], dim=0)/NUM_SHOTS
                     eval_model.net.output.weight.data[class_id] = 2*mean
                     eval_model.net.output.bias.data[class_id] = -torch.matmul(mean, mean.t())
 
@@ -427,16 +399,10 @@ if __name__ == '__main__':
             syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
             print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
 
-            if loaded_wandb:
-                wandb.log({"eval_accuracy":eval_accs[-1]}, commit=False)
-
             # Run benchmark on query classes only
             query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
             print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
             query_accs.append(query_results['classification_accuracy'])
-
-            if loaded_wandb:
-                wandb.log({"query_accuracy":query_accs[-1]}, commit=True)
 
         all_evals.append(eval_accs)
         all_query.append(query_accs)
@@ -454,22 +420,3 @@ if __name__ == '__main__':
         print(f"Act Sparsity: {act_sparsity}")
         print(f"Syn Ops Dense: {syn_ops_dense}")
         print(f"Syn Ops MACs: {syn_ops_macs}")
-
-    metrics = {"act_sparsity":all_act_sparsity, "syn_ops_dense":all_syn_ops_dense, "syn_ops_macs":all_syn_ops_macs, "syn_ops_acs":all_syn_ops_acs}
-    results = {"all": all_evals, "query": all_query}
-
-    metrics_file = "metrics_proto_"+str(NUM_REPEATS)+"reps_"
-    name = "eval_proto_"+str(NUM_REPEATS)+"reps_"
-
-    if SPIKING:
-        name += "SNN"
-        metrics_file += "SNN"
-
-    name += ".json"
-    metrics_file += ".json"
-
-    with open(os.path.join(MODEL_SAVE_DIR,name), "w") as f:
-        json.dump(results, f)
-
-    with open(os.path.join(MODEL_SAVE_DIR,metrics_file), "w") as f:
-        json.dump(metrics, f)

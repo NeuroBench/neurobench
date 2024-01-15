@@ -21,5 +21,5 @@ def WISDM(*args, **kwargs):
     return _lazy_import("neurobench.datasets", ".WISDM", "WISDM")(*args, **kwargs)
 
 def MSWC(*args, **kwargs):
-    return _lazy_import("neurobench.datasets", ".MSWC", "MSWC")(*args, **kwargs)
+    return _lazy_import("neurobench.datasets", ".MSWC_dataset", "MSWC")(*args, **kwargs)
 

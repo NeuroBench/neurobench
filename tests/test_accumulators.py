@@ -1,6 +1,6 @@
 import torch
 
-from neurobench.accumulators import choose_max_count
+from neurobench.postprocessing import choose_max_count
 
 def test_choose_max_count():
     # Create a tensor of all 0's except for one class

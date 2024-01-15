@@ -12,8 +12,8 @@ class Benchmark():
         Args:
             model: A NeuroBenchModel.
             dataloader: A PyTorch DataLoader.
-            preprocessors: A list of NeuroBenchProcessors.
-            postprocessors: A list of NeuroBenchAccumulators.
+            preprocessors: A list of NeuroBenchPreProcessors.
+            postprocessors: A list of NeuroBenchPostProcessors.
             metric_list: A list of lists of strings of metrics to run. 
                 First item is static metrics, second item is data metrics.
         """

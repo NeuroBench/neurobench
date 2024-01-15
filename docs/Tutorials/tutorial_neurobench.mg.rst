@@ -74,6 +74,7 @@ The Mackey Glass task is a synthetic dataset generated when calling the MackeyGl
       preprocessors = []
       postprocessors = []
 
+We create a list for the parameters which we want to track.
 .. container:: cell code
 
    .. code:: python
@@ -90,6 +91,41 @@ The Mackey Glass task is a synthetic dataset generated when calling the MackeyGl
       # Shift time series by 0.5 of its Lyapunov times for each independent run
       start_offset_range = torch.arange(0., 0.5 * repeat, 0.5)
 
+Specify the metrics which you want to calculate. The available metrics (V1.0 release) are:
+
+**Static Metrics:**
+
+- footprint
+- connection_sparsity
+- parameter_count
+- Model Excecution Rate
+
+**Data Metrics:**
+
+- activation_sparsity
+- synaptic_operations
+- classification_accuracy
+- coco_map
+- mse
+- r2
+- smape
+
+More accuracy metrics are available, for which the user is recommended to consult the documentation. Note that the Model Excecution Rate is not returned by the famework, but reported by the user. Execution rate, in Hz, of the model computation based on forward inference passes per second, measured in the time-stepped simulation timescale. More explanation on the metrics can be found on neurobench.ai <https://neurobench.ai/>.
+
+.. container:: cell code
+
+   .. code:: python
+
+      static_metrics = ["footprint", "connection_sparsity"]
+      data_metrics = ["sMAPE", "activation_sparsity"]
+
+Next, we need to specify where the time series are stored. Due to differences between system architectures, the generation of this time series data can vary, therefore, NeuroBench provides precomputed time series. For more information on how to download this dataset, see the corresponding file in neurobench/datasets/mackey_glass.py.
+
+.. container:: cell code
+   .. code:: python
+       data_dir = "data/mackey_glass/"
+
+Next, the training and benchmarking is performed for each time series.
 .. container:: cell code
 
    .. code:: python
@@ -97,8 +133,13 @@ The Mackey Glass task is a synthetic dataset generated when calling the MackeyGl
       for repeat_id in range(repeat):
           for series_id in range(len(mg_parameters)):
               tau = mg_parameters.tau[series_id]
-              # Load data using the parameters loaded from the CSV file
-              mg = MackeyGlass(tau=tau, lyaptime=mg_parameters.lyapunov_time[series_id], constant_past=mg_parameters.initial_condition[series_id], start_offset=start_offset_range[repeat_id].item(), bin_window=1)
+              filepath = data_dir + "mg_" + str(tau) + ".npy"
+              lyaptime = mg_parameters.lyapunov_time[series_id]
+              offset = start_offset_range[repeat_id].item()
+              mg = MackeyGlass(filepath,
+                               start_offset=offset,
+                               bin_window=1)
+
               # Split test and train set
               train_set = Subset(mg, mg.ind_train)
               test_set = Subset(mg, mg.ind_test)
@@ -124,8 +165,7 @@ The Mackey Glass task is a synthetic dataset generated when calling the MackeyGl
               test_set_loader = DataLoader(test_set, batch_size=mg.testtime_pts, shuffle=False)
               # Wrap the model
               model = TorchModel(net)
-              static_metrics = ["model_size", "connection_sparsity"]
-              data_metrics = ["sMAPE", "activation_sparsity"]
+
               benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, data_metrics])
               results = benchmark.run()
               print(results)

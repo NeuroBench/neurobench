@@ -8,7 +8,7 @@ from neurobench.datasets import SpeechCommands
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.preprocessing import NeuroBenchProcessor
+from neurobench.preprocessing import NeuroBenchPreProcessor
 
 from ANN import M5
 
@@ -19,7 +19,7 @@ test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 net = M5()
 net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/m5_ann", map_location=torch.device('cpu')))
 
-class resample(NeuroBenchProcessor):
+class resample(NeuroBenchPreProcessor):
 	def __init__(self):
 		self.resample = torchaudio.transforms.Resample(orig_freq=16000, new_freq=8000)
 

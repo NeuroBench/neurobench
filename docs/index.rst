@@ -16,7 +16,7 @@ NeuroBench Documentation
    neurobench.datasets
    neurobench.models
    neurobench.preprocessing
-   neurobench.accumulators
+   neurobench.postprocessing
 
 Indices and tables
 ==================

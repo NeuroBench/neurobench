@@ -22,7 +22,7 @@ The Google Speech Commands dataset (V2) is a commonly used dataset in assessing 
 
 The goal is to develop a model that trains using the designated train and validation sets, followed by an evaluation of generalization to a separate test set. The task is a classification task.
 
-First we will import the relevant libraries. These include the datasets, preprocessors and accumulators. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
+First we will import the relevant libraries. These include the datasets, preprocessors and postprocessors. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
 
 .. code:: python
 
@@ -30,10 +30,10 @@ First we will import the relevant libraries. These include the datasets, preproc
    # import the dataloader
    from torch.utils.data import DataLoader
 
-   # import the dataset, preprocessors and accumulators you want to use
+   # import the dataset, preprocessors and postprocessors you want to use
    from neurobench.datasets import SpeechCommands
-   from neurobench.preprocessing import S2SProcessor
-   from neurobench.accumulators import choose_max_count
+   from neurobench.preprocessing import S2SPreProcessor
+   from neurobench.postprocessing import choose_max_count
 
    # import the NeuroBench wrapper to wrap your snnTorch model for usage in the NeuroBench framework
    from neurobench.models import SNNTorchModel
@@ -55,7 +55,7 @@ To get started, we will load our desired dataset in a dataloader:
 
    test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
-Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the time of writing this tutorial, (V1.0) snnTorch is the only supported framework, therefore, we will wrap our snnTorch model in the SNNTorchModel() wrapper.
+Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the time of writing this tutorial, (V1.0) snnTorch is the only supported framework, therefore, we will wrap our snnTorch model in the SNNTorchModel() wrapper. Note that any framework based on PyTorch can be wrapped in a TorchModel() wrapper, and the neuron layers can be added with add_activation_module().
 
 .. code:: python
 
@@ -63,34 +63,37 @@ Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the
    # Wrap our net in the SNNTorchModel wrapper
    model = SNNTorchModel(net)
 
-Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessors and neurobench/accumulators respectively.
+Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessing and neurobench/postprocessing respectively.
 
 .. code:: python
 
-   preprocessors = [S2SProcessor()]
+   preprocessors = [S2SPreProcessor()]
    postprocessors = [choose_max_count]
 
 Next specify the metrics which you want to calculate. The available metrics (V1.0 release) are:
 
 **Static Metrics:**
 
-- model_size
+- footprint
 - connection_sparsity
-- frequency
+- parameter_count
+- Model Excecution Rate
 
 **Data Metrics:**
 
 - activation_sparsity
-- multiply_accumulates
+- synaptic_operations
 - classification_accuracy
+- coco_map
+- mse
+- r2
+- smape
 
-More accuracy metrics are available, for which the user is recommended to consult the documentation
-
-More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`.
+More accuracy metrics are available, for which the user is recommended to consult the documentation. Note that the Model Excecution Rate is not returned by the famework, but reported by the user. Execution rate, in Hz, of the model computation based on forward inference passes per second, measured in the time-stepped simulation timescale. More explanation on the metrics can be found on `neurobench.ai <https://neurobench.ai/>`. 
 
 .. code:: python
 
-   static_metrics = ["model_size"]
+   static_metrics = ["footprint"]
    data_metrics = ["classification_accuracy"]
 
 Next, we instantiate the benchmark. We have to specify the model, the dataloader, the preprocessors, the postprocessor and the list of the static and data metrics which we want to measure:

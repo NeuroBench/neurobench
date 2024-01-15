@@ -22,7 +22,7 @@ The Google Speech Commands dataset (V2) is a commonly used dataset in assessing 
 
 The goal is to develop a model that trains using the designated train and validation sets, followed by an evaluation of generalization to a separate test set. The task is a classification task.
 
-First we will import the relevant libraries. These include the datasets, preprocessors and accumulators. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
+First we will import the relevant libraries. These include the datasets, preprocessors and postprocessors. To ensure your model to be compatible with the NeuroBench framework, we will import the wrapper for snnTorch models. This wrapper will not change your model. Finally, we import the Benchmark class, which will run the benchmark and calculate your metrics.
 
 .. code:: python
 
@@ -30,10 +30,10 @@ First we will import the relevant libraries. These include the datasets, preproc
    # import the dataloader
    from torch.utils.data import DataLoader
 
-   # import the dataset, preprocessors and accumulators you want to use
+   # import the dataset, preprocessors and postprocessors you want to use
    from neurobench.datasets import SpeechCommands
-   from neurobench.preprocessing import S2SProcessor
-   from neurobench.accumulators import choose_max_count
+   from neurobench.preprocessing import S2SPreProcessor
+   from neurobench.postprocessing import choose_max_count
 
    # import the NeuroBench wrapper to wrap your snnTorch model for usage in the NeuroBench framework
    from neurobench.models import SNNTorchModel
@@ -63,11 +63,11 @@ Next, load our model and wrap it in the corresponding NeuroBench wrapper. At the
    # Wrap our net in the SNNTorchModel wrapper
    model = SNNTorchModel(net)
 
-Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessors and neurobench/accumulators respectively.
+Specify the preprocessor and postprocessor want to use. These will be applied to your data before feeding into the model, and to the output spikes respectively. Available preprocessors and postprocessors can be found in neurobench/preprocessing and neurobench/postprocessing respectively.
 
 .. code:: python
 
-   preprocessors = [S2SProcessor()]
+   preprocessors = [S2SPreProcessor()]
    postprocessors = [choose_max_count]
 
 Next specify the metrics which you want to calculate. The available metrics (V1.0 release) are:

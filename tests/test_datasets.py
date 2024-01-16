@@ -5,7 +5,7 @@ from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.datasets import PrimateReaching
 from neurobench.datasets import DVSGesture
 from neurobench.datasets import MackeyGlass
-from neurobench.datasets import WISDMDataLoader
+from neurobench.datasets import WISDM
 from torch.utils.data import DataLoader
 
 import torch
@@ -19,7 +19,7 @@ def test_nehar():
         assert os.path.exists(path)
     except AssertionError:
         raise FileExistsError(f"Can't find {path}")
-    wisdm = WISDMDataLoader(path)
+    wisdm = WISDM(path)
     assert len(wisdm) > 0
     assert list(wisdm.train_dataset[0].shape) == [21720, 40, 6]
     assert list(wisdm.val_dataset[0].shape) == [7240, 40, 6]
@@ -33,14 +33,14 @@ def test_nehar():
     assert isinstance(wisdm.val_dataloader(), torch.utils.data.DataLoader)
     assert isinstance(wisdm.test_dataloader(), torch.utils.data.DataLoader)
 
-    wisdm = WISDMDataLoader(path)
+    wisdm = WISDM(path)
 
     wisdm.setup('test')
     assert isinstance(wisdm.ds_test, torch.utils.data.TensorDataset)
     assert wisdm.ds_val is None
     assert wisdm.ds_train is None
 
-    wisdm = WISDMDataLoader(path)
+    wisdm = WISDM(path)
     wisdm.setup('predict')
     assert isinstance(wisdm.ds_test, torch.utils.data.TensorDataset)
     assert wisdm.ds_val is None
@@ -77,46 +77,12 @@ def test_dvs_gesture():
 
 
 def test_mackey_glass():
-    mg = MackeyGlass(tau=17,lyaptime=197,constant_past=0.7206597)
-
-    assert len(mg) > 0
-
-    trainset = torch.utils.data.Subset(mg, mg.ind_train)
-    testset = torch.utils.data.Subset(mg, mg.ind_test)
-
-    assert len(trainset) == mg.traintime_pts
-    assert len(testset) == mg.testtime_pts
-
-    assert trainset[0][0].shape == (1, 1)
-    assert trainset[0][1].shape == (1,)
-    assert testset[0][0].shape == (1, 1)
-    assert testset[0][1].shape == (1,)
-
-    assert (torch.eq(trainset[0][0], mg[0][0]))
-    assert (torch.eq(trainset[0][1], mg[0][1]))
-    assert (torch.eq(testset[0][0], mg[mg.traintime_pts][0]))
-    assert (torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
-
-
-    bin_window = 3
-    mg = MackeyGlass(tau=17,lyaptime=197,constant_past=0.7206597, bin_window=bin_window)
-    trainset = torch.utils.data.Subset(mg, mg.ind_train)
-    testset = torch.utils.data.Subset(mg, mg.ind_test)
-    
-    assert trainset[0][0].shape == (bin_window,1)
-    assert trainset[0][1].shape == (1,)
-    assert testset[0][0].shape == (bin_window,1)
-    assert testset[0][1].shape == (1,)
-    
-    assert(torch.eq(mg[0][1], mg[1][0][-1])) # ensure target from previous timestep is appended to lookback window
-
-def test_mackey_glass_load():
     filepath = dataset_path + "mackey_glass/mg_17.npy"
     try:
         assert os.path.exists(filepath)
     except AssertionError:
         raise FileExistsError(f"Can't find {filepath}")
-    mg = MackeyGlass(file=filepath)
+    mg = MackeyGlass(file_path=filepath)
 
     assert len(mg) > 0
 
@@ -137,7 +103,7 @@ def test_mackey_glass_load():
     assert(torch.eq(testset[0][1], mg[mg.traintime_pts][1]))
 
     bin_window = 3
-    mg = MackeyGlass(file=filepath, bin_window=bin_window)
+    mg = MackeyGlass(file_path=filepath, bin_window=bin_window)
     trainset = torch.utils.data.Subset(mg, mg.ind_train)
     testset = torch.utils.data.Subset(mg, mg.ind_test)
     
@@ -194,7 +160,7 @@ def test_primate_reaching():
     try:
         assert not os.path.exists(file_path)
     except AssertionError:
-        raise FileExistsError(f"Dataset {filename} already exists in {path}")
+        print(f"Dataset {filename} already exists in {path}, not downloading")
 
     dataset = PrimateReaching(file_path=path,
                               filename="indy_20170131_02.mat",

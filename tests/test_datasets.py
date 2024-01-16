@@ -125,7 +125,6 @@ def test_1mp():
     dl = Gen4DetectionDataLoader(
         dataset_path=path,
         split="testing",
-        label_map_path="neurobench/datasets/label_map_dictionary.json",
         batch_size=1,
         num_tbins=12,
         preprocess_function_name="histo",

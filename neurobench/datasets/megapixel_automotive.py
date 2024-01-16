@@ -80,7 +80,6 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         Args:
             dataset_path: path to the dataset folder
             split: split to use, can be 'training', 'validation' or 'testing'
-            label_map_path: path to the label_map_dictionary.json file
             batch_size: batch size
             num_tbins: number of time bins in a mini batch
             preprocess_function_name: name of the preprocessing function to use, 'histo' by default. Can be that are listed under https://docs.prophesee.ai/stable/api/python/ml/preprocessing.html

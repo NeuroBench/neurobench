@@ -89,6 +89,7 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
             "f_max": 4000,
             "hop_length": 80,
         }
+        self.threshold = 1
         self.transform = torchaudio.transforms.MelSpectrogram(
             **self._default_spec_kwargs
         ).to(device)

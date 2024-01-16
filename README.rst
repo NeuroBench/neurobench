@@ -82,26 +82,42 @@ Documentation for the framework interfaces can found in
 Development
 -----------
 
-If you clone the repo directly for development, poetry can be used to
-maintain a virtualenv consistent with a deployment environment. In the
+If you clone the repo directly for development, `poetry <https://pypi.org/project/poetry/>`__ 
+can be used to maintain a virtualenv consistent with a deployment environment. In the
 root directory run:
 
 ::
 
+   pip install poetry
    poetry install
    poetry run pytest tests/
 
-Currently the end-to-end examples can be run from the root directory
-via:
+Poetry requires python >=3.8. Installation should not take more than a few minutes.
+
+End-to-end examples can be run from the poetry environment. As a demo, try the 
+Google Speech Commands keyword classification benchmark:
 
 ::
 
-   poetry run python neurobench/examples/dvs_gesture/benchmark.py
-   poetry run python neurobench/examples/gsc/benchmark.py
-   poetry run python neurobench/examples/mackey_glass/benchmark.py
-   poetry run python neurobench/examples/primate_reaching/benchmark.py
+   # ANN Benchmark Example
+   poetry run python neurobench/examples/gsc/benchmark_ann.py
+   
+   # Expected results:
+   # {'footprint': 109228, 'connection_sparsity': 0.0,
+   # 'classification_accuracy': 0.8653339397251905, 'activation_sparsity': 0.3854464619019532, 
+   # 'synaptic_operations': {'Effective_MACs': 1749994.1556565198, 'Effective_ACs': 0.0, 'Dense': 1902179.0}}
 
-The examples may not yet have trained models or a full set of metrics.
+
+   # SNN Benchmark Example
+   poetry run python neurobench/examples/gsc/benchmark_snn.py
+   
+   # Expected results:
+   # {'footprint': 583900, 'connection_sparsity': 0.0,
+   # 'classification_accuracy': 0.8484325295196562, 'activation_sparsity': 0.9675956131759854, 
+   # 'synaptic_operations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
+
+These demos should run in a couple minutes. Other baseline result scripts and notebook
+tutorials are available in the ``neurobench/examples`` folder.
 
 Developers
 ----------
@@ -116,7 +132,8 @@ there have been technical contributions from many others. A
 non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes
 Bouhadjar, Paul Hueber, Vincent Sun, Biyan Zhou, George Vathakkattil
 Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang,
-Anurag Kumar Mishra, Soikat Hasan Ahmed.
+Anurag Kumar Mishra, Soikat Hasan Ahmed, Benedetto Leto, Aurora Micheli,
+Tao Sun.
 
 Contributing
 ------------
@@ -128,7 +145,7 @@ Citation
 --------
 
 If you use this framework in your research, please cite the following
-whitepaper:
+preprint article:
 
 ::
 

@@ -89,7 +89,7 @@ root directory run:
 ::
 
    pip install poetry
-   poetry install
+   poetry install --with=dev
    poetry run pytest tests/
 
 Poetry requires python >=3.8. Installation should not take more than a few minutes.

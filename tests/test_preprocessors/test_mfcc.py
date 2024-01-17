@@ -1,12 +1,12 @@
 import unittest
 from pathlib import Path
-from neurobench.preprocessing.mfcc import MFCCProcessor
+from neurobench.preprocessing.mfcc import MFCCPreProcessor
 import torch
 import torchaudio
 import numpy as np
 
 
-class TestMFCCProcessor(unittest.TestCase):
+class TestMFCCPreProcessor(unittest.TestCase):
     def setUp(self):
         sample_file = Path(__file__).parent.joinpath("sample_audio.wav")
 
@@ -29,18 +29,18 @@ class TestMFCCProcessor(unittest.TestCase):
         self.sample_audio = self.sample_audio.permute(0, 1)
 
     def test_mfcc_non_tuple(self):
-        mfcc = MFCCProcessor(**self.init_args)
+        mfcc = MFCCPreProcessor(**self.init_args)
         audio = [1, 2, 3]
         with self.assertRaises(TypeError):
             mfcc(audio)
 
     def test_mfcc_tuple_wrong_shape(self):
-        mfcc = MFCCProcessor(**self.init_args)
+        mfcc = MFCCPreProcessor(**self.init_args)
         audio = (self.sample_audio, 2, 3, 4)
         with self.assertRaises(ValueError):
             mfcc(audio)
 
     def test_mfcc_tuple_correct_shape(self):
-        mfcc = MFCCProcessor(**self.init_args)
+        mfcc = MFCCPreProcessor(**self.init_args)
         audio = (self.sample_audio, 2)
         mfcc(audio)

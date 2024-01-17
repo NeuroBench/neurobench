@@ -28,10 +28,10 @@ class M5(nn.Module):
         self.act4 = nn.ReLU()
         self.drop4 = nn.Dropout(p=0.2) if drop else nn.Identity()
         self.pool4 = nn.MaxPool1d(pool_kernel)
-        self.output = nn.Linear(2 * n_channel, n_output, bias=False)
+        self.output = nn.Linear(2 * n_channel, n_output, bias=True)
 
 
-    def forward(self, x):
+    def forward(self, x, features_out=False):
         x = self.conv1(x)
         x = self.act1(self.bn1(x))
         x = self.drop1(x)
@@ -49,7 +49,9 @@ class M5(nn.Module):
         x = self.drop4(x)
         x = self.pool4(x)
         x = F.avg_pool1d(x, x.shape[-1])
-        x = x.permute(0, 2, 1)
-        x = self.output(x)
+        x = x.permute(0, 2, 1).squeeze()
+
+        if not features_out:
+            x = self.output(x)
 
         return x

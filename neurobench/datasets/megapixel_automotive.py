@@ -18,6 +18,38 @@ skip_files = [
     'moorea_2019-06-26_test_02_000_1708500000_1768500000.h5',
 ]
 
+def create_class_lookup(wanted_keys=[]):
+    """Source code modified from metavision_ml.data.box_processing.create_class_lookup to avoid
+    having extraneous label map json file.
+    """
+    label_dic = {0: "pedestrian", 1: "two wheeler", 2: "car", 
+                  3: "truck", 4: "bus", 5: "traffic sign", 
+                  6: "traffic light"}
+
+    # we take maximum class id + 1 because of class id 0
+    size = max(label_dic.keys()) + 1
+
+    # check that all wanted classes are inside the dataset
+    classes = label_dic.values()
+    if wanted_keys:
+        assert any(item != 'empty' for item in wanted_keys)
+        for key in wanted_keys:
+            assert key in classes, "key '{}' not found in the dataset".format(key)
+    else:
+        # we filter out 'empty' because this is used to annotate empty frames
+        wanted_keys = [label for label in classes if label != 'empty']
+
+    wanted_map = {label: idx for idx, label in enumerate(wanted_keys)}
+    class_lookup = np.full(size, -1)
+    for src_idx in range(size):
+        if src_idx not in label_dic:
+            continue
+        src_label = label_dic[src_idx]
+        if src_label not in wanted_keys:
+            continue
+        class_lookup[src_idx] = wanted_map[src_label] + 1
+    return class_lookup
+
 class Gen4DetectionDataLoader(SequentialDataLoader):
     """NeuroBench DataLoader for Gen4 pre-computed dataset
 
@@ -32,7 +64,6 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         self,
         dataset_path="data/Gen 4 Histograms",
         split="testing",
-        label_map_path="neurobench/datasets/label_map_dictionary.json",
         batch_size: int = 4,
         num_tbins: int = 12,
         preprocess_function_name="histo",
@@ -49,7 +80,6 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         Args:
             dataset_path: path to the dataset folder
             split: split to use, can be 'training', 'validation' or 'testing'
-            label_map_path: path to the label_map_dictionary.json file
             batch_size: batch size
             num_tbins: number of time bins in a mini batch
             preprocess_function_name: name of the preprocessing function to use, 'histo' by default. Can be that are listed under https://docs.prophesee.ai/stable/api/python/ml/preprocessing.html
@@ -82,7 +112,9 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         self.height = height
         self.width = width
         self.class_selection = class_selection
-        class_lookup = box_api.create_class_lookup(label_map_path, class_selection)
+        
+        # class_lookup = box_api.create_class_lookup(label_map_path, class_selection)
+        class_lookup = create_class_lookup(class_selection)
 
         self.kw_args = dict(
             delta_t=delta_t,

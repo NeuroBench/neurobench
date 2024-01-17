@@ -23,7 +23,7 @@ class TorchModel(NeuroBenchModel):
 
         Returns:
             preds: either a tensor to be compared with targets or passed to
-                NeuroBenchAccumulators.
+                NeuroBenchPostProcessors.
         """
         return self.net(batch)
 

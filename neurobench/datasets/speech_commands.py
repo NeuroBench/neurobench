@@ -18,6 +18,7 @@ class SpeechCommands(NeuroBenchDataset, SPEECHCOMMANDS):
             subset (str, optional): one of "training", "validation", or "testing". Defaults to None.
             truncate_or_pad_to_1s (bool, optional): whether to truncate or pad samples to 1s. Defaults to True.
         """
+        os.makedirs(path, exist_ok=True)
         SPEECHCOMMANDS.__init__(self, path, download=True, subset=subset)
         self.truncate_or_pad_to_1s = truncate_or_pad_to_1s
 

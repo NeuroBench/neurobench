@@ -33,7 +33,7 @@ The original code can be found at:
 https://github.com/Accenture/speech2spikes
 """
 
-from .preprocessor import NeuroBenchProcessor
+from .preprocessor import NeuroBenchPreProcessor
 
 import torch
 import torchaudio
@@ -69,7 +69,7 @@ def tensor_to_events(batch, threshold=1, device=None):
     return events
 
 
-class S2SProcessor(NeuroBenchProcessor):
+class S2SPreProcessor(NeuroBenchPreProcessor):
     """ The SpikeEncoder class manages the conversion from raw audio into spikes
     and stores the required conversion parameters.
     """
@@ -89,6 +89,7 @@ class S2SProcessor(NeuroBenchProcessor):
             "f_max": 4000,
             "hop_length": 80,
         }
+        self.threshold = 1
         self.transform = torchaudio.transforms.MelSpectrogram(
             **self._default_spec_kwargs
         ).to(device)
@@ -120,7 +121,7 @@ class S2SProcessor(NeuroBenchProcessor):
             tensors = tensors.transpose(1, 2)
         tensors = self.transform(tensors)
         tensors = torch.log(tensors)
-        tensors = tensor_to_events(tensors, device=self.device)
+        tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
         
         if kwargs:

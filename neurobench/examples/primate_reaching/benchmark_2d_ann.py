@@ -6,8 +6,6 @@ from neurobench.models.torch_model import TorchModel
 from neurobench.benchmarks import Benchmark
 
 from neurobench.examples.primate_reaching.ANN import ANNModel2D
-# Download data to /data/primate_reaching/PrimateReachingDataset. See PrimateReaching
-# class for download instructions.
 
 all_files = ["indy_20160622_01", "indy_20160630_01", "indy_20170131_02", 
              "loco_20170210_03", "loco_20170215_02", "loco_20170301_05"]

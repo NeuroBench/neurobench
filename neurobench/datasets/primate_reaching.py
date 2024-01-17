@@ -75,7 +75,7 @@ class PrimateReaching(NeuroBenchDataset):
         "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
         "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
         "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
-        "loco_20170217_02.mat": "739b70762d838f3a1f358733c426bb02",
+        "loco_20170215_02.mat": "739b70762d838f3a1f358733c426bb02",
         "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
     }
 
@@ -115,7 +115,6 @@ class PrimateReaching(NeuroBenchDataset):
         self.file_path = os.path.join(file_path, self.filename)
 
         if download:
-            print("downloading ....")
             self.download()
         
         # test filepath
@@ -190,7 +189,6 @@ class PrimateReaching(NeuroBenchDataset):
         md5 = self.md5s[self.filename]
         
         if self._check_exists(self.file_path, md5):
-            print(f"The dataset already exists!")
             return
 
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
@@ -211,7 +209,7 @@ class PrimateReaching(NeuroBenchDataset):
             if spike data has been processed and stored already
         """
         # Assume input is the original dataset, instead of the reconstructed one
-
+        print(f"Loading {self.filename}")
         dataset = h5py.File(self.file_path, "r")
 
         # extract data from datafile

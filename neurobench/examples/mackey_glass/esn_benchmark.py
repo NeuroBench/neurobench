@@ -66,7 +66,7 @@ for tau in range(17, 31):
         model = TorchModel(esn)
     
         static_metrics = ["footprint", "connection_sparsity"]
-        workload_metrics = ["sMAPE", "activation_sparsity","synaptic_operations"]
+        workload_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics]) 
         results = benchmark.run()

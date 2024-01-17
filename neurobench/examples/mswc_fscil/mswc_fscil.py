@@ -33,7 +33,7 @@ to_device = lambda x: (x[0].to(device), x[1].to(device))
 def parse_arguments():
     parser = argparse.ArgumentParser(description="Argument Parser")
     
-    parser.add_argument("--spiking", action='store_true',  help="Run pre-training")
+    parser.add_argument("--spiking", action='store_true',  help="Use SNN instead of ANN")
 
     args = parser.parse_args()
 

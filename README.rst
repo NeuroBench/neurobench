@@ -84,8 +84,8 @@ root directory run:
 ::
 
    pip install poetry
-   poetry install --with=dev
-   poetry run pytest tests/
+   poetry install
+   git switch dev # currently all features implemented under dev branch
 
 Poetry requires python >=3.8. Installation should not take more than a few minutes.
 
@@ -111,7 +111,7 @@ Google Speech Commands keyword classification benchmark:
    # 'classification_accuracy': 0.8484325295196562, 'activation_sparsity': 0.9675956131759854, 
    # 'synaptic_operations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
 
-These demos should run in a couple minutes. Other baseline result scripts and notebook
+These demos should download the dataset, then run in a couple minutes. Other baseline result scripts and notebook
 tutorials are available in the ``neurobench/examples`` folder.
 
 Developers

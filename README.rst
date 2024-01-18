@@ -5,11 +5,6 @@ Introduction
 A harness for running evaluations on
 `NeuroBench <https://neurobench.ai>`__ algorithm benchmarks.
 
-This framework is in a beta state and is still under active development.
-Currently, only pytorch-based models and frameworks are supported.
-Extension of the harness to cover system track benchmarks in the future
-is planned.
-
 NeuroBench is a community-driven project, and we welcome further
 development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,

@@ -8,7 +8,7 @@ NeuroBench Documentation
    :caption: Contents:
 
    readme
-   tutorials/index
+   tutorial/index
    metrics/index
    contributing
    api

@@ -9,8 +9,8 @@ Benchmark
     :undoc-members:
     :show-inheritance:
 
-Data Metrics
-^^^^^^^^^^^^
+Workload Metrics
+^^^^^^^^^^^^^^^^
 .. automodule:: neurobench.benchmarks.workload_metrics
     :members:
     :undoc-members:

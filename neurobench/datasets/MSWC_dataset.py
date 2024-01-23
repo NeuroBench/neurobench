@@ -262,16 +262,6 @@ class MSWC(Dataset):
 
     The subset of data used for this task, as well as the supporting files for base class and incremental 
     splits, is hosted on Huggingface at the first link above.
-    
-    The data just needs to be downloaded, for instance in a _data_ folder inside the main neurobench folder. 
-    In this case, it should have the following format.
-    github_repo_root (neurobench)/
-        data/
-            MSWC/
-                base_[test,train,val].csv
-                language/ (for all languages in general or FSCIL dataset)
-                    clips/
-                    evaluation.csv
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
                  language: Optional[str] = None, incremental: Optional[bool] = False, download=True

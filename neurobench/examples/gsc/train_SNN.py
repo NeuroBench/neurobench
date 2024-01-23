@@ -8,8 +8,8 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 
 from neurobench.datasets import SpeechCommands
-from neurobench.preprocessing import S2SProcessor
-from neurobench.accumulators import choose_max_count
+from neurobench.preprocessing import S2SPreProcessor
+from neurobench.postprocessing import choose_max_count
 
 from neurobench.examples.gsc.SNN import net
 
@@ -26,7 +26,7 @@ train_set = SpeechCommands(path="data/speech_commands/", subset="training")
 val_set = SpeechCommands(path="data/speech_commands/", subset="validation")
 test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
 
-s2s = S2SProcessor()
+s2s = S2SPreProcessor()
 
 # Create the dataloaders
 train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)

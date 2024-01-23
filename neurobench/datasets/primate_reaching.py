@@ -38,11 +38,21 @@ class PrimateReaching(NeuroBenchDataset):
 
         Once these .mat files are downloaded, store them in the same directory.
     """
+    url = "https://zenodo.org/record/583331/files/"
+
+    md5s = {
+        "indy_20170131_02.mat": "2790b1c869564afaa7772dbf9e42d784",
+        "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
+        "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
+        "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
+        "loco_20170215_02.mat": "739b70762d838f3a1f358733c426bb02",
+        "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
+    }
 
     def __init__(self, file_path, filename, num_steps, train_ratio=0.8,
                  biological_delay=0, spike_sorting=False, stride=0.004, bin_width=0.028,
                  max_segment_length=2000, split_num=1, remove_segments_inactive=False, 
-                 download= False):
+                 download=True):
 
         """
             Initialises the Dataset for the Primate Reaching Task.
@@ -85,7 +95,6 @@ class PrimateReaching(NeuroBenchDataset):
         self.file_path = os.path.join(file_path, self.filename)
 
         if download:
-            print("downloading ....")
             self.download()
         
         # test filepath
@@ -160,7 +169,6 @@ class PrimateReaching(NeuroBenchDataset):
         md5 = self.md5s[self.filename]
         
         if self._check_exists(self.file_path, md5):
-            print(f"The dataset already exists!")
             return
 
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
@@ -181,7 +189,7 @@ class PrimateReaching(NeuroBenchDataset):
             if spike data has been processed and stored already
         """
         # Assume input is the original dataset, instead of the reconstructed one
-
+        print(f"Loading {self.filename}")
         dataset = h5py.File(self.file_path, "r")
 
         # extract data from datafile

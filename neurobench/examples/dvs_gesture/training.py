@@ -9,7 +9,7 @@ from snntorch import surrogate
 from neurobench.datasets import DVSGesture
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
-from neurobench.accumulators.accumulator import aggregate,choose_max_count
+from neurobench.postprocessing.postprocessor import aggregate,choose_max_count
 
 from neurobench.examples.dvs_gesture.CSNN import Conv_SNN
 

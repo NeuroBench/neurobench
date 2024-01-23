@@ -12,7 +12,7 @@ def parameter_count(model):
     """
     return sum(p.numel() for p in model.__net__().parameters())
 
-def model_size(model):
+def footprint(model):
     """ Memory footprint of the model.
 
     Args:

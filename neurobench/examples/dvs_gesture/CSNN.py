@@ -7,9 +7,9 @@ from torch import nn
 from snntorch import surrogate
 from snntorch import utils
 # datasets
-from neurobench.datasets.DVSGesture_loader import DVSGesture
+from neurobench.datasets.dvs_gesture import DVSGesture
 from neurobench.models import SNNTorchModel
-from neurobench.accumulators.accumulator import choose_max_count
+from neurobench.postprocessing.postprocessor import choose_max_count
 
 from tqdm import tqdm
 

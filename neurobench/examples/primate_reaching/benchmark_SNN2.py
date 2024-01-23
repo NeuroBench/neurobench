@@ -8,9 +8,6 @@ from neurobench.examples.primate_reaching.SNN2 import SNN2
 from neurobench.models import TorchModel
 import snntorch as snn
 
-# Download data to /data/primate_reaching/PrimateReachingDataset. See PrimateReaching
-# class for download instructions.
-
 # The dataloader and preprocessor has been combined together into a single class
 files = ["indy_20160622_01", "indy_20160630_01", "indy_20170131_02",
             "loco_20170210_03", "loco_20170215_02", "loco_20170301_05"]
@@ -41,7 +38,7 @@ for filename in files:
     model = TorchModel(net) # using TorchModel instead of SNNTorchModel because the SNN iterates over dimension 0
     model.add_activation_module(snn.SpikingNeuron)
 
-    static_metrics = ["model_size", "connection_sparsity"]
+    static_metrics = ["footprint", "connection_sparsity"]
     workload_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
 
     # Benchmark expects the following:
@@ -49,7 +46,7 @@ for filename in files:
     results = benchmark.run()
     print(results)
 
-    footprint.append(results['model_size'])
+    footprint.append(results['footprint'])
     connection_sparsity.append(results['connection_sparsity'])
     activation_sparsity.append(results['activation_sparsity'])
     dense.append(results['synaptic_operations']['Dense'])

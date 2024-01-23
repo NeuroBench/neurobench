@@ -19,10 +19,10 @@ please contact neuromorphic_inquiries@accenture.com for more information.
 
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
- FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
- COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
- IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
- CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 You agree to indemnify and hold Accenture harmless from and against all 
 liabilities, claims and suits and to pay all costs and expenses thereby 
@@ -33,7 +33,7 @@ The original code can be found at:
 https://github.com/Accenture/speech2spikes
 """
 
-from .preprocessor import NeuroBenchProcessor
+from .preprocessor import NeuroBenchPreProcessor
 
 import torch
 import torchaudio
@@ -69,17 +69,18 @@ def tensor_to_events(batch, threshold=1, device=None):
     return events
 
 
-class S2SProcessor(NeuroBenchProcessor):
+class S2SPreProcessor(NeuroBenchPreProcessor):
     """ The SpikeEncoder class manages the conversion from raw audio into spikes
     and stores the required conversion parameters.
     """
-    def __init__(self, device=None):
+    def __init__(self, device=None, transpose=True):
         """
         Args:
             device (torch.device, optional): A torch.Device used by PyTorch for the
                 computation. Defaults to None.
         """
         self.device = device
+        self.transpose = transpose
         self._default_spec_kwargs = {
             "sample_rate": 16000,
             "n_mels": 20,
@@ -88,9 +89,10 @@ class S2SProcessor(NeuroBenchProcessor):
             "f_max": 4000,
             "hop_length": 80,
         }
+        self.threshold = 1
         self.transform = torchaudio.transforms.MelSpectrogram(
             **self._default_spec_kwargs
-        )
+        ).to(device)
 
     def __call__(self, batch):
         """ Converts raw audio data to spikes using Speech2Spikes algorithm
@@ -106,14 +108,26 @@ class S2SProcessor(NeuroBenchProcessor):
         TODO:
             Add support for cumulative sum of features
         """
-        tensors, targets = batch
+        tensors = batch[0]
+        targets = batch[1]
+        if len(batch) == 3:
+            kwargs = batch[2]
+        else:
+            kwargs = None
 
         # Tensors will be batch, timestep, channels and need to be transposed
-        tensors = self.transform(tensors.transpose(1, 2))
+        
+        if self.transpose:
+            tensors = tensors.transpose(1, 2)
+        tensors = self.transform(tensors)
         tensors = torch.log(tensors)
-        tensors = tensor_to_events(tensors, device=self.device)
+        tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
-        return tensors, targets
+        
+        if kwargs:
+            return tensors, targets, kwargs
+        else:
+            return tensors, targets
 
     def configure(self, threshold=1, **spec_kwargs):
         """ Allows the user to configure parameters of the S2S class and the
@@ -130,4 +144,4 @@ class S2SProcessor(NeuroBenchProcessor):
         self.threshold = threshold
 
         spec_kwargs = {**self._default_spec_kwargs, **spec_kwargs}
-        self.transform = torchaudio.transforms.MelSpectrogram(spec_kwargs)
+        self.transform = torchaudio.transforms.MelSpectrogram(**spec_kwargs).to(self.device)

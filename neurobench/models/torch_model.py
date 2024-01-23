@@ -10,6 +10,8 @@ class TorchModel(NeuroBenchModel):
         Args:
             net: A PyTorch nn.Module.
         """
+        super().__init__(net)
+        
         self.net = net
         self.net.eval()
 
@@ -21,7 +23,7 @@ class TorchModel(NeuroBenchModel):
 
         Returns:
             preds: either a tensor to be compared with targets or passed to
-                NeuroBenchAccumulators.
+                NeuroBenchPostProcessors.
         """
         return self.net(batch)
 

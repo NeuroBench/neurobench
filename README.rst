@@ -84,7 +84,6 @@ root directory run:
 
    pip install poetry
    poetry install
-   git switch dev # currently all features implemented under dev branch
 
 Poetry requires python >=3.8. Installation should not take more than a few minutes.
 

@@ -6,6 +6,8 @@ Definition
 ----------
 During execution, the average sparsity of neuron activations over all neurons in all model layers, for all timesteps of all tested samples, where 0 refers to no sparsity (i.e., all neurons are always activated), and 1 refers to the case where all neurons have a zero output.
 
+The sparsity is calculated by accumulating the number of zero activations (:math:`z`), over all neuron layers (:math:`l`), timesteps (:math:`t`), and input samples (:math:`i`) and dividing by the total number of neurons (:math:`N`), :math:`\frac{\sum_l \sum_t \sum_i z_{l,t}^i}{\sum_t \sum_l \sum_i N_{l,t}^i}`.
+
 Implementation Notes
 --------------------
 When the NeuroBench model is instatiated, certain layers can be recognized automatically for activation sparsity calculation.

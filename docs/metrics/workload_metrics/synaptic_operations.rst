@@ -25,7 +25,7 @@ The layers that are supported include:
 
 This uses pre-hooks, saving the input to each of the layers. At the end of a batch, all the inputs are binarized (for both Effective MACs and ACs).
 
-This is demonstrated below for a linear layer. Assume the bias to be zero, resulting in a forward pass following :math:`y=W \cdot x`. An example weight and activation vector is presented below.
+This is demonstrated below for a linear layer. Assume the bias to be zero, resulting in a forward pass following :math:`y=W \cdot x`. An example weight and activation vector is presented:
 
 .. math::   
     W \cdot x=
@@ -39,7 +39,7 @@ This is demonstrated below for a linear layer. Assume the bias to be zero, resul
             -1 \\
         \end{bmatrix} 
 
-Both the weight matrix and the activation vector contain zeroes, so effective synaptic operations are only performed for a subset of the weight and input combinations. We make the weight matrix and input matrix binary and compute the forward pass to yield effective operations.
+Both the weight matrix and the activation vector contain zeroes, so effective synaptic operations are only performed for a subset of the weight and input combinations. We make the weight matrix and input matrix binary by replacing non-zeroes with 1. Then, we compute the forward pass to yield effective operations.
 
 .. math::
     \begin{bmatrix}
@@ -56,8 +56,8 @@ Both the weight matrix and the activation vector contain zeroes, so effective sy
         2 \\
         1 \\
     \end{bmatrix} \rightarrow 
-    SynOps = 4
+    \text{Effective SynOps} = 4
 
-For Dense synaptic operation, instead of binarizing we convert everything to all ones.
+For Dense synaptic operation, instead of binarizing we convert all elements to 1. The forward pass yields all zero and non-zero operations. In the above example, the number of Dense synaptic operations is 9.
 
 With these augmented input tensors and weights from the hooks we re-run the forward pass. The final number of operations is the average over all of the samples. Samples is defined over the batch dimension (0 dimension).

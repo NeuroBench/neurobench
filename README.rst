@@ -20,15 +20,15 @@ NeuroBench contains the following sections:
 
    * - **Section**
      - **Description**
-   * - `neurobench.benchmarks <docs/neurobench.benchmarks.rst>`__
+   * - `neurobench.benchmarks <neurobench.benchmarks.html>`__
      - Neurobench benchmarks, including data metrics and static metrics
-   * - `neurobench.datasets <docs/neurobench.datasets.rst>`__
+   * - `neurobench.datasets <neurobench.datasets.html>`__
      - Neurobench benchmark datasets
-   * - `neurobench.models <docs/neurobench.models.rst>`__
+   * - `neurobench.models <neurobench.models.html>`__
      - Neurobench framework for Torch and SNNTorch models
-   * - `neurobench.preprocessing <docs/neurobench.preprocessing.rst>`__
+   * - `neurobench.preprocessing <neurobench.preprocessing.html>`__
      - Pre-processing of data, conversion to spikes
-   * - `neurobench.postprocessing <docs/neurobench.postprocessing.rst>`__
+   * - `neurobench.postprocessing <neurobench.postprocessing.html>`__
      - Post-processors take the spiking output from the models and provide several methods of combining them
 
 Installation
@@ -47,16 +47,16 @@ The following benchmarks are currently available:
 
 v1.0 benchmarks
 ~~~~~~~~~~~~~~~
-- `Keyword Few-shot Class-incremental Learning (FSCIL) <neurobench/examples/mswc_fscil>`__
-- `Event Camera Object Detection <neurobench/examples/obj_detection>`__
-- `Non-human Primate (NHP) Motor Prediction <neurobench/examples/primate_reaching>`__
-- `Chaotic Function Prediction <neurobench/examples/mackey_glass>`__
+- Keyword Few-shot Class-incremental Learning (FSCIL)
+- Event Camera Object Detection
+- Non-human Primate (NHP) Motor Prediction
+- Chaotic Function Prediction
 
 Additional benchmarks
 ~~~~~~~~~~~~~~~~~~~~~
-- `DVS Gesture Recognition <neurobench/examples/dvs_gesture>`__
-- `Google Speech Commands (GSC) Classification <neurobench/examples/gsc>`__
-- `Neuromorphic Human Activity Recognition (HAR) <neurobench/examples/nehar>`__
+- DVS Gesture Recognition
+- Google Speech Commands (GSC) Classification
+- Neuromorphic Human Activity Recognition (HAR)
 
 Getting started
 ---------------

@@ -8,7 +8,7 @@ A harness for running evaluations on
 NeuroBench is a community-driven project, and we welcome further
 development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
-please see the `contributing guidelines <CONTRIBUTING.rst>`__.
+please see the `Contributing Guidelines <contributing.html>`__.
 
 NeuroBench Structure
 ---------------------
@@ -61,8 +61,8 @@ Additional benchmarks
 Getting started
 ---------------
 
-Example benchmark scripts can be found under the ``neurobench/examples``
-folder.
+Example benchmark scripts can be found under the ``neurobench/examples`` folder. 
+(`https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/ <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/>`__)
 
 In general, the design flow for using the framework is as follows:
 
@@ -71,8 +71,7 @@ In general, the design flow for using the framework is as follows:
 3. Pass the model, evaluation split dataloader, pre-/post-processors,
    and a list of metrics to the ``Benchmark`` and ``run()``.
 
-Documentation for the framework interfaces can found in
-`API.md <API.md>`__.
+Documentation for the framework interfaces can found in the `API Overview <api.html>`__.
 
 Development
 -----------
@@ -134,7 +133,7 @@ Contributing
 ------------
 
 If you are interested in helping to build this framework, please see the
-`contributing guidelines <CONTRIBUTING.rst>`__.
+`Contribution Guidelines <contributing.html>`__.
 
 Citation
 --------

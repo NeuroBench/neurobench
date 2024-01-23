@@ -47,6 +47,7 @@ As a community-driven project, we welcome further development from the community
     .. code-block:: bash
 
         # To build the documentation
+        cd docs
         poetry run make html
         
 * Write tests for your feature and place them in the `neurobench/tests` directory.

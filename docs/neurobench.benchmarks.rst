@@ -11,7 +11,7 @@ Benchmark
 
 Data Metrics
 ^^^^^^^^^^^^
-.. automodule:: neurobench.benchmarks.data_metrics
+.. automodule:: neurobench.benchmarks.workload_metrics
     :members:
     :undoc-members:
     :show-inheritance:

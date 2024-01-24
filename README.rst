@@ -8,7 +8,7 @@ A harness for running evaluations on
 NeuroBench is a community-driven project, and we welcome further
 development from the community. If you are interested in developing
 extensions to features, programming frameworks, or metrics and tasks,
-please see the `Contributing Guidelines <contributing.html>`__.
+please see the `Contributing Guidelines <https://neurobench.readthedocs.io/en/latest/contributing.html>`__.
 
 NeuroBench Structure
 ---------------------
@@ -20,15 +20,15 @@ NeuroBench contains the following sections:
 
    * - **Section**
      - **Description**
-   * - `neurobench.benchmarks <neurobench.benchmarks.html>`__
+   * - `neurobench.benchmarks <https://neurobench.readthedocs.io/en/latest/neurobench.benchmarks.html>`__
      - Neurobench benchmarks, including data metrics and static metrics
-   * - `neurobench.datasets <neurobench.datasets.html>`__
+   * - `neurobench.datasets <https://neurobench.readthedocs.io/en/latest/neurobench.datasets.html>`__
      - Neurobench benchmark datasets
-   * - `neurobench.models <neurobench.models.html>`__
+   * - `neurobench.models <https://neurobench.readthedocs.io/en/latest/neurobench.models.html>`__
      - Neurobench framework for Torch and SNNTorch models
-   * - `neurobench.preprocessing <neurobench.preprocessing.html>`__
+   * - `neurobench.preprocessing <https://neurobench.readthedocs.io/en/latest/neurobench.preprocessing.html>`__
      - Pre-processing of data, conversion to spikes
-   * - `neurobench.postprocessing <neurobench.postprocessing.html>`__
+   * - `neurobench.postprocessing <https://neurobench.readthedocs.io/en/latest/neurobench.postprocessing.html>`__
      - Post-processors take the spiking output from the models and provide several methods of combining them
 
 Installation
@@ -71,7 +71,7 @@ In general, the design flow for using the framework is as follows:
 3. Pass the model, evaluation split dataloader, pre-/post-processors,
    and a list of metrics to the ``Benchmark`` and ``run()``.
 
-Documentation for the framework interfaces can found in the `API Overview <api.html>`__.
+Documentation for the framework interfaces can found in the `API Overview <https://neurobench.readthedocs.io/en/latest/api.html>`__.
 
 Development
 -----------
@@ -85,7 +85,7 @@ root directory run:
    pip install poetry
    poetry install
 
-Poetry requires python >=3.8. Installation should not take more than a few minutes.
+Poetry requires python >=3.9. Installation should not take more than a few minutes.
 
 End-to-end examples can be run from the poetry environment. As a demo, try the 
 Google Speech Commands keyword classification benchmark:
@@ -132,7 +132,7 @@ Contributing
 ------------
 
 If you are interested in helping to build this framework, please see the
-`Contribution Guidelines <contributing.html>`__.
+`Contribution Guidelines <https://neurobench.readthedocs.io/en/latest/contributing.html>`__.
 
 Citation
 --------

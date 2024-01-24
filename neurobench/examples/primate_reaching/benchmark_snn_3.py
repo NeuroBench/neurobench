@@ -7,7 +7,7 @@ from neurobench.datasets import PrimateReaching
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.examples.primate_reaching.SNN_3 import SNNModel3
+from SNN_3 import SNNModel3
 
 all_files = ["indy_20160622_01", "indy_20160630_01", "indy_20170131_02", 
              "loco_20170210_03", "loco_20170215_02", "loco_20170301_05"]
@@ -26,7 +26,8 @@ for filename in all_files:
     print("Processing {}".format(filename))
 
     # The dataloader and preprocessor has been combined together into a single class
-    dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename=filename,
+    data_dir = "../../../data/primate_reaching/PrimateReachingDataset/" # data in repo root dir
+    dataset = PrimateReaching(file_path=data_dir, filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
                             biological_delay=0, remove_segments_inactive=False)
     
@@ -36,7 +37,7 @@ for filename in all_files:
                     batch_size=256, bin_window=0.2, num_steps=7, drop_rate=0.5,
                     beta=0.5, mem_thresh=0.5, spike_grad=surrogate.atan(alpha=2))
 
-    net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/SNN3_Weight/"+filename+"_model_state_dict.pth", map_location=device))
+    net.load_state_dict(torch.load("./model_data/SNN3_Weight/"+filename+"_model_state_dict.pth", map_location=device))
 
     model = TorchModel(net)
     model.add_activation_module(snn.SpikingNeuron)

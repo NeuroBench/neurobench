@@ -19,8 +19,8 @@ from metavision_ml.detection.losses import DetectionLoss
 from metavision_ml.metrics.coco_eval import CocoEvaluator
 from metavision_sdk_core import EventBbox
 
-from neurobench.examples.obj_detection.obj_det_model import  Vanilla
-from neurobench.datasets import Gen4DetectionDataLoader as seq_dataloader
+from obj_det_model import  Vanilla
+from training_utils import seq_dataloader
 
 from metavision_ml.detection.anchors import Anchors
 from metavision_ml.detection.rpn import BoxHead

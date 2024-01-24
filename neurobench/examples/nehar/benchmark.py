@@ -8,7 +8,8 @@ from neurobench.models import SNNTorchModel
 if __name__ == '__main__':
     batch_size = 256
     lr = 1.e-3
-    dataset_path = "./data/nehar/watch_subset2_40.npz"
+    # data in repo root dir
+    dataset_path = "../../../data/nehar/watch_subset2_40.npz"
     data_module = WISDM(path=dataset_path, batch_size=batch_size)
     data_module.setup('test')
 
@@ -16,7 +17,7 @@ if __name__ == '__main__':
     num_outputs = data_module.num_outputs
     num_steps = data_module.num_steps
 
-    spiking_network = SpikingNetwork.load_from_checkpoint('neurobench/examples/nehar/model_data/WISDM_snnTorch.ckpt', map_location='cpu')
+    spiking_network = SpikingNetwork.load_from_checkpoint('./model_data/WISDM_snnTorch.ckpt', map_location='cpu')
 
     model = SNNTorchModel(spiking_network.model)
     test_set_loader = data_module.test_dataloader()

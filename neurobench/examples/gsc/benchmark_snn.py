@@ -9,12 +9,14 @@ from neurobench.postprocessing import choose_max_count
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.examples.gsc.SNN import net
-test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
+from SNN import net
+
+# data in repo root dir
+test_set = SpeechCommands(path="../../../data/speech_commands/", subset="testing")
 
 test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
-net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/s2s_gsc_snntorch", map_location=torch.device('cpu')))
+net.load_state_dict(torch.load("./model_data/s2s_gsc_snntorch", map_location=torch.device('cpu')))
 
 ## Define model ##
 model = SNNTorchModel(net)

@@ -8,10 +8,10 @@ from neurobench.datasets import MackeyGlass
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.examples.mackey_glass.echo_state_network import EchoStateNetwork
+from echo_state_network import EchoStateNetwork
 
 # Load hyperparameters of echo state networks found via the random search
-esn_parameters = pd.read_csv("neurobench/examples/mackey_glass/model_data/echo_state_network_hyperparameters.csv")
+esn_parameters = pd.read_csv("./model_data/echo_state_network_hyperparameters.csv")
 
 # benchmark run over 14 different series
 sMAPE_scores = []
@@ -25,7 +25,8 @@ start_offset_range = torch.arange(0., 0.5*repeat, 0.5)
 lyaptime_pts = 75
 start_offset_range = start_offset_range * lyaptime_pts
 
-data_dir = "data/mackey_glass/"
+# data in repo root dir
+data_dir = "../../../data/mackey_glass/"
 
 for tau in range(17, 31):
     for repeat_id in range(repeat):

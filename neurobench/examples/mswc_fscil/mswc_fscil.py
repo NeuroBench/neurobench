@@ -13,17 +13,16 @@ from torch.utils.data import DataLoader, ConcatDataset
 
 from neurobench.datasets import MSWC
 from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot
-from neurobench.examples.mswc_fscil.M5 import M5
 from neurobench.models import TorchModel
-
-from neurobench.examples.mswc_fscil.sparchSNNs import SNN
-from neurobench.examples.mswc_fscil.sparchSNNs import RadLIFLayer
 
 from neurobench.benchmarks import Benchmark
 from neurobench.preprocessing import MFCCPreProcessor, S2SPreProcessor
 
 import argparse
 
+from M5 import M5
+from sparchSNNs import SNN
+from sparchSNNs import RadLIFLayer
 
 squeeze = lambda x: (x[0].squeeze(), x[1])
 out2pred = lambda x: torch.argmax(x, dim=-1)
@@ -46,7 +45,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 fscil_directory = os.path.dirname(os.path.abspath(__file__))
 MODEL_SAVE_DIR = os.path.join(fscil_directory, "model_data/")
-ROOT = os.path.join(fscil_directory, "../../../data/")
+ROOT = os.path.join(fscil_directory, "../../../data/") # data in repo root dir
 NUM_WORKERS = 8 if device == torch.device("cuda") else 0
 BATCH_SIZE = 256
 NUM_REPEATS = 1

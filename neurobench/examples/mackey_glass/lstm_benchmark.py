@@ -14,7 +14,7 @@ from neurobench.datasets import MackeyGlass
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.examples.mackey_glass.lstm_model import LSTMModel
+from lstm_model import LSTMModel
 
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('--wb', dest='wandb_state', type=str, default="offline")
@@ -78,7 +78,8 @@ start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5)
 lyaptime_pts = 75
 start_offset_range = start_offset_range * lyaptime_pts
 
-data_dir = "data/mackey_glass/"
+# data in repo root dir
+data_dir = "../../../data/mackey_glass/"
 
 for repeat_id in range(args.repeat):
     tau = args.tau

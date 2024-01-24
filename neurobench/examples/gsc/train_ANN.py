@@ -21,9 +21,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Load the dataset
-train_set = SpeechCommands(path="data/speech_commands/", subset="training")
-val_set = SpeechCommands(path="data/speech_commands/", subset="validation")
-test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
+data_dir = "../../../data/speech_commands/"
+train_set = SpeechCommands(path=data_dir, subset="training")
+val_set = SpeechCommands(path=data_dir, subset="validation")
+test_set = SpeechCommands(path=data_dir, subset="testing")
 
 # Create the dataloaders
 train_loader = DataLoader(train_set, batch_size=BATCH_SIZE, shuffle=True)
@@ -101,11 +102,11 @@ for epoch in range(EPOCHS):
     if np.mean(val_acc) > best_acc:
         print("New Best Validation Accuracy. Saving...")
         best_acc = np.mean(val_acc)
-        torch.save(model.state_dict(), "neurobench/examples/gsc/model_data/m5_ann")
+        torch.save(model.state_dict(), "./model_data/m5_ann")
 
     scheduler.step()
 
     print(f"---------------------\n")
 
 # Load the weights into the network for inference
-model.load_state_dict(torch.load("neurobench/examples/gsc/model_data/m5_ann"))
+model.load_state_dict(torch.load("./model_data/m5_ann"))

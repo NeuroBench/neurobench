@@ -12,12 +12,13 @@ from neurobench.preprocessing import NeuroBenchPreProcessor
 
 from ANN import M5
 
-test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
+# data in repo root dir
+test_set = SpeechCommands(path="../../../data/speech_commands/", subset="testing")
 
 test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
 net = M5()
-net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/m5_ann", map_location=torch.device('cpu')))
+net.load_state_dict(torch.load("./model_data/m5_ann", map_location=torch.device('cpu')))
 
 class resample(NeuroBenchPreProcessor):
 	def __init__(self):

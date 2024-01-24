@@ -3,7 +3,7 @@ from torch.utils.data import DataLoader, Subset
 
 from neurobench.datasets import PrimateReaching
 from neurobench.benchmarks import Benchmark
-from neurobench.examples.primate_reaching.SNN2 import SNN2
+from SNN2 import SNN2
 
 from neurobench.models import TorchModel
 import snntorch as snn
@@ -23,14 +23,15 @@ r2 = []
 
 for filename in files:
     print("Processing {}".format(filename))
-    dataset = PrimateReaching(file_path="data/primate_reaching/PrimateReachingDataset/", filename=filename,
+    data_dir = "../../../data/primate_reaching/PrimateReachingDataset/" # data in repo root dir
+    dataset = PrimateReaching(file_path=data_dir, filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
                             biological_delay=0, remove_segments_inactive=False)
     
     test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=len(dataset.ind_test), shuffle=False)
 
     net = SNN2(input_size=dataset.input_feature_size)
-    net.load_state_dict(torch.load("neurobench/examples/primate_reaching/model_data/SNN2_{}.pt".format(filename), map_location=torch.device('cpu'))
+    net.load_state_dict(torch.load("./model_data/SNN2_{}.pt".format(filename), map_location=torch.device('cpu'))
                         ['model_state_dict'], strict=False)
 
     # init the model

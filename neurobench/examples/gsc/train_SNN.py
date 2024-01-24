@@ -11,7 +11,7 @@ from neurobench.datasets import SpeechCommands
 from neurobench.preprocessing import S2SPreProcessor
 from neurobench.postprocessing import choose_max_count
 
-from neurobench.examples.gsc.SNN import net
+from SNN import net
 
 BATCH_SIZE = 5
 NUM_WORKERS = 8
@@ -22,9 +22,10 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print(device)
 
 # Load the dataset
-train_set = SpeechCommands(path="data/speech_commands/", subset="training")
-val_set = SpeechCommands(path="data/speech_commands/", subset="validation")
-test_set = SpeechCommands(path="data/speech_commands/", subset="testing")
+data_dir = "../../../data/speech_commands/"
+train_set = SpeechCommands(path=data_dir, subset="training")
+val_set = SpeechCommands(path=data_dir, subset="validation")
+test_set = SpeechCommands(path=data_dir, subset="testing")
 
 s2s = S2SPreProcessor()
 
@@ -98,9 +99,9 @@ for epoch in range(EPOCHS):
     if np.mean(val_acc) > best_acc:
         print("New Best Validation Accuracy. Saving...")
         best_acc = np.mean(val_acc)
-        torch.save(net.state_dict(), "neurobench/examples/gsc/model_data/s2s_gsc_snntorch")
+        torch.save(net.state_dict(), "./model_data/s2s_gsc_snntorch")
 
     print(f"---------------------\n")
 
 # Load the weights into the network for inference
-net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/s2s_gsc_snntorch"))
+net.load_state_dict(torch.load("./model_data/s2s_gsc_snntorch"))

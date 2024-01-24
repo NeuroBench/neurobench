@@ -28,10 +28,6 @@ Overview
 | Benchmark      |
 +----------------+
 
-.. raw:: html
-
-   <div class="page"/>
-
 Specifications
 --------------
 

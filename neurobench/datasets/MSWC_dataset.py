@@ -262,6 +262,8 @@ class MSWC(Dataset):
 
     The subset of data used for this task, as well as the supporting files for base class and incremental 
     splits, is hosted on Huggingface at the first link above.
+
+    The data is given in 48kHz opus format. Converted 16kHz wav files are available to download at the link above.
     """
     def __init__(self, root: Union[str, Path], subset: Optional[str] = None, procedure: Optional[str] = None, 
                  language: Optional[str] = None, incremental: Optional[bool] = False, download=True

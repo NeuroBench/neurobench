@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "neurobench"
-version = "1.0.1"
+version = "1.0.2"
 description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
 authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
 readme = "README.rst"

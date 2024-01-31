@@ -73,14 +73,18 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
     """ The SpikeEncoder class manages the conversion from raw audio into spikes
     and stores the required conversion parameters.
     """
-    def __init__(self, device=None, transpose=True):
+    def __init__(self, device=None, transpose=True, log_offset=1e-6):
         """
         Args:
             device (torch.device, optional): A torch.Device used by PyTorch for the
                 computation. Defaults to None.
+            transpose (bool, optional): Whether to transpose the input tensor before processing.
+                If the input tensor is of shape (batch, channels, timesteps), this should be true.
+            log_offset (float, optional): A small value added to the MelSpectrogram before log is applied
         """
         self.device = device
         self.transpose = transpose
+        self.log_offset = log_offset
         self._default_spec_kwargs = {
             "sample_rate": 16000,
             "n_mels": 20,
@@ -120,6 +124,8 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         if self.transpose:
             tensors = tensors.transpose(1, 2)
         tensors = self.transform(tensors)
+        if self.log_offset:
+            tensors = tensors + self.log_offset
         tensors = torch.log(tensors)
         tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device)
         tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last

@@ -4,6 +4,9 @@ from tqdm import tqdm
 
 from . import static_metrics, workload_metrics
 
+# workload metrics which require hooks
+requires_hooks = ["activation_sparsity", "number_neuron_updates", "synaptic_operations"]
+
 class Benchmark():
     """ Top-level benchmark class for running benchmarks.
     """
@@ -50,7 +53,8 @@ class Benchmark():
                 results[m] = self.static_metrics[m](self.model)
 
             # add hooks to the model
-            workload_metrics.detect_activations_connections(self.model)
+            if any([m in requires_hooks for m in self.workload_metrics.keys()]):
+                workload_metrics.detect_activations_connections(self.model)            
 
             dataloader = dataloader if dataloader is not None else self.dataloader
             preprocessors = preprocessors if preprocessors is not None else self.preprocessors
@@ -117,5 +121,15 @@ class Benchmark():
                 for m in self.workload_metrics.keys():
                     if isinstance(self.workload_metrics[m], workload_metrics.AccumulatedMetric):
                         results[m] = self.workload_metrics[m].compute()
+
+        # close hooks
+        for hook in self.model.activation_hooks:
+            hook.reset()
+            hook.close()
+        for hook in self.model.connection_hooks:
+            hook.reset()
+            hook.close()
+        self.model.activation_hooks = []
+        self.model.connection_hooks = []
 
         return results

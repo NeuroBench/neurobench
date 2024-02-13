@@ -355,7 +355,7 @@ class MSWC(Dataset):
             idx (int): Index of the sample.
 
         Returns:
-            sample (tensor): Individual waveform sample, padded to always match dimension (1, 48000).
+            sample (tensor): Individual waveform sample, padded to always match dimension (48000, 1).
             target (int): Corresponding keyword index based on FSCIL_KEYWORDS order (by decreasing number of samples in original dataset).
         """
         item = self._walker[index]

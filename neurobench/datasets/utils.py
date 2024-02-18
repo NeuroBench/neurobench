@@ -59,9 +59,15 @@ def _save_response_content(
             pbar.update(len(chunk))
 
 
-def _urlretrieve(url, filename, chunk_size=1024*32):
-    with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
-        _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+def _urlretrieve(url, filename, chunk_size=1024 * 32):
+    with urllib.request.urlopen(
+        urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    ) as response:
+        _save_response_content(
+            iter(lambda: response.read(chunk_size), b""),
+            filename,
+            length=response.length,
+        )
 
 
 def _get_redirect_url(url, max_hops=3):
@@ -69,7 +75,9 @@ def _get_redirect_url(url, max_hops=3):
     headers = {"Method": "HEAD", "User-Agent": USER_AGENT}
 
     for _ in range(max_hops + 1):
-        with urllib.request.urlopen(urllib.request.Request(url, headers=headers)) as response:
+        with urllib.request.urlopen(
+            urllib.request.Request(url, headers=headers)
+        ) as response:
             if response.url == url or response.url is None:
                 return url
 
@@ -80,7 +88,7 @@ def _get_redirect_url(url, max_hops=3):
         )
 
 
-def calculate_md5(fpath, chunk_size=1024*1024):
+def calculate_md5(fpath, chunk_size=1024 * 1024):
     # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
     # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS.
     if sys.version_info >= (3, 9):
@@ -136,7 +144,12 @@ def download_url(url, file_path, md5=None, max_redirect_hops=3):
     except (urllib.error.URLError, OSError) as e:  # type: ignore[attr-defined]
         if url[:5] == "https":
             url = url.replace("https:", "http:")
-            print("Failed download. Trying https -> http instead. Downloading " + url + " to " + file_path)
+            print(
+                "Failed download. Trying https -> http instead. Downloading "
+                + url
+                + " to "
+                + file_path
+            )
             _urlretrieve(url, file_path)
         else:
             raise e

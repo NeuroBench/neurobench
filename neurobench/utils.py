@@ -13,27 +13,36 @@ def activation_modules():
     """
     The activation layers that can be auto-deteced. Every activation layer can only be included once.
     """
-    return list(set([nn.ReLU,
-                     nn.Sigmoid,
-                     ]))
+    return list(
+        set(
+            [
+                nn.ReLU,
+                nn.Sigmoid,
+            ]
+        )
+    )
 
 
 def check_shape(preds, labels):
-    """ Checks that the shape of the predictions and labels are the same.
-    """
+    """Checks that the shape of the predictions and labels are the same."""
     if preds.shape != labels.shape:
         raise ValueError("preds and labels must have the same shape")
 
 
 def make_binary_copy(layer, all_ones=False):
-    """ Makes a binary copy of the layer. All non 0 entries are made 1.
-        If all_ones is True, then all entries are made 1.
+    """Makes a binary copy of the layer. All non 0 entries are made 1.
+    If all_ones is True, then all entries are made 1.
     """
     layer_copy = copy.deepcopy(layer)
 
-    stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
+    stateless_layers = (
+        torch.nn.Linear,
+        torch.nn.Conv2d,
+        torch.nn.Conv1d,
+        torch.nn.Conv3d,
+    )
     # recurrent_layers = (torch.nn.RNNBase)
-    recurrent_cells = (torch.nn.RNNCellBase)
+    recurrent_cells = torch.nn.RNNCellBase
 
     if isinstance(layer, stateless_layers):
         weights = layer_copy.weight.data
@@ -50,11 +59,10 @@ def make_binary_copy(layer, all_ones=False):
 
         layer_copy.weight.data = weights
 
-
     elif isinstance(layer, recurrent_cells):
-        attribute_names = ['weight_ih', 'weight_hh']
+        attribute_names = ["weight_ih", "weight_hh"]
         if layer.bias:
-            attribute_names += ['bias_ih', 'bias_hh']
+            attribute_names += ["bias_ih", "bias_hh"]
         # if layer.proj_size > 0: # it is lstm
         # 	attribute_names += ['weight_hr']
 
@@ -70,13 +78,17 @@ def make_binary_copy(layer, all_ones=False):
 
 
 def make_ones_copy(layer):
-    """ Makes a ones copy of the layer. All entries are made 1.
-    """
+    """Makes a ones copy of the layer. All entries are made 1."""
     layer_copy = copy.deepcopy(layer)
 
-    stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
+    stateless_layers = (
+        torch.nn.Linear,
+        torch.nn.Conv2d,
+        torch.nn.Conv1d,
+        torch.nn.Conv3d,
+    )
     # recurrent_layers = (torch.nn.RNNBase)
-    recurrent_cells = (torch.nn.RNNCellBase)
+    recurrent_cells = torch.nn.RNNCellBase
 
     if isinstance(layer, stateless_layers):
         weights = layer_copy.weight.data
@@ -91,11 +103,10 @@ def make_ones_copy(layer):
 
         layer_copy.weight.data = weights
 
-
     elif isinstance(layer, recurrent_cells):
-        attribute_names = ['weight_ih', 'weight_hh']
+        attribute_names = ["weight_ih", "weight_hh"]
         if layer.bias:
-            attribute_names += ['bias_ih', 'bias_hh']
+            attribute_names += ["bias_ih", "bias_hh"]
         # if layer.proj_size > 0: # it is lstm
         # 	attribute_names += ['weight_hr']
 
@@ -110,8 +121,7 @@ def make_ones_copy(layer):
 
 
 def cylce_tuple(tup):
-    """ Returns a copy of the tuple with binary elements
-    """
+    """Returns a copy of the tuple with binary elements"""
     tup_copy = []
     for t in tup:
         if isinstance(t, tuple):
@@ -124,8 +134,7 @@ def cylce_tuple(tup):
 
 
 def cylce_tuple_ones(tup):
-    """ Returns a copy of the tuple with ones elements
-    """
+    """Returns a copy of the tuple with ones elements"""
     tup_copy = []
     for t in tup:
         if isinstance(t, tuple):
@@ -139,14 +148,13 @@ def cylce_tuple_ones(tup):
 
 
 def binary_inputs(inputs, all_ones=False):
-    """ Returns a copy of the inputs with binary elements, all ones if all_ones is True"""
+    """Returns a copy of the inputs with binary elements, all ones if all_ones is True"""
     in_states = True  # assume that input is tuple of inputs and states. If not, then set to False
     spiking = False
 
     with torch.no_grad():
         # TODO: should change this code block so that all inputs get cloned
         if isinstance(inputs, tuple):
-
             # input is first element, rest is hidden states
             test_ins = inputs[0]
 
@@ -171,18 +179,23 @@ def binary_inputs(inputs, all_ones=False):
 
 
 def single_layer_MACs(inputs, layer, total=False):
-    """ Computes the MACs for a single layer.
-        returns effective operations if total=False, else total operations (including zero operations)
-        Supported layers: Linear, Conv1d, Conv2d, Conv3d, RNNCellBase, LSTMCell, GRUCell
+    """Computes the MACs for a single layer.
+    returns effective operations if total=False, else total operations (including zero operations)
+    Supported layers: Linear, Conv1d, Conv2d, Conv3d, RNNCellBase, LSTMCell, GRUCell
     """
     macs = 0
 
     # copy input
     inputs, spiking, in_states = binary_inputs(inputs, all_ones=total)
 
-    stateless_layers = (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)
-    recurrent_layers = (torch.nn.RNNBase)
-    recurrent_cells = (torch.nn.RNNCellBase)
+    stateless_layers = (
+        torch.nn.Linear,
+        torch.nn.Conv2d,
+        torch.nn.Conv1d,
+        torch.nn.Conv3d,
+    )
+    recurrent_layers = torch.nn.RNNBase
+    recurrent_cells = torch.nn.RNNCellBase
 
     if isinstance(layer, stateless_layers):
         # then multiply the binary layer with the diagonal matrix to get the MACs
@@ -196,25 +209,25 @@ def single_layer_MACs(inputs, layer, total=False):
             layer_bin.bias.data = torch.zeros_like(layer_bin.bias.data)
 
         nr_updates = layer_bin(
-            inputs)  # this returns the number of MACs for every output neuron: if spiking neurons only AC
+            inputs
+        )  # this returns the number of MACs for every output neuron: if spiking neurons only AC
         macs = nr_updates.sum()
-
 
     elif isinstance(layer, recurrent_layers):
         layer_bin = make_binary_copy(layer, all_ones=total)
         attribute_names = []
         for i in range(layer.num_layers):
-            param_names = ['weight_ih_l{}{}', 'weight_hh_l{}{}']
+            param_names = ["weight_ih_l{}{}", "weight_hh_l{}{}"]
             if layer.bias:
-                param_names += ['bias_ih_l{}{}', 'bias_hh_l{}{}']
+                param_names += ["bias_ih_l{}{}", "bias_hh_l{}{}"]
             if layer.proj_size > 0:  # it is lstm
-                param_names += ['weight_hr_l{}{}']
+                param_names += ["weight_hr_l{}{}"]
 
-            attribute_names += [x.format(i, '') for x in param_names]
+            attribute_names += [x.format(i, "") for x in param_names]
             if layer.bidirectional:
-                suffix = '_reverse'
+                suffix = "_reverse"
                 attribute_names += [x.format(i, suffix) for x in param_names]
-        raise 'This layer is not yet supported by NeuroBench.'
+        raise "This layer is not yet supported by NeuroBench."
         return 0
     elif isinstance(layer, recurrent_cells):
         # NOTE: sigmoid and tanh will never change a non-zero value to zero or vice versa
@@ -223,7 +236,9 @@ def single_layer_MACs(inputs, layer, total=False):
         layer_bin = make_binary_copy(layer, all_ones=total)
         # transpose from batches, timesteps, features to features, batches
         # print(layer_bin.weight_ih.shape)
-        out_ih = torch.matmul(layer_bin.weight_ih, inputs[0].transpose(0, -1))  # accounts for i,f,g,o
+        out_ih = torch.matmul(
+            layer_bin.weight_ih, inputs[0].transpose(0, -1)
+        )  # accounts for i,f,g,o
         out_hh = torch.zeros_like(out_ih)
 
         biases = 0
@@ -247,7 +262,9 @@ def single_layer_MACs(inputs, layer, total=False):
 
             # inputs = (x,(h,c))
             if in_states:
-                out_hh = torch.matmul(layer_bin.weight_hh, inputs[1][0].transpose(0, -1))
+                out_hh = torch.matmul(
+                    layer_bin.weight_hh, inputs[1][0].transpose(0, -1)
+                )
 
             # out_ih[out_ih!=0] = 1
             # out_hh[out_hh!=0] = 1
@@ -300,14 +317,20 @@ def single_layer_MACs(inputs, layer, total=False):
             r[r != 0] = 1
             out_hh_n[out_hh_n != 0] = 1
 
-            n_hh_term_macs = r * out_hh_n  # elementwise_multiplication to find macs ofr*(Whn*h + bhn) specifically
+            n_hh_term_macs = (
+                r * out_hh_n
+            )  # elementwise_multiplication to find macs ofr*(Whn*h + bhn) specifically
             n_hh_term_macs[n_hh_term_macs != 0] = 1
             macs += n_hh_term_macs.sum()
 
             # note hh part of n is already binarized, does not influence calculation of macs for n
-            n = out_hh.reshape(3, -1)[2, :] + bias_ih.reshape(3, -1)[2, :] + n_hh_term_macs
+            n = (
+                out_hh.reshape(3, -1)[2, :]
+                + bias_ih.reshape(3, -1)[2, :]
+                + n_hh_term_macs
+            )
             n[n != 0] = 1
-            z_a = (1 - z)
+            z_a = 1 - z
             # only do this now because affects z_a
             z[z != 0] = 1
             z_a[z_a != 0] = 1

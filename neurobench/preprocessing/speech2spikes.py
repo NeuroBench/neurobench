@@ -40,7 +40,7 @@ import torchaudio
 
 
 def tensor_to_events(batch, threshold=1, device=None):
-    """ Converts a batch of continuous signals to binary spikes via delta modulation
+    """Converts a batch of continuous signals to binary spikes via delta modulation
     (https://en.wikipedia.org/wiki/Delta_modulation).
 
     Args:
@@ -70,9 +70,10 @@ def tensor_to_events(batch, threshold=1, device=None):
 
 
 class S2SPreProcessor(NeuroBenchPreProcessor):
-    """ The SpikeEncoder class manages the conversion from raw audio into spikes
+    """The SpikeEncoder class manages the conversion from raw audio into spikes
     and stores the required conversion parameters.
     """
+
     def __init__(self, device=None, transpose=True, log_offset=1e-6):
         """
         Args:
@@ -99,7 +100,7 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         ).to(device)
 
     def __call__(self, batch):
-        """ Converts raw audio data to spikes using Speech2Spikes algorithm
+        """Converts raw audio data to spikes using Speech2Spikes algorithm
         (https://doi.org/10.1145/3584954.3584995)
 
         Args:
@@ -120,23 +121,25 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
             kwargs = None
 
         # Tensors will be batch, timestep, channels and need to be transposed
-        
+
         if self.transpose:
             tensors = tensors.transpose(1, 2)
         tensors = self.transform(tensors)
         if self.log_offset:
             tensors = tensors + self.log_offset
         tensors = torch.log(tensors)
-        tensors = tensor_to_events(tensors, threshold=self.threshold, device=self.device)
-        tensors = tensors.transpose(1, 3).squeeze() # Transpose back to timestep last
-        
+        tensors = tensor_to_events(
+            tensors, threshold=self.threshold, device=self.device
+        )
+        tensors = tensors.transpose(1, 3).squeeze()  # Transpose back to timestep last
+
         if kwargs:
             return tensors, targets, kwargs
         else:
             return tensors, targets
 
     def configure(self, threshold=1, **spec_kwargs):
-        """ Allows the user to configure parameters of the S2S class and the
+        """Allows the user to configure parameters of the S2S class and the
         MelSpectrogram transform from torchaudio.
 
         Go to (https://pytorch.org/audio/main/generated/torchaudio.transforms.MelSpectrogram.html)
@@ -150,4 +153,6 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         self.threshold = threshold
 
         spec_kwargs = {**self._default_spec_kwargs, **spec_kwargs}
-        self.transform = torchaudio.transforms.MelSpectrogram(**spec_kwargs).to(self.device)
+        self.transform = torchaudio.transforms.MelSpectrogram(**spec_kwargs).to(
+            self.device
+        )

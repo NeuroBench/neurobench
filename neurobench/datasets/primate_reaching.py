@@ -56,6 +56,7 @@ class PrimateReaching(NeuroBenchDataset):
         filename,
         num_steps,
         train_ratio=0.8,
+        label_series=False,
         biological_delay=0,
         spike_sorting=False,
         stride=0.004,
@@ -71,9 +72,12 @@ class PrimateReaching(NeuroBenchDataset):
         Args:
             file_path (str): The path to the directory storing the matlab files.
             filename (str): The name of the file that will be loaded.
-            num_steps (int): number of timesteps the data will be split into.
+            num_steps (int): Number of consecutive timesteps that are included per sample.
+                             In the real-time case, this should be 1.
             train_ratio (float): ratio for how the dataset will be split into training/(val+test) set.
                                  Default is 0.8 (80% of data is training).
+            label_series (bool): Whether the labels are series or not. Useful for training with multiple
+                                 timesteps. Default is False.
             biological_delay (int): How many steps of delay is to be applied to the dataset. Default is 0
                                     i.e. no delay applied.
             spike_sorting (bool): Apply spike sorting for processing raw spike data. Default is False.
@@ -118,6 +122,7 @@ class PrimateReaching(NeuroBenchDataset):
         self.bin_width = bin_width
         self.num_steps = num_steps
         self.train_ratio = train_ratio
+        self.label_series = label_series
         self.ratio = int(np.round(self.bin_width / SAMPLING_RATE))
 
         # test parameters
@@ -172,7 +177,12 @@ class PrimateReaching(NeuroBenchDataset):
         """
         # compute indices of congruent binning windows
         mask = idx - np.arange(self.num_steps) * self.ratio
-        return self.samples[:, mask].transpose(0, 1), self.labels[:, idx]
+        if self.label_series:
+            samples = self.samples[:, mask].transpose(0, 1)
+            labels = self.labels[:, mask].transpose(0, 1)
+            return samples, labels
+        else:
+            return self.samples[:, mask].transpose(0, 1), self.labels[:, idx]
 
     def _check_exists(self, file_path, md5) -> bool:
         return check_integrity(file_path, md5)

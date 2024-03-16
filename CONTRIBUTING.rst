@@ -75,11 +75,31 @@ This will install the git hook scripts in your `.git/` directory.
 
 Before committing your changes, run the pre-commit hooks to ensure your code is formatted and linted according to the project's standards:
 
+1. Stage your changes for commit:
+
+.. code-block:: bash
+
+    git add <file/directory>
+
+Replace `<file/directory>` with the file(s) or directory(s) you intend to commit. You can also use `git add .` to stage all changes in the current directory.
+
+2. Run the pre-commit hooks:
+
 .. code-block:: bash
 
     pre-commit run
 
-If all checks pass, you can proceed to commit your changes. If some checks fail, pre-commit will modify the files when possible (e.g., auto-formatting code) or display errors that you need to fix manually.
+This command will execute all configured pre-commit hooks on the staged files. If the hooks make any modifications (e.g., auto-formatting), or if there are any errors that require manual attention, pre-commit will report back.
+
+3. If pre-commit has modified any files, those changes need to be restaged. This ensures that the commit includes the latest updates made by the pre-commit hooks. Restage the modified files with:
+
+.. code-block:: bash
+
+    git add <modified-file>
+
+Again, replace `<modified-file>` with the specific file(s) that were modified, or use `git add .` to stage all updates.
+
+4. Once all changes are staged, and pre-commit checks pass, you can proceed to commit your changes. If no further modifications were made by pre-commit, there's no need to run `git add` again; you can directly commit your changes.
 
 7. Open a Pull Request
 ----------------------

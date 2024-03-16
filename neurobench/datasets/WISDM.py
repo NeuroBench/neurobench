@@ -1,80 +1,85 @@
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, TensorDataset
 import os
-import gdown
 import numpy as np
 import torch
-
-
-def create_directory(directory_path):
-    if os.path.exists(directory_path):
-        return None
-    else:
-        try:
-            os.makedirs(directory_path)
-        except:
-            # in case another machine created the path meanwhile! :(
-            return None
-        return directory_path
-
-
-def convert_to_tensor(x, y):
-    return torch.tensor(x, dtype=torch.float), torch.tensor(y, dtype=torch.long)
+from .utils import download_url
 
 
 class WISDM(LightningDataModule):
-    def __init__(self, path: str = "path/to/file", batch_size: int = 256):
+    """
+        Subset version (https://github.com/neuromorphic-polito/NeHAR/blob/main/data/data_watch_subset2_40.npz)
+        of the original WISDM dataset (https://archive.ics.uci.edu/dataset/507/wisdm+smartphone+and+smartwatch+activity+and+biometrics+dataset)
+        for a classification task in human activity recognition.
+
+        This data subset, employed for this task, centers on the information gathered from the smartwatch.
+        The dataset comprises 7 classes and 36,201 samples, which are split into training, validation, and test sets with proportions of 60%, 20%, and 20%, respectively.
+
+    """
+
+    def __init__(self, path: str = "./data_watch_subset2_40.npz", batch_size: int = 256):
+        """
+            Initialize the class with the path to the dataset file and the batch size for processing.
+
+        Args:
+            path (str): The path to the directory storing the dataset file.
+            batch_size (int): The size of the data batches to be used for processing.
+        """
         super().__init__()
         self.ds_test = None
         self.ds_val = None
         self.ds_train = None
         self.batch_size = batch_size
 
+        self.url = 'https://media.githubusercontent.com/media/neuromorphic-polito/NeHAR/main/data/data_watch_subset2_40.npz'
+
         (x_train, x_val, x_test, y_train, y_val,
-         y_test) = self.load_wisdm2_data(path)
-        self.train_dataset = convert_to_tensor(x_train, np.argmax(y_train, axis=-1))
-        self.val_dataset = convert_to_tensor(x_val, np.argmax(y_val, axis=-1))
-        self.test_dataset = convert_to_tensor(x_test, np.argmax(y_test, axis=-1))
+         y_test) = self.load_wisdm_data(path)
+        self.train_dataset = x_train, np.argmax(y_train, axis=-1)
+        self.val_dataset = x_val, np.argmax(y_val, axis=-1)
+        self.test_dataset = x_test, np.argmax(y_test, axis=-1)
 
         self.num_inputs = next(iter(self.train_dataset))[0].shape[1]
         self.num_steps = next(iter(self.train_dataset))[0].shape[0]
         self.num_outputs = len(np.unique(np.argmax(y_train, axis=-1)))
 
-    @staticmethod
-    def load_wisdm2_data(path):
+    def load_wisdm_data(self, path: str):
+        """
+            Load the WISDM dataset, downloading it if not present, and return as PyTorch tensors.
 
+            Args:
+                path (str): Path to the dataset or directory to save the dataset.
+
+            Returns:
+                tuple: A tuple of PyTorch tensors representing the dataset.
+            """
         if path.endswith(".npz"):
             file_path = path
             dir_path = os.path.split(file_path)[0]
         else:
-            file_path = os.path.join(path, 'watch_subset2_40.npz')
+            file_path = os.path.join(path, 'data_watch_subset2_40.npz')
             dir_path = path
 
         if not os.path.exists(dir_path) or not os.path.isfile(file_path):
-            create_directory(directory_path=dir_path)
-            url = "https://drive.google.com/drive/folders/1WCN-XwLM_D2nOTZLY00iGwEJLwDQaUCv"
-            gdown.download_folder(url, quiet=True, use_cookies=False, output=dir_path)
+            print("downloading ....")
+            os.makedirs(dir_path, exist_ok=True)
+            download_url(self.url, path)
 
         data = np.load(file_path)
-        return (data['arr_0'], data['arr_1'], data['arr_2'], data['arr_3'], data['arr_4'], data['arr_5'])
+        return tuple(torch.tensor(data[key], dtype=torch.float) for key in data)
 
     def setup(self, stage: str):
         match stage:
             case 'fit':
-                x_train, y_train = self.train_dataset
-                x_val, y_val = self.val_dataset
-                x_test, y_test = self.test_dataset
-                self.ds_train = TensorDataset(x_train, y_train)
-                self.ds_val = TensorDataset(x_val, y_val)
-                self.ds_test = TensorDataset(x_test, y_test)
+                self.ds_train = TensorDataset(*self.train_dataset)
+                self.ds_val = TensorDataset(*self.val_dataset)
+                self.ds_test = TensorDataset(*self.test_dataset)
 
             case 'test':
-                x_test, y_test = self.test_dataset
-                self.ds_test = TensorDataset(x_test, y_test)
+                self.ds_test = TensorDataset(*self.test_dataset)
 
             case 'predict':
-                x_test, y_test = self.test_dataset
-                self.ds_test = TensorDataset(x_test, y_test)
+                self.ds_test = TensorDataset(*self.test_dataset)
 
     def train_dataloader(self):
         return DataLoader(self.ds_train, batch_size=self.batch_size, shuffle=True, num_workers=8, drop_last=False,
@@ -91,9 +96,6 @@ class WISDM(LightningDataModule):
     def predict_dataloader(self):
         return DataLoader(self.ds_test, batch_size=self.batch_size, num_workers=8, shuffle=False, drop_last=False,
                           persistent_workers=True)
-
-    def teardown(self, stage: str):
-        ...
 
     def __len__(self):
         return self.train_dataset[0].shape[0] + self.val_dataset[0].shape[0] + self.test_dataset[0].shape[0]

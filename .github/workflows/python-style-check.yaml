@@ -19,12 +19,16 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip
-        pip install flake8==7.0.0 black==24.2.0
-
-    - name: Run Flake8
-      run: |
-        flake8 . --count --ignore=E203,W503,F401,F403,C901 --max-line-length=88 --statistics --show-source --exclude=neurobench/examples  
+        pip install flake8==7.0.0 black==24.2.0 docformatter==1.7.5
 
     - name: Check with Black
       run: |
-        black --check . --exclude='neurobench/examples'
+        black --check . --exclude='/neurobench/examples/'
+
+    - name: Check with docformatter
+      run: |
+        docformatter --wrap-summaries 88 --wrap-descriptions 88 --pre-summary-newline --exclude /neurobench/examples/ --recursive --blank --black --check .
+
+    - name: Run Flake8
+      run: |
+        flake8 --count --ignore=E501,E203,W291,W503,F403,F401 --max-line-length=88 --statistics --show-source --exclude=/neurobench/examples/ .

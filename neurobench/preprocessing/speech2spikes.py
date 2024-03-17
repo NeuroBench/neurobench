@@ -1,36 +1,36 @@
 """
-Speech2Spikes License
-Copyright © 2023 Accenture. 
+Speech2Spikes License Copyright © 2023 Accenture.
 
-Speech2Spikes is made available under a proprietary license that permits using, 
-copying, sharing, and making derivative works from Speech2Spikes and its source 
-code for academics/non-commercial purposes only, as long as the above copyright 
+Speech2Spikes is made available under a proprietary license that permits using,
+copying, sharing, and making derivative works from Speech2Spikes and its source
+code for academics/non-commercial purposes only, as long as the above copyright
 notice and this permission notice are included in all copies of the software.
 
-All distribution of Speech2Spikes in any form (source or executable), including 
-any derivative works that you create or to which you contribute, must be under 
-the terms of this license. You must inform recipients that any form of 
-Speech2Spikes and its derivatives is governed by the terms of this license, and 
-how they can obtain a copy of this license and a copy of the source code of 
-Speech2Spikes. You may not attempt to alter or restrict the recipients’ rights 
-in any form. If you are interested to use Speech2Spikes and/or develop 
-derivatives for commercial purposes, licenses can be purchased from Accenture, 
+All distribution of Speech2Spikes in any form (source or executable), including
+any derivative works that you create or to which you contribute, must be under
+the terms of this license. You must inform recipients that any form of
+Speech2Spikes and its derivatives is governed by the terms of this license, and
+how they can obtain a copy of this license and a copy of the source code of
+Speech2Spikes. You may not attempt to alter or restrict the recipients’ rights
+in any form. If you are interested to use Speech2Spikes and/or develop
+derivatives for commercial purposes, licenses can be purchased from Accenture,
 please contact neuromorphic_inquiries@accenture.com for more information.
 
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR 
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR 
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER 
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN 
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
+COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
+IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-You agree to indemnify and hold Accenture harmless from and against all 
-liabilities, claims and suits and to pay all costs and expenses thereby 
-incurred, including reasonable legal fees and court courts, arising out of, 
-caused by or in any way connected with your use of Speech2Spikes. 
+You agree to indemnify and hold Accenture harmless from and against all
+liabilities, claims and suits and to pay all costs and expenses thereby
+incurred, including reasonable legal fees and court courts, arising out of,
+caused by or in any way connected with your use of Speech2Spikes.
 
 The original code can be found at:
 https://github.com/Accenture/speech2spikes
+
 """
 
 from .preprocessor import NeuroBenchPreProcessor
@@ -70,9 +70,8 @@ def tensor_to_events(batch, threshold=1, device=None):
 
 
 class S2SPreProcessor(NeuroBenchPreProcessor):
-    """The SpikeEncoder class manages the conversion from raw audio into spikes
-    and stores the required conversion parameters.
-    """
+    """The SpikeEncoder class manages the conversion from raw audio into spikes and
+    stores the required conversion parameters."""
 
     def __init__(self, device=None, transpose=True, log_offset=1e-6):
         """
@@ -139,8 +138,9 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
             return tensors, targets
 
     def configure(self, threshold=1, **spec_kwargs):
-        """Allows the user to configure parameters of the S2S class and the
-        MelSpectrogram transform from torchaudio.
+        """
+        Allows the user to configure parameters of the S2S class and the MelSpectrogram
+        transform from torchaudio.
 
         Go to (https://pytorch.org/audio/main/generated/torchaudio.transforms.MelSpectrogram.html)
         for more information on the available transform parameters.
@@ -149,6 +149,7 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
             threshold (float): The difference between the residual and signal that
                 will be considered an increase or decrease. Defaults to 1.
             **spec_kwargs: Keyword arguments passed to torchaudio's MelSpectrogram.
+
         """
         self.threshold = threshold
 

@@ -6,9 +6,11 @@ from .dataset import NeuroBenchDataset
 
 
 class SpeechCommands(NeuroBenchDataset, SPEECHCOMMANDS):
-    """Speech commands dataset v0.02 with 35 keywords.
+    """
+    Speech commands dataset v0.02 with 35 keywords.
 
     Wraps the torchaudio SPEECHCOMMANDS dataset.
+
     """
 
     def __init__(
@@ -17,12 +19,14 @@ class SpeechCommands(NeuroBenchDataset, SPEECHCOMMANDS):
         subset: str = None,
         truncate_or_pad_to_1s=True,
     ):
-        """Initializes the SpeechCommands dataset.
+        """
+        Initializes the SpeechCommands dataset.
 
         Args:
             path (str): path to the root directory of the dataset
             subset (str, optional): one of "training", "validation", or "testing". Defaults to None.
             truncate_or_pad_to_1s (bool, optional): whether to truncate or pad samples to 1s. Defaults to True.
+
         """
         os.makedirs(path, exist_ok=True)
         SPEECHCOMMANDS.__init__(self, path, download=True, subset=subset)
@@ -39,13 +43,15 @@ class SpeechCommands(NeuroBenchDataset, SPEECHCOMMANDS):
         self.labels = {key[:-1]: idx - 1 for idx, key in enumerate(self.labels)}
 
     def __getitem__(self, idx):
-        """Getter method for dataset.
+        """
+        Getter method for dataset.
 
         Args:
             idx (int): index of sample to return
         Returns:
             waveform (torch.Tensor): waveform of audio sample
             label (torch.Tensor): label index of audio sample
+
         """
         (
             waveform,
@@ -68,19 +74,23 @@ class SpeechCommands(NeuroBenchDataset, SPEECHCOMMANDS):
         return waveform, label
 
     def label_to_index(self, label):
-        """Converts a label to an index.
+        """
+        Converts a label to an index.
 
         Args:
             label (str): label of audio sample
         Returns:
             torch.Tensor: index of label
+
         """
         return torch.tensor(self.labels[label])
 
     def __len__(self):
-        """Returns number of samples in dataset.
+        """
+        Returns number of samples in dataset.
 
         Returns:
             int: number of samples in dataset
+
         """
         return SPEECHCOMMANDS.__len__(self)

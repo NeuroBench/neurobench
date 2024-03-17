@@ -5,23 +5,27 @@ import snntorch as snn
 
 
 def parameter_count(model):
-    """Number of parameters in the model.
+    """
+    Number of parameters in the model.
 
     Args:
         model: A NeuroBenchModel.
     Returns:
         int: Number of parameters.
+
     """
     return sum(p.numel() for p in model.__net__().parameters())
 
 
 def footprint(model):
-    """Memory footprint of the model.
+    """
+    Memory footprint of the model.
 
     Args:
         model: A NeuroBenchModel.
     Returns:
         float: Model size in bytes.
+
     """
     # Count the number of parameters and multiply by the size of each parameter in bytes
     param_size = 0
@@ -54,12 +58,14 @@ def connection_sparsity(model):
     """
 
     def get_nr_zeros_weights(module):
-        """Get the number of zeros in a module's weights.
+        """
+        Get the number of zeros in a module's weights.
 
         Args:
             module: A torch.nn.Module.
         Returns:
             int: Number of zeros in the module's weights.
+
         """
         children = list(module.children())
         regular_layers = (

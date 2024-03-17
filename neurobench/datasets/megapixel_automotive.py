@@ -20,9 +20,8 @@ skip_files = [
 
 
 def create_class_lookup(wanted_keys=[]):
-    """Source code modified from metavision_ml.data.box_processing.create_class_lookup to avoid
-    having extraneous label map json file.
-    """
+    """Source code modified from metavision_ml.data.box_processing.create_class_lookup
+    to avoid having extraneous label map json file."""
     label_dic = {
         0: "pedestrian",
         1: "two wheeler",
@@ -59,14 +58,17 @@ def create_class_lookup(wanted_keys=[]):
 
 
 class Gen4DetectionDataLoader(SequentialDataLoader):
-    """NeuroBench DataLoader for Gen4 pre-computed dataset
+    """
+    NeuroBench DataLoader for Gen4 pre-computed dataset.
 
-    The default parameters are set for the Gen4 Histograms dataset, which can be downloaded from
+    The default parameters are set for the Gen4 Histograms dataset, which can be
+    downloaded from
     https://docs.prophesee.ai/stable/datasets.html#precomputed-datasets
     but you can change that easily by downloading one of the other pre-computed datasets and
     changing the preprocess_function_name and channels parameters accordingly.
 
     Once downloaded, extract the zip folder and set the dataset_path parameter to the path of the extracted folder.
+
     """
 
     def __init__(
@@ -84,7 +86,8 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         class_selection=["pedestrian", "two wheeler", "car"],
         num_workers=4,
     ):
-        """Initializes the Gen4DetectionDataLoader dataloader.
+        """
+        Initializes the Gen4DetectionDataLoader dataloader.
 
         Args:
             dataset_path: path to the dataset folder
@@ -99,6 +102,7 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
             max_incr_per_pixel: maximum number of events per pixel
             class_selection: list of classes to use
             num_workers: number of workers for the dataloader
+
         """
 
         self.dataset_path = Path(dataset_path)
@@ -143,7 +147,8 @@ class Gen4DetectionDataLoader(SequentialDataLoader):
         super().__init__(self.data, **self.kw_args)
 
     def __next__(self):
-        """Override the metavision dataloader to reformat data.
+        """
+        Override the metavision dataloader to reformat data.
 
         Errata: note that labels do not fit the usual format of tensor with batch as first dimension,
         since the number of boxes per frame is variable.

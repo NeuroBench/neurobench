@@ -40,7 +40,8 @@ class Benchmark:
         preprocessors=None,
         postprocessors=None,
     ):
-        """Runs batched evaluation of the benchmark.
+        """
+        Runs batched evaluation of the benchmark.
 
         Args:
             dataloader (optional): override DataLoader for this run.
@@ -52,6 +53,7 @@ class Benchmark:
 
         Returns:
             results: A dictionary of results.
+
         """
         with redirect_stdout(None if quiet else sys.stdout):
             print("Running benchmark")

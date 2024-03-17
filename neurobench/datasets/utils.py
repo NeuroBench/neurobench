@@ -114,13 +114,15 @@ def check_integrity(fpath, md5):
 
 
 def download_url(url, file_path, md5=None, max_redirect_hops=3):
-    """Download a file from a url and place it in root.
+    """
+    Download a file from a url and place it in root.
 
     Args:
         url (str): URL to download file from
         file_path (str): Full path to the file to be downloaded.
         md5 (str, optional): MD5 checksum of the download. If None, do not check
         max_redirect_hops (int, optional): Maximum number of redirect hops allowed
+
     """
     os.makedirs(os.path.dirname(file_path), exist_ok=True)
 

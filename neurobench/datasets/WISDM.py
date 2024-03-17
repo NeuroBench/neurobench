@@ -6,18 +6,6 @@ import numpy as np
 import torch
 
 
-def create_directory(directory_path):
-    if os.path.exists(directory_path):
-        return None
-    else:
-        try:
-            os.makedirs(directory_path)
-        except:
-            # in case another machine created the path meanwhile! :(
-            return None
-        return directory_path
-
-
 def convert_to_tensor(x, y):
     return torch.tensor(x, dtype=torch.float), torch.tensor(y, dtype=torch.long)
 
@@ -49,7 +37,7 @@ class WISDM(LightningDataModule):
             dir_path = path
 
         if not os.path.exists(dir_path) or not os.path.isfile(file_path):
-            create_directory(directory_path=dir_path)
+            os.makedirs(dir_path, exist_ok=True)
             url = "https://drive.google.com/drive/folders/1WCN-XwLM_D2nOTZLY00iGwEJLwDQaUCv"
             gdown.download_folder(url, quiet=True, use_cookies=False, output=dir_path)
 
@@ -120,9 +108,6 @@ class WISDM(LightningDataModule):
             drop_last=False,
             persistent_workers=True,
         )
-
-    def teardown(self, stage: str):
-        ...
 
     def __len__(self):
         return (

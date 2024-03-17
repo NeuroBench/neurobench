@@ -4,9 +4,12 @@ import torch
 
 
 class MFCCPreProcessor(NeuroBenchPreProcessor):
-    """Does MFCC computation on dataset using torchaudio.transforms.MFCC.
-    Call expects loaded .wav data and targets as a tuple (data, targets).
-    Expects sample_rate to be the same for all samples in data.
+    """
+    Does MFCC computation on dataset using torchaudio.transforms.MFCC.
+
+    Call expects loaded .wav data and targets as a tuple (data, targets). Expects
+    sample_rate to be the same for all samples in data.
+
     """
 
     def __init__(
@@ -49,7 +52,8 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
             self.mfcc = self.mfcc.to(device)
 
     def __call__(self, dataset):
-        """Executes the MFCC computation on the dataset.
+        """
+        Executes the MFCC computation on the dataset.
 
         Args:
             dataset (tuple): A tuple of (data, targets).
@@ -57,6 +61,7 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
         Returns:
             results: mfcc applied on data
             targets: targets from dataset
+
         """
         self.dataset_validity_check(dataset)
 

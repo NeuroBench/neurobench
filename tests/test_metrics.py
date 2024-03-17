@@ -6,7 +6,7 @@ from neurobench.models import SNNTorchModel, TorchModel
 
 # from neurobench.benchmarks.static_metrics import footprint, parameter_count, connection_sparsity,
 # from neurobench.benchmarks.workload_metrics import activation_sparsity, classification_accuracy, MSE, sMAPE, r2,
-from neurobench.models import SNNTorchModel
+
 from neurobench.benchmarks.static_metrics import (
     footprint,
     parameter_count,
@@ -526,14 +526,13 @@ def test_neuron_update_metric():
     inp = torch.ones(1, 1, 20)
     out_relu = model_relu_0(inp)
     neuron_updates = number_neuron_updates(model_relu_0, out_relu, (inp, 0))
+    print(neuron_updates)
     print("Manual check!")
     print("Passed neuron update metric")
 
 
 class simple_LSTM(nn.Module):
-    """Nonsense LSTM for operations testing
-    Should be 615 MACs
-    """
+    """Nonsense LSTM for operations testing Should be 615 MACs."""
 
     def __init__(self):
         super(simple_LSTM, self).__init__()
@@ -548,9 +547,7 @@ class simple_LSTM(nn.Module):
 
 
 class simple_RNN(nn.Module):
-    """Nonsense RNN for operations testing
-    Should be 150 MACs
-    """
+    """Nonsense RNN for operations testing Should be 150 MACs."""
 
     def __init__(self):
         super(simple_RNN, self).__init__()
@@ -565,9 +562,7 @@ class simple_RNN(nn.Module):
 
 
 class simple_GRU(nn.Module):
-    """Nonsense GRU/RNN for operations testing
-    Should be 465 MACs
-    """
+    """Nonsense GRU/RNN for operations testing Should be 465 MACs."""
 
     def __init__(self):
         super(simple_GRU, self).__init__()

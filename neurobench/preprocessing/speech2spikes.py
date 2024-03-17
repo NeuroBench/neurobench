@@ -93,9 +93,9 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
             "hop_length": 80,
         }
         self.threshold = 1
-        self.transform = torchaudio.transforms.MelSpectrogram(
-            **self.spec_kwargs
-        ).to(device)
+        self.transform = torchaudio.transforms.MelSpectrogram(**self.spec_kwargs).to(
+            device
+        )
 
     def __call__(self, batch):
         """Converts raw audio data to spikes using Speech2Spikes algorithm
@@ -131,12 +131,14 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         tensors = tensor_to_events(
             tensors, threshold=self.threshold, device=self.device
         )
-        tensors = tensors.transpose(1, 3).squeeze()  # Transpose back to batch, timestep, channel
+        tensors = tensors.transpose(
+            1, 3
+        ).squeeze()  # Transpose back to batch, timestep, channel
 
         # torchaudio seems to return one extra timestep, get rid of the zero timestep
-        if tensors.shape[1] == (timesteps/self.spec_kwargs["hop_length"] + 1):
+        if tensors.shape[1] == (timesteps / self.spec_kwargs["hop_length"] + 1):
             tensors = tensors[:, 1:, :]
-            
+
         if kwargs:
             return tensors, targets, kwargs
         else:

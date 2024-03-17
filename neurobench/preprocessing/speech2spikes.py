@@ -81,7 +81,6 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
                 If the input tensor is of shape (batch, channels, timesteps), this should be true.
             log_offset (float, optional): A small value added to the MelSpectrogram before log is applied
         """
-        super().__init__(args=None)
         self.device = device
         self.transpose = transpose
         self.log_offset = log_offset

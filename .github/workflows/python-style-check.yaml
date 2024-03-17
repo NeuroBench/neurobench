@@ -16,7 +16,12 @@ jobs:
       uses: actions/setup-python@v2
       with:
         python-version: '3.10'
-        cache: 'pip'
+
+    - name: Clean up Python bytecode
+      run: |
+        find . -name "*.pyc" -delete
+        find . -name "__pycache__" -delete
+        find . -name ".pytest_cache" -type d -exec rm -r "{}" +
 
     - name: Install dependencies
       run: |

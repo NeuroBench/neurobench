@@ -84,7 +84,7 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         self.device = device
         self.transpose = transpose
         self.log_offset = log_offset
-        self._default_spec_kwargs = {
+        self.spec_kwargs = {
             "sample_rate": 16000,
             "n_mels": 20,
             "n_fft": 512,
@@ -94,7 +94,7 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         }
         self.threshold = 1
         self.transform = torchaudio.transforms.MelSpectrogram(
-            **self._default_spec_kwargs
+            **self.spec_kwargs
         ).to(device)
 
     def __call__(self, batch):
@@ -111,6 +111,8 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         TODO:
             Add support for cumulative sum of features
         """
+        timesteps = batch[0].shape[1]
+
         tensors = batch[0]
         targets = batch[1]
         if len(batch) == 3:
@@ -129,8 +131,12 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         tensors = tensor_to_events(
             tensors, threshold=self.threshold, device=self.device
         )
-        tensors = tensors.transpose(1, 3).squeeze()  # Transpose back to timestep last
+        tensors = tensors.transpose(1, 3).squeeze()  # Transpose back to batch, timestep, channel
 
+        # torchaudio seems to return one extra timestep, get rid of the zero timestep
+        if tensors.shape[1] == (timesteps/self.spec_kwargs["hop_length"] + 1):
+            tensors = tensors[:, 1:, :]
+            
         if kwargs:
             return tensors, targets, kwargs
         else:
@@ -152,7 +158,7 @@ class S2SPreProcessor(NeuroBenchPreProcessor):
         """
         self.threshold = threshold
 
-        spec_kwargs = {**self._default_spec_kwargs, **spec_kwargs}
-        self.transform = torchaudio.transforms.MelSpectrogram(**spec_kwargs).to(
+        self.spec_kwargs = {**self.spec_kwargs, **spec_kwargs}
+        self.transform = torchaudio.transforms.MelSpectrogram(**self.spec_kwargs).to(
             self.device
         )

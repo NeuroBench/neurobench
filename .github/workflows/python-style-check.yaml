@@ -30,7 +30,7 @@ jobs:
 
     - name: Check with Black
       run: |
-        black --check --line-length 88 --exclude='/neurobench/examples/' .
+        black --check -v --line-length 88 --exclude='/neurobench/examples/' .
 
     - name: Check with docformatter
       run: |

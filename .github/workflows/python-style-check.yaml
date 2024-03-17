@@ -14,7 +14,7 @@ jobs:
     - name: Set up Python
       uses: actions/setup-python@v2
       with:
-        python-version: '3.x'
+        python-version: '3.10'
 
     - name: Install dependencies
       run: |
@@ -23,7 +23,7 @@ jobs:
 
     - name: Check with Black
       run: |
-        black --check . --exclude='/neurobench/examples/'
+        black --check --line-length 88 --exclude='/neurobench/examples/' .
 
     - name: Check with docformatter
       run: |

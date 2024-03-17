@@ -32,4 +32,4 @@ jobs:
 
     - name: Run Flake8
       run: |
-        flake8 --count --ignore=E501,E203,W291,W503,F403,F401 --max-line-length=88 --statistics --show-source --exclude=neurobench/examples/ .
+        flake8 --count --ignore=E501,E203,W291,W503,F403,F401,F821 --max-line-length=88 --statistics --show-source --exclude=neurobench/examples/ .

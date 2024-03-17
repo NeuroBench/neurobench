@@ -2,8 +2,6 @@ import torch
 import numpy as np
 from ..utils import check_shape, make_binary_copy, single_layer_MACs
 from .hooks import ActivationHook, LayerHook
-from collections import defaultdict
-from metavision_ml.metrics.coco_eval import CocoEvaluator
 
 
 class AccumulatedMetric:

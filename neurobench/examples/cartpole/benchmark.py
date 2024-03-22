@@ -21,7 +21,7 @@ nr_outs = env.action_space.n
 
 
 # postprocessors
-postprocessors = [discrete_Actor_Critic]
+postprocessors = [discrete_Actor_Critic] # goes from probalities to actions
 
 static_metrics = ["model_size", "connection_sparsity"]
 data_metrics = ["activation_sparsity", 'reward_score','synaptic_operations']
@@ -31,21 +31,22 @@ ANN = ActorCritic_ANN(nr_ins, env.action_space)
 ANN.load_state_dict(torch.load('neurobench/examples/cartpole/model_data/ANN_in128x2out_50e3_20hz_lower_entropy_loss.pt'))
 
 model_ann = TorchAgent(ANN)
+
+SNN =  ActorCriticSNN_LIF_Small(nr_ins,env.action_space,
+                                    inp_min = torch.tensor([-4.8, -10,-0.418,-2]), 
+                                    inp_max=  torch.tensor([4.8, 10,0.418,2]), 
+                                    bias=False,nr_passes = 1)
+SNN.load_state_dict(torch.load('neurobench/examples/cartpole/model_data/SNN_in128x2out_50e3_20hz_real.pt'))
+
+model_snn = SNNTorchAgent(SNN)
+
 benchmark = Benchmark_Closed_Loop(model_ann, env, [], postprocessors, [static_metrics, data_metrics])
-results = benchmark.run(nr_interactions=1000,max_length=10000)
+results = benchmark.run(nr_interactions=50, max_length=500) # for risk, now min 20 interactions as risk is lowest 5 percentile
 print(results)
 
-# SNN =  ActorCriticSNN_LIF_Small(nr_ins,env.action_space,
-#                                     inp_min = torch.tensor([-4.8, -10,-0.418,-2]), 
-#                                     inp_max=  torch.tensor([4.8, 10,0.418,2]), 
-#                                     bias=False,nr_passes = 1)
-# SNN.load_state_dict(torch.load('neurobench/examples/cartpole/model_data/SNN_in128x2out_50e3_20hz_real.pt'))
-# print(SNN.lif1.beta)
-# print(SNN.lif2.beta)
-# model_snn = SNNTorchAgent(SNN)
-# benchmark = Benchmark_Closed_Loop(model_snn, env, [], postprocessors, [static_metrics, data_metrics])
-# results = benchmark.run(nr_interactions=1000, max_length=10000)
-# print(results)
+
+
+
 # SNN =  ActorCriticSNN_LIF_Smallest_pruned(nr_ins,env.action_space, hidden_size=11,
 #                                     inp_min = torch.tensor([-4.8, -10,-0.418,-2]), 
 #                                     inp_max=  torch.tensor([4.8, 10,0.418,2]), 

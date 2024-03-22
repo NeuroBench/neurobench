@@ -136,7 +136,7 @@ class Benchmark_Closed_Loop():
         """
         print("Running benchmark")
         
-        # add hooks to the agent
+        # add hooks to the agent (for activation sparsity and SynOps)
         data_metrics.detect_activations_connections(self.agent)
 
         # Static metrics

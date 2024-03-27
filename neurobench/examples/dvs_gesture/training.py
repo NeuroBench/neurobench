@@ -36,7 +36,7 @@ torch.manual_seed(0)
 torch.cuda.manual_seed(0)
 # data in repo root dir
 data = DVSGesture('../../../data/dvs_gesture/', split='testing', preprocessing='stack')
-dataloader_training = DataLoader(data, 24,shuffle=False)
+dataloader_training = DataLoader(data, 128,shuffle=False)
 model = Conv_SNN().to(device)
 run.watch(model, log='all', log_freq=1)
 # data_1 = [(torch.tensor(data[0][0]).unsqueeze(0),torch.tensor(data[0][1]).unsqueeze(0))]
@@ -48,5 +48,5 @@ run.watch(model, log='all', log_freq=1)
 
 optimizer = torch.optim.Adamax(model.parameters(),lr=1.2e-3,betas=[0.9,0.95])
 # model.fit(dataloader_training=dataloader_training,device=device, warmup_frames=70, optimizer=optimizer, nr_episodes=1000)
-model.fit(dataloader_training=dataloader_training,device=device, warmup_frames=34, optimizer=optimizer, nr_episodes=3)
+model.fit(dataloader_training=dataloader_training,device=device, warmup_frames=34, optimizer=optimizer, nr_episodes=50)
 # torch.save(model.state_dict(), 'neurobench/examples/dvs_gesture/model_data/DVS_SNN_trained.pth')

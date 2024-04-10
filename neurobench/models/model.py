@@ -6,15 +6,20 @@ from neurobench.utils import activation_modules
 
 
 class NeuroBenchModel:
-    """Abstract class for NeuroBench models. Individual model frameworks are
-    responsible for defining model inference.
+    """
+    Abstract class for NeuroBench models.
+
+    Individual model frameworks are responsible for defining model inference.
+
     """
 
     def __init__(self, net):
-        """Init using a trained network
+        """
+        Init using a trained network.
 
         Args:
             net: A trained network
+
         """
         self.activation_modules = activation_modules()
         self.activation_hooks = []
@@ -31,31 +36,36 @@ class NeuroBenchModel:
         )
 
     def __call__(self, batch):
-        """Includes the whole pipeline from data to inference (output should be same format as targets).
+        """
+        Includes the whole pipeline from data to inference (output should be same format
+        as targets).
 
         Args:
             batch: A batch of data to run inference on
+
         """
         raise NotImplementedError(
             "Subclasses of NeuroBenchModel should implement __call__"
         )
 
     def __net__(self):
-        """Returns the underlying network"""
+        """Returns the underlying network."""
         raise NotImplementedError(
             "Subclasses of NeuroBenchModel should implement __net__"
         )
 
     def set_first_layer(self, layer):
-        """Sets the first layer of the network"""
+        """Sets the first layer of the network."""
         self.first_layer = layer
 
     def add_activation_module(self, activaton_module):
-        """Add a cutomized activaton_module that can be detected after running the preprocessing pipeline for detecting activation functions"""
+        """Add a cutomized activaton_module that can be detected after running the
+        preprocessing pipeline for detecting activation functions."""
         self.activation_modules.append(activaton_module)
 
     def activation_layers(self):
-        """Retrieve all the activaton layers of the underlying network (including spiking neuron layers)"""
+        """Retrieve all the activaton layers of the underlying network (including
+        spiking neuron layers)"""
 
         def check_if_activation(module):
             for activation_module in self.activation_modules:
@@ -63,7 +73,7 @@ class NeuroBenchModel:
                     return True
 
         def get_activation_layers(parent):
-            """Returns all the neuro layers"""
+            """Returns all the neuro layers."""
             layers = []
             children = parent.children()
             for child in children:
@@ -83,11 +93,12 @@ class NeuroBenchModel:
         return layers
 
     def connection_layers(self):
-        """Retrieve all the connection layers of the underlying network (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)"""
+        """Retrieve all the connection layers of the underlying network
+        (torch.nn.Linear, torch.nn.Conv2d, torch.nn.Conv1d, torch.nn.Conv3d)"""
         supported_layers = self.supported_layers
 
         def get_connection_layers(parent):
-            """Returns all the connection layers"""
+            """Returns all the connection layers."""
             connection_layers = []
             children = parent.children()
             for child in children:

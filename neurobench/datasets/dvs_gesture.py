@@ -17,8 +17,8 @@ from matplotlib.animation import FuncAnimation
 
 class DVSGesture(NeuroBenchDataset):
     """
-    Installs DVSGesture Dataset with individual events in each file,
-    if not yet installed, else pass the path of the tonic DVSGesture install.
+    Installs DVSGesture Dataset with individual events in each file, if not yet
+    installed, else pass the path of the tonic DVSGesture install.
 
     Data information:
     - Event rate: 1MHz -> dt 1e-6
@@ -27,18 +27,22 @@ class DVSGesture(NeuroBenchDataset):
 
     For possible preprocessing functions, see:
     https://docs.prophesee.ai/stable/tutorials/ml/data_processing/event_preprocessing.html?highlight=metavision_ml%20preprocessing
+
     """
 
     def __init__(
         self, path, split="testing", data_type="frames", preprocessing="stack"
     ):
-        """Initialization will load in data from path if possible, else will download dataset into path.
+        """
+        Initialization will load in data from path if possible, else will download
+        dataset into path.
 
         Args:
             path (str): Path of DVS Gesture dataset folder if applicable, else the destination of DVS Gesture dataset.
             split (str): Return testing or training data.
             data_type (str): If 'frames', returns frames with preprocessing applied; else returns raw events.
             preprocessing (str): Preprocessing to get frames from raw events.
+
         """
         # download or load data
         if split == "training":
@@ -57,15 +61,18 @@ class DVSGesture(NeuroBenchDataset):
         self.random_window = False
 
     def __len__(self):
-        """Returns the number of samples in the dataset.
+        """
+        Returns the number of samples in the dataset.
 
         Returns:
             int: The number of samples in the dataset.
+
         """
         return len(self.filenames)
 
     def __getitem__(self, idx):
-        """Getter method for test data in the DataLoader.
+        """
+        Getter method for test data in the DataLoader.
 
         Args:
             idx (int): Index of the sample.
@@ -73,6 +80,7 @@ class DVSGesture(NeuroBenchDataset):
         Returns:
             sample (tensor): Individual data sample, which can be a sequence of frames or raw data.
             target (tensor): Corresponding gesture label.
+
         """
         structured_array = self.dataset[idx][0]
 
@@ -141,6 +149,7 @@ class DVSGesture(NeuroBenchDataset):
             delta_t (int): Time steps to stack events into frames (in milliseconds).
             length (int): Length in milliseconds of each sample.
             random_window (bool): If True, the sample will be a random time window of length within the gesture.
+
         """
         self._deltat = delta_t * 1000  # convert to microseconds
         self._T = length
@@ -151,8 +160,8 @@ def stack_preprocessing(
     xypt, delta_t=5000, tbins=200, h_og=128, w_og=128, channels=3, display_frame=False
 ):
     """
-    Applies stack preprocessing to events. If at least one event has occurred at (x,y) in delta_t corresponding channel
-    (pos or neg) will be 1, else zero.
+    Applies stack preprocessing to events. If at least one event has occurred at (x,y)
+    in delta_t corresponding channel (pos or neg) will be 1, else zero.
 
     Args:
         delta_t (int): Time steps to stack events into frames (in milliseconds).
@@ -161,6 +170,7 @@ def stack_preprocessing(
         w_og (int): Number of pixels in width.
         channels (int): Number of channels in each frame (default 3 for plotting purposes).
         display_frame (bool): If True, will create an animation to visualize event frames.
+
     """
     frames = np.zeros((tbins, channels, h_og, w_og))
     for frame in frames:
@@ -172,8 +182,8 @@ def stack_preprocessing(
         xypt[:, 3] = xypt[:, 3] - delta_t
 
         xypt_sub = xypt[xypt[:, 3] <= 0]  # events for the current frame
-        pos_pol = np.unique(xypt_sub[xypt_sub[:, 2] == True][:, :2], axis=0)
-        neg_pol = np.unique(xypt_sub[xypt_sub[:, 2] == False][:, :2], axis=0)
+        pos_pol = np.unique(xypt_sub[xypt_sub[:, 2] is True][:, :2], axis=0)
+        neg_pol = np.unique(xypt_sub[xypt_sub[:, 2] is False][:, :2], axis=0)
 
         frame[0, :, :][pos_pol[:, 0], pos_pol[:, 1]] = 1
         frame[1, :, :][neg_pol[:, 0], neg_pol[:, 1]] = 1
@@ -195,8 +205,9 @@ def histogram_difference_preprocessing(
     xypt, delta_t=5000, tbins=200, h_og=128, w_og=128, channels=3, display_frame=False
 ):
     """
-    Applies histogram preprocessing to events. For every positive (pos) or negative (neg) event that has occurred
-    at (x,y) in delta_t, 1 will be added to (x,y) in the corresponding channel (pos or neg).
+    Applies histogram preprocessing to events. For every positive (pos) or negative
+    (neg) event that has occurred at (x,y) in delta_t, 1 will be added to (x,y) in the
+    corresponding channel (pos or neg).
 
     Args:
         delta_t (int): Time steps to stack events into frames (in milliseconds).
@@ -205,6 +216,7 @@ def histogram_difference_preprocessing(
         w_og (int): Number of pixels in width.
         channels (int): Number of channels in each frame (default 3 for plotting purposes).
         display_frame (bool): If True, will create an animation to visualize event frames.
+
     """
     histogram = np.zeros((tbins, channels, h_og, w_og))
     for frame in histogram:
@@ -217,10 +229,10 @@ def histogram_difference_preprocessing(
 
         xypt_sub = xypt[xypt[:, 3] <= 0]  # events for the current frame
         pos_pol, pos_count = np.unique(
-            xypt_sub[xypt_sub[:, 2] == True][:, :2], axis=0, return_counts=True
+            xypt_sub[xypt_sub[:, 2] is True][:, :2], axis=0, return_counts=True
         )
         neg_pol, neg_count = np.unique(
-            xypt_sub[xypt_sub[:, 2] == False][:, :2], axis=0, return_counts=True
+            xypt_sub[xypt_sub[:, 2] is False][:, :2], axis=0, return_counts=True
         )
 
         counts_dict = {}
@@ -261,9 +273,7 @@ fig, ax = plt.subplots()
 
 
 def update(frame, frames):
-    """
-    Helper function for animation.
-    """
+    """Helper function for animation."""
     ax.clear()
     image = frames[frame].transpose(1, 2, 0)
 

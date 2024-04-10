@@ -56,6 +56,7 @@ class MackeyGlass(Dataset):
             bin_window (int): number of points forming lookback window for each prediction
             download (bool): If True, downloads the dataset from the internet and puts it in root
                                  directory. If dataset is already downloaded, it will not be downloaded again.
+
         """
 
         super().__init__()
@@ -116,7 +117,7 @@ class MackeyGlass(Dataset):
         """Download the Mackey Glass data if it doesn't exist already."""
 
         if os.path.exists(self.file_path):
-            print(f"The dataset already exists!")
+            print("The dataset already exists!")
             return
 
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
@@ -168,7 +169,7 @@ class MackeyGlass(Dataset):
         self.DDE.step_on_discontinuities()
 
         ##
-        ## Generate data from the Mackey-Glass system
+        # Generate data from the Mackey-Glass system
         ##
         self.mackeyglass_soln = torch.zeros((self.maxtime_pts, 1), dtype=torch.float64)
         lyaps = torch.zeros((self.maxtime_pts, 1), dtype=torch.float64)
@@ -210,15 +211,18 @@ class MackeyGlass(Dataset):
         self.ind_test = torch.arange(self.traintime_pts, self.maxtime_pts - 1)
 
     def __len__(self):
-        """Returns number of samples in dataset.
+        """
+        Returns number of samples in dataset.
 
         Returns:
             int: number of samples in dataset
+
         """
         return len(self.mackeyglass_soln) - 1
 
     def __getitem__(self, idx):
-        """Getter method for dataset.
+        """
+        Getter method for dataset.
 
         Args:
             idx (int or tensor): index(s) of sample(s) to return
@@ -226,6 +230,7 @@ class MackeyGlass(Dataset):
         Returns:
             sample (tensor): individual data sample, shape=(timestamps, features)=(1,1)
             target (tensor): corresponding next state of the system, shape=(label,)=(1,)
+
         """
         # using Subset with list of indices
         if isinstance(idx, list) or (isinstance(idx, torch.Tensor) and idx.ndim > 0):

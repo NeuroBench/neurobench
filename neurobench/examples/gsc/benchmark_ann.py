@@ -12,17 +12,19 @@ from neurobench.preprocessing import NeuroBenchPreProcessor
 
 from ANN import M5
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # data in repo root dir
 test_set = SpeechCommands(path="../../../data/speech_commands/", subset="testing")
 
 test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
 net = M5()
-net.load_state_dict(torch.load("./model_data/m5_ann", map_location=torch.device('cpu')))
+net.load_state_dict(torch.load("./model_data/m5_ann", map_location=device))
 
 class resample(NeuroBenchPreProcessor):
 	def __init__(self):
-		self.resample = torchaudio.transforms.Resample(orig_freq=16000, new_freq=8000)
+		self.resample = torchaudio.transforms.Resample(orig_freq=16000, new_freq=8000).to(device)
 
 	def __call__(self, dataset):
 		inputs = dataset[0].permute(0, 2, 1)
@@ -43,7 +45,7 @@ static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, workload_metrics])
-results = benchmark.run()
+results = benchmark.run(device=device)
 print(results)
 
 # Results:

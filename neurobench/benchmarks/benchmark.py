@@ -90,11 +90,13 @@ class Benchmark:
 
             dataset_len = len(dataloader.dataset)
 
-            model.net.to(device)
+            if device is not None:
+                self.model.net.to(device)
 
             batch_num = 0
             for data in tqdm(dataloader, total=len(dataloader), disable=quiet):
-                data = (data[0].to(device), data[1].to(device))
+                if device is not None:
+                    data = (data[0].to(device), data[1].to(device))
 
                 batch_size = data[0].size(0)
 

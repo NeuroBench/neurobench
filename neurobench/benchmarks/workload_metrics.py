@@ -282,8 +282,8 @@ class r2(AccumulatedMetric):
         self.x_sum_squares = 0.0
         self.y_sum_squares = 0.0
 
-        self.x_labels = torch.tensor([])
-        self.y_labels = torch.tensor([])
+        self.x_labels = None
+        self.y_labels = None
 
     def reset(self):
         """Reset metric state."""
@@ -305,8 +305,13 @@ class r2(AccumulatedMetric):
         check_shape(preds, data[1])
         self.x_sum_squares += torch.sum((data[1][:, 0] - preds[:, 0]) ** 2).item()
         self.y_sum_squares += torch.sum((data[1][:, 1] - preds[:, 1]) ** 2).item()
-        self.x_labels = torch.cat((self.x_labels, data[1][:, 0]))
-        self.y_labels = torch.cat((self.y_labels, data[1][:, 1]))
+
+        if self.x_labels is None:
+            self.x_labels = data[1][:, 0]
+            self.y_labels = data[1][:, 1]
+        else:
+            self.x_labels = torch.cat((self.x_labels, data[1][:, 0]))
+            self.y_labels = torch.cat((self.y_labels, data[1][:, 1]))
 
         return self.compute()
 

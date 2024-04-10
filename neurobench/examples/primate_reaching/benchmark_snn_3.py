@@ -20,7 +20,8 @@ macs = []
 acs = []
 r2 = []
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu") # workload runs faster on CPU due to I/O
     
 for filename in all_files:
     print("Processing {}".format(filename))
@@ -47,7 +48,7 @@ for filename in all_files:
 
     # Benchmark expects the following:
     benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics])
-    results = benchmark.run()
+    results = benchmark.run(device=device)
     print(results)
 
     footprint.append(results['footprint'])

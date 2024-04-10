@@ -85,7 +85,7 @@ class SNNModel3(nn.Module):
                 temp = torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0)
                 acc_spikes[i, :] = temp
 
-            pred = self.single_forward(acc_spikes)
+            pred = self.single_forward(acc_spikes.to(x.device))
             U_x = self.v_x*pred[0]
             U_y = self.v_y*pred[1]
             out = torch.stack((U_x, U_y), 0).permute(1, 0)

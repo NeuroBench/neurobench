@@ -39,6 +39,7 @@ class Benchmark:
         dataloader=None,
         preprocessors=None,
         postprocessors=None,
+        device=None,
     ):
         """
         Runs batched evaluation of the benchmark.
@@ -50,6 +51,7 @@ class Benchmark:
             quiet (bool, default=False): If True, output is suppressed.
             verbose (bool, default=False): If True, metrics for each bach will be printed.
                                            If False (default), metrics are accumulated and printed after all batches are processed.
+            device (optional): use device for this run (e.g. 'cuda' or 'cpu').
 
         Returns:
             results: A dictionary of results.
@@ -88,8 +90,12 @@ class Benchmark:
 
             dataset_len = len(dataloader.dataset)
 
+            model.net.to(device)
+
             batch_num = 0
             for data in tqdm(dataloader, total=len(dataloader), disable=quiet):
+                data = (data[0].to(device), data[1].to(device))
+
                 batch_size = data[0].size(0)
 
                 # convert data to tuple

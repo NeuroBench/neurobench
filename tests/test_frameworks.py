@@ -37,6 +37,5 @@ def test_snntorch_framework():
     assert spikes.shape == (256, 1000, 35)
 
     data = torch.rand((256, 1000, 10, 5))
-    with pytest.raises(RuntimeError, match='mat1 and mat2 shapes cannot be multiplied'):
+    with pytest.raises(RuntimeError, match="mat1 and mat2 shapes cannot be multiplied"):
         spikes = model(data)
-    

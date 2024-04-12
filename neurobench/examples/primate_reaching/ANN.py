@@ -48,7 +48,7 @@ class ANNModel2D(nn.Module):
             self.data_buffer = torch.cat((self.data_buffer, current_seq), dim=0)
 
             if self.data_buffer.shape[0] <= self.bin_window_size:
-                predictions.append(torch.zeros(1, self.output_dim))
+                predictions.append(torch.zeros(1, self.output_dim).to(x.device))
             else:
                 # Only pass input into model when the buffer size == bin_window_size
                 if self.data_buffer.shape[0] > self.bin_window_size:
@@ -120,7 +120,7 @@ class ANNModel3D(nn.Module):
                 temp = torch.sum(spikes[self.step_size*i:self.step_size*i+(self.step_size), :], dim=0)
                 acc_spikes[i, :] = temp
 
-            pred = self.single_forward(acc_spikes)
+            pred = self.single_forward(acc_spikes.to(x.device))
             predictions.append(pred)
 
         predictions = torch.stack(predictions).squeeze(dim=1)

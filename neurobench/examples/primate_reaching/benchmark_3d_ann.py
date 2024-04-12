@@ -43,7 +43,7 @@ for filename in all_files:
 
     # Benchmark expects the following:
     benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics])
-    results = benchmark.run()
+    results = benchmark.run(device=device)
     print(results)
 
     footprint.append(results['footprint'])

@@ -20,6 +20,7 @@ macs = []
 acs = []
 r2 = []
 
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 for filename in files:
     print("Processing {}".format(filename))
@@ -44,7 +45,7 @@ for filename in files:
 
     # Benchmark expects the following:
     benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics])
-    results = benchmark.run()
+    results = benchmark.run(device=device)
     print(results)
 
     footprint.append(results['footprint'])

@@ -4,10 +4,14 @@ import torch
 
 
 class MFCCPreProcessor(NeuroBenchPreProcessor):
-    """ Does MFCC computation on dataset using torchaudio.transforms.MFCC.
-    Call expects loaded .wav data and targets as a tuple (data, targets).
-    Expects sample_rate to be the same for all samples in data.
     """
+    Does MFCC computation on dataset using torchaudio.transforms.MFCC.
+
+    Call expects loaded .wav data and targets as a tuple (data, targets). Expects
+    sample_rate to be the same for all samples in data.
+
+    """
+
     def __init__(
         self,
         sample_rate: int = 16000,
@@ -16,7 +20,7 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
         norm: str = "ortho",
         log_mels: bool = False,
         melkwargs: dict = None,
-        device = None,
+        device=None,
     ):
         super(NeuroBenchPreProcessor).__init__()
         """
@@ -48,7 +52,8 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
             self.mfcc = self.mfcc.to(device)
 
     def __call__(self, dataset):
-        """ Executes the MFCC computation on the dataset.
+        """
+        Executes the MFCC computation on the dataset.
 
         Args:
             dataset (tuple): A tuple of (data, targets).
@@ -56,6 +61,7 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
         Returns:
             results: mfcc applied on data
             targets: targets from dataset
+
         """
         self.dataset_validity_check(dataset)
 
@@ -72,7 +78,7 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
         # Data is expected in (batch, timesteps, features) format
         if data.dim() == 2:
             data.permute(1, 0)
-        
+
         elif data.dim() == 3:
             data = data.permute(0, 2, 1)
 
@@ -84,10 +90,11 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
 
     @staticmethod
     def dataset_validity_check(dataset):
-        """ Checks if dataset is a tuple with length two.
-        """
+        """Checks if dataset is a tuple with length two."""
         if not isinstance(dataset, tuple):
             raise TypeError("Expected dataset to be tuple")
 
         if not len(dataset) == 2 and not len(dataset) == 3:
-            raise ValueError("Dataset tuple should have values as (data, targets), or (data, targets, kwargs)")
+            raise ValueError(
+                "Dataset tuple should have values as (data, targets), or (data, targets, kwargs)"
+            )

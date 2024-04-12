@@ -54,7 +54,7 @@ As a community-driven project, we welcome further development from the community
 * Document your code thoroughly.
 
 5. Setting Up Pre-commit
----------------------
+------------------------
 
 1. Install pre-commit on your local machine. If you haven't installed it yet, you can do so using pip:
 
@@ -71,7 +71,7 @@ As a community-driven project, we welcome further development from the community
 This will install the git hook scripts in your `.git/` directory.
 
 6. Running Pre-commit
-------------------
+---------------------
 
 Before committing your changes, run the pre-commit hooks to ensure your code is formatted and linted according to the project's standards:
 

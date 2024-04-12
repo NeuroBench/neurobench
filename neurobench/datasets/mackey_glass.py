@@ -7,36 +7,36 @@ from .utils import download_url
 from urllib.error import URLError
 import tarfile
 
-'''
+"""
 The jitcdde package used to generate the MackeyGlass time-series can vary based 
 on platform, due to lower level integration solvers. In order to ensure that you
 are using the same data as the authors, please use the downloaded version, which
 will be automatically downloaded.
 
 https://huggingface.co/datasets/NeuroBench/mackey_glass
-'''
+"""
 
 
 class MackeyGlass(Dataset):
-    """ Dataset for the Mackey-Glass task.
-    """
+    """Dataset for the Mackey-Glass task."""
 
-    def __init__(self,
-                 file_path=None,
-                 tau=17,
-                 lyaptime=197,
-                 constant_past=0.7206597,
-                 nmg=10,
-                 beta=0.2,
-                 gamma=0.1,
-                 pts_per_lyaptime=75,
-                 traintime=10.,
-                 testtime=10.,
-                 start_offset=0.,
-                 seed_id=0,
-                 bin_window=1,
-                 download=True
-                 ):
+    def __init__(
+        self,
+        file_path=None,
+        tau=17,
+        lyaptime=197,
+        constant_past=0.7206597,
+        nmg=10,
+        beta=0.2,
+        gamma=0.1,
+        pts_per_lyaptime=75,
+        traintime=10.0,
+        testtime=10.0,
+        start_offset=0.0,
+        seed_id=0,
+        bin_window=1,
+        download=True,
+    ):
         """
         Initializes the Mackey-Glass dataset.
 
@@ -50,12 +50,13 @@ class MackeyGlass(Dataset):
             gamma (float): parameter of the Mackey-Glass equation
             pts_per_lyaptime (int): number of points to sample per one Lyapunov time
             traintime (float): number of Lyapunov times to be used for training a model
-            testtime (float): number of Lyapunov times to be used for testing a model            
+            testtime (float): number of Lyapunov times to be used for testing a model
             start_offset (int): added offset in number of points to shift the timeseries forward
             seed_id (int): seed for generating function solution
             bin_window (int): number of points forming lookback window for each prediction
             download (bool): If True, downloads the dataset from the internet and puts it in root
                                  directory. If dataset is already downloaded, it will not be downloaded again.
+
         """
 
         super().__init__()
@@ -80,19 +81,25 @@ class MackeyGlass(Dataset):
         self.bin_window = bin_window
 
         # Total time to simulate the system
-        self.maxtime = self.traintime + self.testtime + (self.lyaptime / self.pts_per_lyaptime)
+        self.maxtime = (
+            self.traintime + self.testtime + (self.lyaptime / self.pts_per_lyaptime)
+        )
 
         # Discrete-time versions of the continuous times specified above
         self.traintime_pts = round(traintime * self.pts_per_lyaptime)
         self.testtime_pts = round(testtime * self.pts_per_lyaptime)
-        self.maxtime_pts = self.traintime_pts + self.testtime_pts + 1  # eval one past the end
+        self.maxtime_pts = (
+            self.traintime_pts + self.testtime_pts + 1
+        )  # eval one past the end
 
         # Specify the system using the provided parameters
         self.mackeyglass_specification = [
-            self.beta * y(0, t - self.tau) / (1 + y(0, t - self.tau) ** self.nmg) - self.gamma * y(0)]
+            self.beta * y(0, t - self.tau) / (1 + y(0, t - self.tau) ** self.nmg)
+            - self.gamma * y(0)
+        ]
 
         self.file_path = file_path
-        self.url = 'https://huggingface.co/datasets/NeuroBench/mackey_glass/resolve/main/data.tar.gz'
+        self.url = "https://huggingface.co/datasets/NeuroBench/mackey_glass/resolve/main/data.tar.gz"
 
         if download and not os.path.exists(self.file_path):
             print("downloading ....")
@@ -110,7 +117,7 @@ class MackeyGlass(Dataset):
         """Download the Mackey Glass data if it doesn't exist already."""
 
         if os.path.exists(self.file_path):
-            print(f"The dataset already exists!")
+            print("The dataset already exists!")
             return
 
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
@@ -124,7 +131,7 @@ class MackeyGlass(Dataset):
             print(f"Failed to download (trying next):\n{error}")
         finally:
             print("Unzipping file...")
-            with tarfile.open(file_path, 'r:gz') as tar:
+            with tarfile.open(file_path, "r:gz") as tar:
                 for member in tar.getmembers():
                     if member.isfile():  # Check if it's a file
                         # Remove the directory path from the member's name
@@ -135,18 +142,24 @@ class MackeyGlass(Dataset):
     def load_data(self, file):
         all_data = np.load(file)
 
-        self.mackeyglass_soln = all_data[int(self.start_offset): int(self.start_offset + self.maxtime_pts)]
+        self.mackeyglass_soln = all_data[
+            int(self.start_offset) : int(self.start_offset + self.maxtime_pts)
+        ]
 
         self.mackeyglass_soln = torch.tensor(self.mackeyglass_soln, dtype=torch.float64)
         self.mackeyglass_soln = self.mackeyglass_soln.unsqueeze(dim=-1)
 
         # pad the soln with preceding zeroes for lookback window
         self.mackeyglass_soln = torch.cat(
-            (torch.zeros((self.bin_window - 1, 1), dtype=torch.float64), self.mackeyglass_soln), 0)
+            (
+                torch.zeros((self.bin_window - 1, 1), dtype=torch.float64),
+                self.mackeyglass_soln,
+            ),
+            0,
+        )
 
     def generate_data(self):
-        """ Generate time-series using the provided parameters of the equation.
-        """
+        """Generate time-series using the provided parameters of the equation."""
         np.random.seed(self.seed_id)
 
         # Create the equation object based on the settings
@@ -156,7 +169,7 @@ class MackeyGlass(Dataset):
         self.DDE.step_on_discontinuities()
 
         ##
-        ## Generate data from the Mackey-Glass system
+        # Generate data from the Mackey-Glass system
         ##
         self.mackeyglass_soln = torch.zeros((self.maxtime_pts, 1), dtype=torch.float64)
         lyaps = torch.zeros((self.maxtime_pts, 1), dtype=torch.float64)
@@ -165,8 +178,12 @@ class MackeyGlass(Dataset):
 
         offset = self.start_offset * self.lyaptime / self.pts_per_lyaptime
 
-        for time in torch.linspace(self.DDE.t + offset, self.DDE.t + offset + self.maxtime, steps=self.maxtime_pts,
-                                   dtype=torch.float64):
+        for time in torch.linspace(
+            self.DDE.t + offset,
+            self.DDE.t + offset + self.maxtime,
+            steps=self.maxtime_pts,
+            dtype=torch.float64,
+        ):
             value, lyap, weight = self.DDE.integrate(time.item())
             self.mackeyglass_soln[count, 0] = value[0]
             lyaps[count, 0] = lyap[0]
@@ -181,24 +198,31 @@ class MackeyGlass(Dataset):
 
         # pad the soln with preceding zeroes for lookback window
         self.mackeyglass_soln = torch.cat(
-            (torch.zeros((self.bin_window - 1, 1), dtype=torch.float64), self.mackeyglass_soln), 0)
+            (
+                torch.zeros((self.bin_window - 1, 1), dtype=torch.float64),
+                self.mackeyglass_soln,
+            ),
+            0,
+        )
 
     def split_data(self):
-        """ Generate training and testing indices.
-        """
+        """Generate training and testing indices."""
         self.ind_train = torch.arange(0, self.traintime_pts)
         self.ind_test = torch.arange(self.traintime_pts, self.maxtime_pts - 1)
 
     def __len__(self):
-        """ Returns number of samples in dataset.
+        """
+        Returns number of samples in dataset.
 
         Returns:
             int: number of samples in dataset
+
         """
         return len(self.mackeyglass_soln) - 1
 
     def __getitem__(self, idx):
-        """ Getter method for dataset.
+        """
+        Getter method for dataset.
 
         Args:
             idx (int or tensor): index(s) of sample(s) to return
@@ -206,17 +230,20 @@ class MackeyGlass(Dataset):
         Returns:
             sample (tensor): individual data sample, shape=(timestamps, features)=(1,1)
             target (tensor): corresponding next state of the system, shape=(label,)=(1,)
+
         """
         # using Subset with list of indices
         if isinstance(idx, list) or (isinstance(idx, torch.Tensor) and idx.ndim > 0):
             # return in format (batch, bin_window, feature)
-            data = [self.mackeyglass_soln[i:i + self.bin_window, :] for i in idx]
+            data = [self.mackeyglass_soln[i : i + self.bin_window, :] for i in idx]
             sample = torch.stack(data)
 
         # idx is an integer
         else:
-            sample = self.mackeyglass_soln[idx:idx + self.bin_window, :]
+            sample = self.mackeyglass_soln[idx : idx + self.bin_window, :]
 
-        target = self.mackeyglass_soln[idx + self.bin_window, :]  # add to account for pre-padding
+        target = self.mackeyglass_soln[
+            idx + self.bin_window, :
+        ]  # add to account for pre-padding
 
         return sample, target

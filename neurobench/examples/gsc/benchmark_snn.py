@@ -11,6 +11,8 @@ from neurobench.benchmarks import Benchmark
 
 from SNN import net
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 # data in repo root dir
 test_set = SpeechCommands(path="../../../data/speech_commands/", subset="testing")
 
@@ -21,14 +23,14 @@ net.load_state_dict(torch.load("./model_data/s2s_gsc_snntorch", map_location=tor
 ## Define model ##
 model = SNNTorchModel(net)
 
-preprocessors = [S2SPreProcessor()]
+preprocessors = [S2SPreProcessor(device=device)]
 postprocessors = [choose_max_count]
 
 static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, workload_metrics])
-results = benchmark.run()
+results = benchmark.run(device=device)
 print(results)
 
 # Results:

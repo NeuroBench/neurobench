@@ -32,7 +32,7 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 master_doc = "index"
 
-autodoc_mock_imports = ['torch', 'torchaudio', 'metavision_ml', 'pytorch_lightning']
+autodoc_mock_imports = ["torch", "torchaudio", "metavision_ml", "pytorch_lightning"]
 todo_include_todos = True
 
 # -- Options for HTML output -------------------------------------------------

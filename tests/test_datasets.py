@@ -21,9 +21,9 @@ def test_nehar():
         raise FileExistsError(f"Can't find {path}")
     wisdm = WISDM(path)
     assert len(wisdm) > 0
-    assert list(wisdm.train_dataset[0].shape) == [21720, 40, 6]
-    assert list(wisdm.val_dataset[0].shape) == [7240, 40, 6]
-    assert list(wisdm.test_dataset[0].shape) == [7241, 40, 6]
+    assert list(wisdm.train_dataset[0].shape) == [18910, 40, 6]
+    assert list(wisdm.val_dataset[0].shape) == [6303, 40, 6]
+    assert list(wisdm.test_dataset[0].shape) == [6304, 40, 6]
 
     wisdm.setup("fit")
     assert isinstance(wisdm.ds_train, torch.utils.data.TensorDataset)

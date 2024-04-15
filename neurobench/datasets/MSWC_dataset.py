@@ -257,6 +257,7 @@ class MSWC(Dataset):
     Subset version (https://huggingface.co/datasets/NeuroBench/mswc_fscil_subset)
     of the original MSWC dataset (https://mlcommons.org/en/multilingual-spoken-words/)
     for a few-shot class-incremental learning (FSCIL) task consisting of 200 voice commands keywords:
+
     - 100 base classes available for pre-training with:
         - 500 train samples
         - 100 validation samples

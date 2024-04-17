@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from ..utils import check_shape, make_binary_copy, single_layer_MACs
 from .hooks import ActivationHook, LayerHook
+from collections import defaultdict
 
 
 class AccumulatedMetric:
@@ -119,6 +120,59 @@ def activation_sparsity(model, preds, data):
         else 0.0
     )
     return sparsity
+
+
+class membrane_updates(AccumulatedMetric):
+    """
+    Number of synaptic operations.
+
+    MACs for ANN ACs for SNN
+
+    """
+
+    def __init__(self):
+        self.total_samples = 0
+        self.neuron_membrane_updates = defaultdict(int)
+
+    def reset(self):
+        self.total_samples = 0
+        self.neuron_membrane_updates = defaultdict(int)
+
+    def __call__(self, model, preds, data):
+        """
+        Multiply-accumulates (MACs) of the model forward.
+
+        Args:
+            model: A NeuroBenchModel.
+            preds: A tensor of model predictions.
+            data: A tuple of data and labels.
+            inputs: A tensor of model inputs.
+        Returns:
+            float: Multiply-accumulates.
+
+        """
+        for hook in model.activation_hooks:
+            for index_mem in range(len(hook.pre_fire_mem_potential) - 1):
+                pre_fire_mem = hook.pre_fire_mem_potential[index_mem + 1]
+                post_fire_mem = hook.post_fire_mem_potential[index_mem + 1]
+                nr_updates = torch.count_nonzero(pre_fire_mem - post_fire_mem)
+                self.neuron_membrane_updates[str(type(hook.layer))] += int(nr_updates)
+            self.neuron_membrane_updates[str(type(hook.layer))] += int(
+                torch.numel(hook.post_fire_mem_potential[0])
+            )
+        self.total_samples += data[0].size(0)
+        return self.compute()
+
+    def compute(self):
+        if self.total_samples == 0:
+            return 0
+
+        total_mem_updates = 0
+        for key in self.neuron_membrane_updates:
+            total_mem_updates += self.neuron_membrane_updates[key]
+
+        total_updates_per_sample = total_mem_updates / self.total_samples
+        return total_updates_per_sample
 
 
 def number_neuron_updates(model, preds, data):

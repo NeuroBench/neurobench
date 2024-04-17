@@ -90,7 +90,8 @@ class WISDM(LightningDataModule):
             acquisition_devices (Optional[List[str]], optional): List of acquisition devices to use.
                 Defaults to ['watch'].
             selected_labels (Optional[List[str]], optional): List of activity labels to include in the dataset.
-                If None, defaults to ['P', 'O', 'F', 'Q', 'R', 'G', 'S'].
+                If None, defaults to ['P', 'O', 'F', 'Q', 'R', 'G', 'S'], i.e. the "Hand-oriented activities (General)"
+                subset according to https://archive.ics.uci.edu/ml/machine-learning-databases/00507/WISDM-dataset-description.pdf
             activity_length (int, optional): The number of time steps in each data sample. Defaults to 40.
 
         For more detailed explanations of the default parameters and their settings, please refer to the
@@ -372,8 +373,9 @@ class WISDM(LightningDataModule):
         The function reads all text files from the specified directory, which is constructed using the
         `sensor_device` and `acquisition_device` parameter. The data is then combined into a single
         pandas DataFrame, with timestamps converted to datetime objects. Each group of data, categorized by
-        'Subject-id' and 'Activity Label', is resampled at a 50ms rate due to some issues highlighted in
-        https://arxiv.org/abs/2305.10222.
+        'Subject-id' and 'Activity Label', is sanitized to guarantee that signal sensors are sampled at a frequency of 50 ms.
+        Owing to certain problems with the WISDM dataset, which are noted in https://arxiv.org/abs/2305.10222,
+        this sanitization and eventual resampling are necessary.
 
         Args:
             sensor_device (str): The name of the sensor device (e.g., 'accel').

@@ -1,1 +1,1 @@
-from .benchmark import *
+from .benchmark import Benchmark

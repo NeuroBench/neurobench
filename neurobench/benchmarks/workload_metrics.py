@@ -124,31 +124,32 @@ def activation_sparsity(model, preds, data):
 
 class membrane_updates(AccumulatedMetric):
     """
-    Number of synaptic operations.
+    Number of membrane potential updates.
 
-    MACs for ANN ACs for SNN
+    This metric can only be used for spiking models implemented with SNNTorch.
 
     """
 
     def __init__(self):
+        """Init metric state."""
         self.total_samples = 0
         self.neuron_membrane_updates = defaultdict(int)
 
     def reset(self):
+        """Reset metric state."""
         self.total_samples = 0
         self.neuron_membrane_updates = defaultdict(int)
 
     def __call__(self, model, preds, data):
         """
-        Multiply-accumulates (MACs) of the model forward.
+        Number of membrane updates of the model forward.
 
         Args:
             model: A NeuroBenchModel.
             preds: A tensor of model predictions.
             data: A tuple of data and labels.
-            inputs: A tensor of model inputs.
         Returns:
-            float: Multiply-accumulates.
+            float: Number of membrane potential updates.
 
         """
         for hook in model.activation_hooks:
@@ -164,6 +165,14 @@ class membrane_updates(AccumulatedMetric):
         return self.compute()
 
     def compute(self):
+        """
+        Compute membrane updates using accumulated data.
+
+        Returns:
+            float: Compute the total updates to each neuron's membrane potential within the model,
+            aggregated across all neurons and normalized by the number of samples processed.
+
+        """
         if self.total_samples == 0:
             return 0
 

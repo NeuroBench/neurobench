@@ -22,16 +22,16 @@ Tasks overview
    +--------------------------+---------------------------------------+-------------------+-----------------------------------------------+
    | Task                     | Dataset                               | Correctness metric| Task description                             |
    +==========================+=======================================+===================+===============================================+
-   | Keyword FSCIL            | MSWC~cite:`mazumder21mswc`            | Accuracy          | Few-shot, continual learning of keyword      |
+   | Keyword FSCIL            | MSWC            | Accuracy          | Few-shot, continual learning of keyword      |
    |                          |                                       |                   | classes.                                      |
    +--------------------------+---------------------------------------+-------------------+-----------------------------------------------+
-   | Event Camera Object      | Prophesee 1MP Automotive~cite:`Perot2020`| COCO mAP       | Detecting automotive objects from event      |
+   | Event Camera Object      | Prophesee 1MP Automotive| COCO mAP       | Detecting automotive objects from event      |
    | Detection                |                                       |                   | camera video.                                 |
    +--------------------------+---------------------------------------+-------------------+-----------------------------------------------+
-   | NHP Motor Prediction     | Primate Reaching~cite:`makin-dataset`  | R^2               | Predicting fingertip velocity from cortical  |
+   | NHP Motor Prediction     | Primate Reaching  | R^2               | Predicting fingertip velocity from cortical  |
    |                          |                                       |                   | recordings.                                   |
    +--------------------------+---------------------------------------+-------------------+-----------------------------------------------+
-   | Chaotic Function         | Mackey-Glass time series~cite:`mackey1977oscillation`| sMAPE| Autoregressive modeling of chaotic           |
+   | Chaotic Function         | Mackey-Glass time series| sMAPE| Autoregressive modeling of chaotic           |
    | Prediction               |                                       |                   | functions.                                    |
    +--------------------------+---------------------------------------+-------------------+-----------------------------------------------+
 

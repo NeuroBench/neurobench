@@ -38,43 +38,44 @@ Tasks overview
 
 Event Camera Object Detection Leaderboard
 ---------------------
-Rank  |  Model Name  |  Task  |  Score  |  Date Submitted
+
 
 
 
 Chaotic Function Prediction Leaderboard
 ---------------------
-Rank  |  Model Name  |  Task  |  Score  |  Date Submitted
+
 
 
 Keyword Few-Shot Learning Leaderboard
 ---------------------
+The submitted solutions for the keyword few-shot class-incremental learning task are evaluated based on the accuracy metric. The leaderboard showcases the top-performing solutions for this task, providing insights into the most effective approaches for few-shot class-incremental learning of keyword classes.
 
 Conventional Solution:
 ~~~~~~~~~~~~~~~
+Conventional solutions do not rely on neuromorphic techniques.
 
-Rank  |  Model Name  |  Task  |  Score  |  Date Submitted
 .. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline. The detailed accuracy per session for the different baselines are shown in Figure~\ref{fig:mswc_acc_per_session}.
    :align: center
 
-   +--------+--------------+-------------------------------+------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
-   Rank     | Baseline     | Accuracy                      | Footprint        | Model Exec. Rate    | Connection Sparsity | Activation Sparsity | Dense                | Eff_MACs                  | Eff_ACs    |
-   +========+==============+===============================+==================+=====================+=====================+=====================+======================+===========================+============+
-   1.       | M5 ANN       | (97.09% / 89.27%)            | $6.03 \times 10^6$ | 1                   | 0.0                 | 0.783               | $2.59 \times 10^7$  | $7.85 \times 10^6$        | 0          |
-   +--------+--------------+-------------------------------+------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
+   +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
+   Rank     | Baseline     | Accuracy                      | Footprint         | Model Exec. Rate    | Connection Sparsity | Activation Sparsity | Dense                | Eff_MACs                  | Eff_ACs    |
+   +========+==============+===============================+===================+=====================+=====================+=====================+======================+===========================+============+
+   1.       | M5 ANN       | (97.09% / 89.27%)             | $6.03 \times 10^6$| 1                   | 0.0                 | 0.783               | $2.59 \times 10^7$   | $7.85 \times 10^6$        | 0          |
+   +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
 
 Neuromorphic Solution:
 ~~~~~~~~~~~~~~~
-
+Neuromorphic solutions 
 .. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline. The detailed accuracy per session for the different baselines are shown in Figure~\ref{fig:mswc_acc_per_session}.
    :align: center
-   +--------+--------------+-------------------------------+------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
-   Rank     | Baseline     | Accuracy                      | Footprint        | Model Exec. Rate    | Connection Sparsity | Activation Sparsity | Dense                | Eff_MACs                  | Eff_ACs    |
-   +========+==============+===============================+==================+=====================+=====================+=====================+======================+===========================+============+
-   1.       | SNN          | (93.48% / 75.27%)            | $1.36 \times 10^7$ | 200                 | 0.0                 | 0.916               | $3.39 \times 10^6$  | 0                         | $3.65 \times 10^5$ |
-   +--------+--------------+-------------------------------+------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
+   +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+--------------------+
+   Rank     | Baseline     | Accuracy                      | Footprint         | Model Exec. Rate    | Connection Sparsity | Activation Sparsity | Dense                | Eff_MACs                  | Eff_ACs            |
+   +========+==============+===============================+===================+=====================+=====================+=====================+======================+===========================+====================+
+   1.       | SNN          | (93.48% / 75.27%)            | $1.36 \times 10^7$ | 200                 | 0.0                 | 0.916               | $3.39 \times 10^6$   | 0                         | $3.65 \times 10^5$ |
+   +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+--------------------+
 
 
 Non-human Primate (NHP) Motor Prediction Leaderboard
 ---------------------
-Rank  |  Model Name  |  Task  |  Score  |  Date Submitted
+

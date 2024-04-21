@@ -52,7 +52,7 @@ v1.0 benchmarks
 - Non-human Primate (NHP) Motor Prediction
 - Chaotic Function Prediction
 
-leaderboards
+Leaderboards
 ~~~~~~~~~~~~
 Proposed solutions for the benchmark tasks are evaluated on a set of metrics and compared to the performance of other solutions.
 

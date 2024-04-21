@@ -55,24 +55,24 @@ Conventional Solution:
 ~~~~~~~~~~~~~~~~~~~~~~
 Conventional solutions do not rely on neuromorphic techniques.
 
-.. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline. The detailed accuracy per session for the different baselines are shown in Figure~\ref{fig:mswc_acc_per_session}.
+.. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline.
    :align: center
 
    +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
    Rank     | Baseline     | Accuracy                      | Footprint         | Model Exec. Rate    | Connection Sparsity | Activation Sparsity | Dense                | Eff_MACs                  | Eff_ACs    |
    +========+==============+===============================+===================+=====================+=====================+=====================+======================+===========================+============+
-   1.       | M5 ANN       | (97.09% / 89.27%)             | $6.03 \times 10^6$| 1                   | 0.0                 | 0.783               | $2.59 \times 10^7$   | $7.85 \times 10^6$        | 0          |
+   1.       | M5 ANN       | (97.09% / 89.27%)             | 6.03e6            | 1                   | 0.0                 | 0.783               | 2.59e7               | 7.85e6                    | 0          |
    +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
 
 Neuromorphic Solution:
 ~~~~~~~~~~~~~~~~~~~~~~
 Neuromorphic solutions 
-.. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline. The detailed accuracy per session for the different baselines are shown in Figure~\ref{fig:mswc_acc_per_session}.
+.. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline.
    :align: center
    +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+--------------------+
    Rank     | Baseline     | Accuracy                      | Footprint         | Model Exec. Rate    | Connection Sparsity | Activation Sparsity | Dense                | Eff_MACs                  | Eff_ACs            |
    +========+==============+===============================+===================+=====================+=====================+=====================+======================+===========================+====================+
-   1.       | SNN          | (93.48% / 75.27%)            | $1.36 \times 10^7$ | 200                 | 0.0                 | 0.916               | $3.39 \times 10^6$   | 0                         | $3.65 \times 10^5$ |
+   1.       | SNN          | (93.48% / 75.27%)            |  1.36e7            | 200                 | 0.0                 | 0.916               |  3.39e6              | 0                         |  3.65 e5           |
    +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+--------------------+
 
 

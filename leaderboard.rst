@@ -37,22 +37,22 @@ Tasks overview
 
 
 Event Camera Object Detection Leaderboard
----------------------
+-----------------------------------------
 
 
 
 
 Chaotic Function Prediction Leaderboard
----------------------
+---------------------------------------
 
 
 
 Keyword Few-Shot Learning Leaderboard
----------------------
+-------------------------------------
 The submitted solutions for the keyword few-shot class-incremental learning task are evaluated based on the accuracy metric. The leaderboard showcases the top-performing solutions for this task, providing insights into the most effective approaches for few-shot class-incremental learning of keyword classes.
 
 Conventional Solution:
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 Conventional solutions do not rely on neuromorphic techniques.
 
 .. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline. The detailed accuracy per session for the different baselines are shown in Figure~\ref{fig:mswc_acc_per_session}.
@@ -65,7 +65,7 @@ Conventional solutions do not rely on neuromorphic techniques.
    +--------+--------------+-------------------------------+-------------------+---------------------+---------------------+---------------------+----------------------+---------------------------+------------+
 
 Neuromorphic Solution:
-~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~~~~
 Neuromorphic solutions 
 .. table:: Baseline results for the keyword few-shot class-incremental learning task. Base accuracy refers to accuracy on the 100 base classes after pre-training while session average accuracy is the average accuracy over all sessions for the corresponding prototypical baseline. The detailed accuracy per session for the different baselines are shown in Figure~\ref{fig:mswc_acc_per_session}.
    :align: center

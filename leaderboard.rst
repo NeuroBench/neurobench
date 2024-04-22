@@ -1,35 +1,12 @@
-NeuroBench Leaderboard
-======================
+NeuroBench Leaderboards
+=======================
 
-The NeuroBench Leaderboard showcases the best performing solutions for
-each task in the NeuroBench harness. It provides a comprehensive
-overview of the top-performing algorithms and models submitted by
-participants. This leaderboard serves as a benchmark for evaluating the
-performance of different approaches and encourages healthy competition
-among participants.
+Following are leaderboards for the NeuroBench v1.0 algorithm track benchmarks.
 
-Each task in the NeuroBench harness is evaluated based on the NeuroBench
-metrics. The leaderboard presents the top solutions based on their
-performance scores, allowing researchers and developers to identify the
-most effective techniques for various tasks, relevant to the
-neuromorphic community.
+An interactive leaderboard can be found on the webiste `neurobench.ai <https://neurobench.ai>`__.
 
-By regularly updating the leaderboard, the NeuroBench project aims to
-foster collaboration, knowledge sharing, and innovation in the field of
-neuromorphics. It provides a platform for researchers and practitioners
-to showcase their advancements and contribute to the collective
-understanding of developing neuromorphic solutions.
+TODO: table of contents to click to the different headers? Not sure how to do in RST file when it is not compiled by sphinx
 
-Whether you are a participant, researcher, or enthusiast, the NeuroBench
-Leaderboard offers valuable insights into the state-of-the-art solutions
-and advancements in neuromorphic research. Explore the leaderboard to
-discover the best performing solutions and stay up-to-date with the
-latest developments in the field.
-
-Let the competition begin!
-
-   **Note:** Interactive leaderboards can be found
-   `here <https://neurobench.ai>`__. ## Tasks Overview
 
 +-------------+--------------+-----------+----------------------------+
 | Task        | Dataset      | Co        | Task description           |
@@ -53,19 +30,49 @@ Let the competition begin!
 | Function    | time series  |           | chaotic functions          |
 +-------------+--------------+-----------+----------------------------+
 
-Event Camera Object Detection Leaderboard
------------------------------------------
+Keyword Few-Shot Class-Incremental Learning (FSCIL)
+---------------------------------------------------
 
-The submitted solutions for the chaotic function prediction task are
-evaluated based on the COCO mAP metric.
+Base accuracy refers to the base class, session 0 test set, while session average refers to the average accuracy across all sessions 0 to 10.
+
++-----------+-----------+-----------------------------------+-----------+------------------+---------------------+---------------------+--------+--------------------+--------------------+---------------+
+| Method    | Reference | Accuracy (Base / Session Average) | Footprint | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense  | Eff_MACs           | Eff_ACs            | Date Submitted|
++===========+===========+===================================+===========+==================+=====================+=====================+========+====================+====================+===============+
+| M5 ANN    | TODO      | (97.09% / 89.27%)                 | 6.03E6    | 1                | 0.0                 | 0.783               | 2.5E7  | 7.85E6             | 0                  |-              |
++-----------+-----------+-----------------------------------+-----------+------------------+---------------------+---------------------+--------+--------------------+--------------------+---------------+
+| SNN       | TODO      | (93.48% / 75.27%)                 | 1.36E7    | 200              | 0.0                 | 0.16                | 3.3E6  | 0                  | 3.65E5             |-              |
++-----------+-----------+-----------------------------------+-----------+------------------+---------------------+---------------------+--------+--------------------+--------------------+---------------+
+
+
+Event Camera Object Detection
+-----------------------------
+
+Solution accuracy is measured by COCO mAP.
 
 +------+----------+----------+-------------+------------------+---------------------+---------------------+---------+------------+---------+---------------+
-| Rank | Baseline | Accuracy | Footprint   | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense   |Eff_MACs    | Eff_ACs | Date Submitted|
+| Rank | Baseline | COCO mAP | Footprint   | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense   |Eff_MACs    | Eff_ACs | Date Submitted|
 +======+==========+==========+=============+==================+=====================+=====================+=========+============+=========+===============+
 | 1    | RED ANN  | 0.42     | .13E7       | 20               | 0.0                 | 0.634               | 2.84E11 | 2.48E11    | 0       | -             |
 +------+----------+----------+-------------+------------------+---------------------+---------------------+---------+------------+---------+---------------+
 | 2    | Hybrid   | 0.271    | 1.21E7      | 20               | 0.0                 | 0.613               | .85E10  | 3.76E10    | 5.60E8  | -             |
 +------+----------+----------+-------------+------------------+---------------------+---------------------+---------+------------+---------+---------------+
+
+Non-Human Primate Motor Prediction
+----------------------------------
+
+For each solution, two sets of metric results are provided, as two
+individual solutions are provided per primate that is present in the
+dataset.
+
++------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
+| Rank | Baseline | R^2   | Footprint (bytes) | Model Exec. Rate (Hz) | Connection Sparsity | Activation Sparsity | Dense | Eff_MACs | Eff_ACs | Date Submitted|
++------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
+| 1.   | SNN      | 0.53  | 1648              | 250                   | 0.0                 | 0.7                 | 400   | 0        | 276     | -             |
+|      |          | 0.568 | 38848             | 250                   | 0.0                 | 0.                  | 700   | 0        | 551     | -             |
++------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
+| 2.   | ANN      | 0.53  | 20824             | 250                   | 0.0                 | 0.683               | 4704  | 3836     | 0       | -             |
+|      |          | 0.558 | 3346              | 250                   | 0.0                 | 0.668               | 7776  | 6103     | 0       | -             |
++------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
 
 Chaotic Function Prediction Leaderboard
 ---------------------------------------
@@ -81,45 +88,3 @@ the data is a synthetic time series, with no real-time correlation.
 +------+----------+----------+-----------+------------------+---------------------+---------------------+--------+-----------+---------+---------------+
 | 2.   | ESN      | 14.7     | 2.81E5    | -                | 0.876               | 0.0                 | 3.52E4 | 4.37E3    | 0       | -             |
 +------+----------+----------+-----------+------------------+---------------------+---------------------+--------+-----------+---------+---------------+
-
-
-Keyword Few-Shot Learning Leaderboard
--------------------------------------
-
-The submitted solutions for the keyword few-shot class-incremental
-learning task are evaluated based on the accuracy metric. Base accuracy
-refers to accuracy on the 100 base classes after pre-training while
-session average accuracy is the average accuracy over all sessions for
-the corresponding prototypical baseline.
-
-+------+----------+-----------------------------------+-----------+------------------+---------------------+---------------------+--------+--------------------+--------------------+---------------+
-| Rank | Baseline | Accuracy (base / session average) | Footprint | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense  | Eff_MACs           | Eff_ACs            | Date Submitted|
-+======+==========+===================================+===========+==================+=====================+=====================+========+====================+====================+===============+
-| 1.   | M5 ANN   | (7.0% / 8.27%)                    | 6.03E6    | 1                | 0.0                 | 0.783               | 2.5E7  | 7.85E6             | 0                  |-              |
-+------+----------+-----------------------------------+-----------+------------------+---------------------+---------------------+--------+--------------------+--------------------+---------------+
-| 2.   | SNN      | (3.48% / 75.27%)                  | 1.36E7    | 200              | 0.0                 | 0.16                | 3.3E6  | 0                  | 3.65E5             |-              |
-+------+----------+-----------------------------------+-----------+------------------+---------------------+---------------------+--------+--------------------+--------------------+---------------+
-
-
-Non-Human Primate Prediction
-----------------------------
-
-The submitted solutions for the NHP prediction task are evaluated based
-on the :math:`R^2` metric. The leaderboard showcases the top-performing
-solutions for this task, providing insights into the most effective
-approaches for predicting fingertip velocity from cortical recordings in
-non-human primates.
-
-For each solution, two sets of metric results are provided, as two
-individual solutions are provided per primate that is present in the
-dataset.
-
-+------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
-| Rank | Baseline | R^2   | Footprint (bytes) | Model Exec. Rate (Hz) | Connection Sparsity | Activation Sparsity | Dense | Eff_MACs | Eff_ACs | Date Submitted|
-+------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
-| 1.   | SNN      | 0.53  | 1648              | 250                   | 0.0                 | 0.7                 | 400   | 0        | 276     | -             |
-|      |          | 0.568 | 38848             | 250                   | 0.0                 | 0.                  | 700   | 0        | 551     | -             |
-+------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
-| 2.   | ANN      | 0.53  | 20824             | 250                   | 0.0                 | 0.683               | 4704  | 3836     | 0       | -             |
-|      |          | 0.558 | 3346              | 250                   | 0.0                 | 0.668               | 7776  | 6103     | 0       | -             |
-+------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+

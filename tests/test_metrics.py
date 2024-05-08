@@ -202,7 +202,7 @@ def test_r2():
 
     data = (
         torch.randn(2, batch_size),
-        torch.tensor(targets).transpose(0, 1),
+        torch.tensor(targets, dtype=torch.float).transpose(0, 1),
     )  # input and targets
 
     preds = [

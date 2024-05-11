@@ -58,12 +58,12 @@ commit = false
 message = "Bump version: {version} → {new_version}"
 commit_args = ""
 
-[tool.bumpversion.file]
+[[tool.bumpversion.file]]
 filename = "pyproject.toml"
 search = "{version}"
 replace = "{new_version}"
 
-[tool.bumpversion.file]
+[[tool.bumpversion.file]]
 filename = "docs/conf.py"
 search = "{release}"
 replace = "{new_version}"

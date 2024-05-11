@@ -60,7 +60,7 @@ This document describes the guidelines for releasing new versions of the library
     ```
 
     ```
-    git push origin
+    git push origin tag <tag_name>
     ```
 --------------------
 

@@ -18,10 +18,10 @@ commit_args = ""
 
 [[tool.bumpversion.files]]
 filename = "pyproject.toml"
-search = "version"
+search = "version = \"{current_version}\""
 replace = "{new_version}"
 
 [[tool.bumpversion.files]]
 filename = "docs/conf.py"
-search = "release"
+search = "release = \"{current_version}\""
 replace = "{new_version}"

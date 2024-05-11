@@ -8,7 +8,7 @@ This document describes the guidelines for releasing new versions of the library
 - PATCH version when you make backwards-compatible bug fixes
 
 
-1. Install the `bumpversion` package:
+1. Install the `bump-my-version` package:
 
     ```
     pip install --upgrade bump-my-version
@@ -53,7 +53,7 @@ This document describes the guidelines for releasing new versions of the library
 
 6. Once the pull request is approved and merged, create a new pull request from the dev branch to the master branch.
 
-7. Once the pull request is approved and merged, create the tag to invoke the package publishing workflow:
+7. Once the pull request is approved and merged, create the tag on the main branch to invoke the package publishing workflow:
 
     ```
     git tag -a x.y.z -m "Release x.y.z"

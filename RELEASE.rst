@@ -66,5 +66,5 @@ This document describes the guidelines for releasing new versions of the library
 
 8. Once the tag is pushed, the package publishing workflow will be triggered and the package will be published to the PyPI.
 
-9. Once the package is published, create a new release on GitHub with the tag name and the release notes.
+9. Once the package is published, create a new release on GitHub with the tag name and the release notes (generate them automatically).
 

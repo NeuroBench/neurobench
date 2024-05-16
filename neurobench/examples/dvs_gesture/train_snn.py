@@ -5,11 +5,18 @@ from snntorch import surrogate
 import torch
 import torch.nn as nn
 import torch.backends.cudnn as cudnn
+import snntorch.utils as utils
+
+import numpy as np
 
 import tonic
 import tonic.transforms as transforms
 from tonic import DiskCachedDataset
 from torch.utils.data import DataLoader
+
+from snn import Net
+
+from tqdm import tqdm
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
@@ -21,79 +28,21 @@ def rand_seed(n):
         torch.backends.cudnn.benchmark = False
         torch.cuda.manual_seed_all(n)
 
+# The SNNTorch forward pass
+def forward_pass(net, data):
+    spk_rec = []
+    utils.reset(net)
+    for step in range(data.shape[1]):
+        spk_out, _ = net(data[:, step, ...])
+        spk_rec.append(spk_out)
+    return torch.stack(spk_rec)
+
 lr = 0.008273059787948487
 batch_size = 64
 train_time_bin = 25
 test_time_bin = 150
+epochs = 100
 data_dir = './data'
-
-class Net(torch.nn.Module):
-    def __init__(self):
-        super().__init__()
-
-        # Neuron Hyperparameters
-        beta_1 = 0.9999903192467171
-        beta_2 = 0.7291118090686332
-        beta_3 = 0.9364650136740154
-        beta_4 = 0.8348241794080301
-        threshold_1 = 3.511291184386264
-        threshold_2 = 3.494437965584431
-        threshold_3 = 1.5986853560315544
-        threshold_4 = 0.3641469130041378
-        spike_grad = surrogate.atan()
-        
-         # Initialize layers
-        self.conv1 = nn.Conv2d(2, 16, 5, padding="same")
-        self.pool1 = nn.MaxPool2d(2)
-        self.lif1 = snn.Leaky(beta=beta_1, threshold=threshold_1, spike_grad=spike_grad)
-        
-        self.conv2 = nn.Conv2d(16, 32, 5, padding="same")
-        self.pool2 = nn.MaxPool2d(2)
-        self.lif2 = snn.Leaky(beta=beta_2, threshold=threshold_2, spike_grad=spike_grad)
-        
-        self.conv3 = nn.Conv2d(32, 64, 5, padding="same")
-        self.pool3 = nn.MaxPool2d(2)
-        self.lif3 = snn.Leaky(beta=beta_3, threshold=threshold_3, spike_grad=spike_grad)
-        
-        self.linear1 = nn.Linear(64*4*4, 11)
-        self.dropout_4 = nn.Dropout(0.5956071342984011)
-        self.lif4 = snn.Leaky(beta=beta_4, threshold=threshold_4, spike_grad=spike_grad)
-
-    def forward(self, x, quanting=False):
-        mem1 = self.lif1.init_leaky()
-        mem2 = self.lif2.init_leaky()
-        mem3 = self.lif3.init_leaky()
-        mem4 = self.lif4.init_leaky()
-
-        # Record the final layer
-        spk4_rec = []
-        mem4_rec = []
-
-        for step in range(x.size(0)):
-            # Layer 1
-            y = self.conv1(x[step])
-            y = self.pool1(y)
-            spk1, mem1 = self.lif1(y, mem1)
-
-            # Layer 2
-            y = self.conv2(spk1)
-            y = self.pool2(y)
-            spk2, mem2 = self.lif2(y, mem2)
-
-            # Layer 3
-            y = self.conv3(spk2)
-            y = self.pool3(y)
-            spk3, mem3 = self.lif3(y, mem3)
-
-            # Layer 4
-            y = self.linear1(spk3.flatten(1))
-            y = self.dropout_4(y)
-            spk4, mem4 = self.lif4(y, mem4)
-
-            spk4_rec.append(spk4)
-            mem4_rec.append(mem4)
-
-        return torch.stack(spk4_rec, dim=0), torch.stack(mem4_rec, dim=0)
             
 def dataloader():
     # sensor_size = tonic.datasets.DVSGesture.sensor_size
@@ -118,47 +67,12 @@ def dataloader():
     cached_testset = DiskCachedDataset(testset, cache_path='./data/cache/dvs/test')
 
     train_loader = DataLoader(cached_trainset, batch_size=batch_size,
-                              collate_fn=tonic.collation.PadTensors(batch_first=False))
-    test_loader = DataLoader(cached_testset, batch_size=batch_size,
-                             collate_fn=tonic.collation.PadTensors(batch_first=False))
+                              collate_fn=tonic.collation.PadTensors(batch_first=True))
+    # test whole validation set at once so that accuracy is exact
+    test_loader = DataLoader(cached_testset, batch_size=512,
+                             collate_fn=tonic.collation.PadTensors(batch_first=True))
 
     return train_loader, test_loader
-
-def calc_accuracy(spikes, labels):
-    _, idx = spikes.sum(dim=0).max(1)
-    batch_acc = (labels == idx).sum()
-    return batch_acc
-
-def batch_accuracy(loader, net):
-    # print("Accuracy test")
-    with torch.no_grad():
-        total = 0
-        acc = 0
-        net.eval()
-        loss = 0
-
-        running_length = 0
-        running_total = 0
-
-        count = 0
-
-        loss_ce = SF.mse_count_loss()
-
-        loader = iter(loader)
-        for data, targets in loader:
-            data = data.to(device)
-            targets = targets.to(device)
-            spk_rec, _ = net(data)
-
-            batch_acc = calc_accuracy(spk_rec, targets)
-            running_length += len(targets)
-            running_total += batch_acc
-            acc = running_total/running_length
-            total += spk_rec.size(1)
-            loss += loss_ce(spk_rec, targets)
-            count += 1
-
-    return acc, (loss / count)  #(acc / total) , (loss / count)
 
 if __name__ == '__main__':
 
@@ -167,36 +81,58 @@ if __name__ == '__main__':
     train_loader, test_loader = dataloader()
 
     net = Net().to(device)
-    num_epochs = 300
 
     optimizer = torch.optim.Adam(net.parameters(), lr=lr, betas=(0.9, 0.999))
 
     loss_fn = SF.mse_count_loss()
     scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, T_max=8250, eta_min=0, last_epoch=-1)
 
-    max_acc = 0
-    for epoch in range(num_epochs):
-        print("Epoch", epoch)
-        for i, (data, targets) in enumerate(train_loader):
+    # Training Start
+    best_acc = 0
+    for epoch in range(epochs):
+        print(f"Epoch {epoch}:")
+        train_loss = []
+        train_acc = []
+        net.train()
+        for data, targets in tqdm(train_loader):
             data = data.to(device)
             targets = targets.to(device)
 
-            net.train()
-            spk_rec, mem_rec = net(data)
+            spk_rec = forward_pass(net, data)
             loss_val = loss_fn(spk_rec, targets)
 
-            # Gradient calculation + weight update
+            train_loss.append(loss_val.item())
+            train_acc.append(SF.accuracy_rate(spk_rec, targets))
+
             optimizer.zero_grad()
             loss_val.backward()
             optimizer.step()
             scheduler.step()
 
-        with torch.no_grad():
-            test_acc, test_loss = batch_accuracy(test_loader, net)
+        print(f"Train Loss: {np.mean(train_loss):.3f}")
+        print(f"Train Accuracy: {np.mean(train_acc) * 100:.2f}%")
 
-            acc = "{:.4f}".format(test_acc.item())
+        val_loss = []
+        val_acc = []
+        net.eval()
+        for data, targets in tqdm(iter(test_loader)):
+            data = data.to(device)
+            targets = targets.to(device)
 
-            if test_acc > max_acc:
-                print("New Max Accuracy Found", test_acc.item())
-                max_acc = test_acc
-                torch.save(net.state_dict(), "./model_data/epoch_" + str(epoch) + "_acc_" + str(acc) + ".pth")
+            spk_rec = forward_pass(net, data)
+
+            val_loss.append(loss_fn(spk_rec, targets).item())
+            val_acc.append(SF.accuracy_rate(spk_rec, targets))
+
+        print(f"Test Loss: {np.mean(val_loss):.3f}")
+        print(f"Test Accuracy: {np.mean(val_acc) * 100:.2f}%")
+
+        if np.mean(val_acc) > best_acc:
+            print("New Best Test Accuracy. Saving...")
+            best_acc = np.mean(val_acc)
+            torch.save(net.state_dict(), "./model_data/dvs_gesture_snn")
+
+        print(f"---------------------\n")
+
+    # Load the weights into the network for inference and benchmarking
+    net.load_state_dict(torch.load("./model_data/dvs_gesture_snn"))

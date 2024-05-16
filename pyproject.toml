@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "neurobench"
-version = "1.0.2"
+version = "1.0.3"
 description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
 authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
 readme = "README.rst"
@@ -32,6 +32,7 @@ gdown = "^4.7.1"
 librosa = "^0.10.1"
 sphinx = "^7.2.5"
 sphinx-rtd-theme = "^1.3.0"
+pre-commit = "*"
 
 [tool.poetry.extras]
 mackey-glass = ["jitcdde"]

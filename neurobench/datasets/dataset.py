@@ -3,9 +3,11 @@ from torch.utils.data import Dataset
 
 class NeuroBenchDataset(Dataset):
     """
-    Abstract class for NeuroBench datasets. Individual datasets are responsible
-    for collating and splitting data. The top-level benchmark expects that the
-    dataset is wrapped into a DataLoader.
+    Abstract class for NeuroBench datasets.
+
+    Individual datasets are responsible for collating and splitting data. The top-level
+    benchmark expects that the dataset is wrapped into a DataLoader.
+
     """
 
     def __init__(self):

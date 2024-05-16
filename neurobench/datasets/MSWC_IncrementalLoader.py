@@ -64,7 +64,8 @@ class IncrementalFewShot(IterableDataset):
         query_shots: int = -1,
         support_query_split: Optional[Tuple[int, int]] = None,
     ):
-        """Dataset for few shot learning.
+        """
+        Dataset for few shot learning.
 
         Args:
             k_shot (int, optional): Number of samples per class in the support set.
@@ -72,6 +73,7 @@ class IncrementalFewShot(IterableDataset):
             inc_languages (List[str], optional): List of languages 2 letters names to use as incremental sessions.
             query_shots (Optional[int]): Number of samples per class in the query set. If not set, query_shots is set to k_shot. Defaults to -1.
             support_query_split (Optional[Tuple[int, int]], optional): Create non-overlapping support and query pools of given number of samples per class. Defaults to None.
+
         """
 
         self.support_query_split = support_query_split
@@ -88,10 +90,12 @@ class IncrementalFewShot(IterableDataset):
         self.root = root
 
     def __iter__(self):
-        """Get a batch of samples for a k-shot n-way task.
+        """
+        Get a batch of samples for a k-shot n-way task.
 
         Returns:
             tuple[List[tuple[Tensor, Tensor]], Dataset, List[int]]: The support as a list of all shots, the query as a Dataset object and the list of cumulative query classes.
+
         """
 
         cumulative_classes = {}

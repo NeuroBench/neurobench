@@ -2,21 +2,27 @@ import snntorch as snn
 
 
 class ActivationHook:
-    """Hook class for an activation layer in a NeuroBenchModel.
+    """
+    Hook class for an activation layer in a NeuroBenchModel.
 
     Output of the activation layer in each forward pass will be stored.
+
     """
 
     def __init__(self, layer, connection_layer=None, prev_act_layer_hook=None):
-        """Initializes the class.
+        """
+        Initializes the class.
 
         A forward hook is registered for the activation layer.
 
         Args:
             layer: The activation layer which is a PyTorch nn.Module.
+
         """
         self.activation_outputs = []
         self.activation_inputs = []
+        self.pre_fire_mem_potential = []
+        self.post_fire_mem_potential = []
         if layer is not None:
             self.hook = layer.register_forward_hook(self.hook_fn)
             self.hook_pre = layer.register_forward_pre_hook(self.pre_hook_fn)
@@ -30,20 +36,25 @@ class ActivationHook:
         self.spiking = isinstance(layer, snn.SpikingNeuron)
 
     def pre_hook_fn(self, layer, input):
-        """Hook function that will be called before each forward pass of
-        the activation layer.
+        """
+        Hook function that will be called before each forward pass of the activation
+        layer.
 
         Each input of the activation layer will be stored.
 
         Args:
             layer: The registered layer
             input: Input of the registered layer
+
         """
         self.activation_inputs.append(input)
+        if self.spiking:
+            self.pre_fire_mem_potential.append(layer.mem)
 
     def hook_fn(self, layer, input, output):
-        """Hook function that will be called after each forward pass of
-        the activation layer.
+        """
+        Hook function that will be called after each forward pass of the activation
+        layer.
 
         Each output of the activation layer will be stored.
 
@@ -51,9 +62,11 @@ class ActivationHook:
             layer: The registered layer
             input: Input of the registered layer
             output: Output of the registered layer
+
         """
         if self.spiking:
             self.activation_outputs.append(output[0])
+            self.post_fire_mem_potential.append(layer.mem)
 
         else:
             self.activation_outputs.append(output)
@@ -64,9 +77,11 @@ class ActivationHook:
         self.activation_inputs = []
 
     def reset(self):
-        """Resets the stored activation outputs and inputs"""
+        """Resets the stored activation outputs and inputs."""
         self.activation_outputs = []
         self.activation_inputs = []
+        self.pre_fire_mem_potential = []
+        self.post_fire_mem_potential = []
 
     def close(self):
         """Remove the registered hook."""

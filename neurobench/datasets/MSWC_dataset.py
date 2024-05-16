@@ -278,7 +278,8 @@ class MSWC(Dataset):
         incremental: Optional[bool] = False,
         download=True,
     ):
-        """Initialization will create the new base eval splits if needed .
+        """
+        Initialization will create the new base eval splits if needed .
 
         Args:
             root (str): Path of data root folder where is or will be the MSWC/ folder containing the dataset.
@@ -287,6 +288,7 @@ class MSWC(Dataset):
             language (str): Language to use for evaluation task.
             download (bool): If True, downloads the dataset from the internet and puts it in root
                                  directory. If dataset is already downloaded, it will not be downloaded again.
+
         """
         self.root = root
         self.dataset_folder = os.path.join(root, "MSWC")
@@ -333,7 +335,7 @@ class MSWC(Dataset):
         """Download the MSWC FSCIL data if it doesn't exist already."""
 
         if os.path.exists(self.dataset_folder):
-            print(f"The dataset already exists!")
+            print("The dataset already exists!")
             return
 
         os.makedirs(os.path.dirname(self.dataset_folder), exist_ok=True)
@@ -361,7 +363,8 @@ class MSWC(Dataset):
             print()
 
     def __getitem__(self, index: int) -> Tuple[Tensor, int]:
-        """Getter method to get waveform samples.
+        """
+        Getter method to get waveform samples.
 
         Args:
             idx (int): Index of the sample.
@@ -369,6 +372,7 @@ class MSWC(Dataset):
         Returns:
             sample (tensor): Individual waveform sample, padded to always match dimension (48000, 1).
             target (int): Corresponding keyword index based on FSCIL_KEYWORDS order (by decreasing number of samples in original dataset).
+
         """
         item = self._walker[index]
 
@@ -377,30 +381,33 @@ class MSWC(Dataset):
         return get_mswc_item(item, dirname, self.return_path)
 
     def __len__(self):
-        """Returns the number of samples in the dataset.
+        """
+        Returns the number of samples in the dataset.
 
         Returns:
             int: The number of samples in the dataset.
+
         """
         return len(self._walker)
 
 
 class MSWC_query(Dataset):
-    """
-    Simple Dataset object created for incremental queries
-    """
+    """Simple Dataset object created for incremental queries."""
 
     def __init__(self, walker):
-        """Initialization of the dataset.
+        """
+        Initialization of the dataset.
 
         Args:
             walker (list): List of tuples with data (filename, class_index, dirname)
+
         """
 
         self._walker = walker
 
     def __getitem__(self, index: int):
-        """Getter method to get waveform samples.
+        """
+        Getter method to get waveform samples.
 
         Args:
             idx (int): Index of the sample.
@@ -408,15 +415,18 @@ class MSWC_query(Dataset):
         Returns:
             sample (tensor): Individual waveform sample, padded to always match dimension (1, 48000).
             target (int): Corresponding keyword index based on FSCIL_KEYWORDS order (by decreasing number of samples in original dataset).
+
         """
         item = self._walker[index]
 
         return get_mswc_item(item, item[2], False)
 
     def __len__(self):
-        """Returns the number of samples in the dataset.
+        """
+        Returns the number of samples in the dataset.
 
         Returns:
             int: The number of samples in the dataset.
+
         """
         return len(self._walker)

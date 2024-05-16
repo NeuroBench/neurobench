@@ -11,7 +11,10 @@ def _lazy_import(package_name, module_name, class_name):
 
 def activation_modules():
     """
-    The activation layers that can be auto-deteced. Every activation layer can only be included once.
+    The activation layers that can be auto-deteced.
+
+    Every activation layer can only be included once.
+
     """
     return list(
         set(
@@ -30,8 +33,11 @@ def check_shape(preds, labels):
 
 
 def make_binary_copy(layer, all_ones=False):
-    """Makes a binary copy of the layer. All non 0 entries are made 1.
-    If all_ones is True, then all entries are made 1.
+    """
+    Makes a binary copy of the layer.
+
+    All non 0 entries are made 1. If all_ones is True, then all entries are made 1.
+
     """
     layer_copy = copy.deepcopy(layer)
 
@@ -78,7 +84,12 @@ def make_binary_copy(layer, all_ones=False):
 
 
 def make_ones_copy(layer):
-    """Makes a ones copy of the layer. All entries are made 1."""
+    """
+    Makes a ones copy of the layer.
+
+    All entries are made 1.
+
+    """
     layer_copy = copy.deepcopy(layer)
 
     stateless_layers = (
@@ -121,7 +132,7 @@ def make_ones_copy(layer):
 
 
 def cylce_tuple(tup):
-    """Returns a copy of the tuple with binary elements"""
+    """Returns a copy of the tuple with binary elements."""
     tup_copy = []
     for t in tup:
         if isinstance(t, tuple):
@@ -134,7 +145,7 @@ def cylce_tuple(tup):
 
 
 def cylce_tuple_ones(tup):
-    """Returns a copy of the tuple with ones elements"""
+    """Returns a copy of the tuple with ones elements."""
     tup_copy = []
     for t in tup:
         if isinstance(t, tuple):
@@ -148,7 +159,8 @@ def cylce_tuple_ones(tup):
 
 
 def binary_inputs(inputs, all_ones=False):
-    """Returns a copy of the inputs with binary elements, all ones if all_ones is True"""
+    """Returns a copy of the inputs with binary elements, all ones if all_ones is
+    True."""
     in_states = True  # assume that input is tuple of inputs and states. If not, then set to False
     spiking = False
 
@@ -179,9 +191,12 @@ def binary_inputs(inputs, all_ones=False):
 
 
 def single_layer_MACs(inputs, layer, total=False):
-    """Computes the MACs for a single layer.
+    """
+    Computes the MACs for a single layer.
+
     returns effective operations if total=False, else total operations (including zero operations)
     Supported layers: Linear, Conv1d, Conv2d, Conv3d, RNNCellBase, LSTMCell, GRUCell
+
     """
     macs = 0
 

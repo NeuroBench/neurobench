@@ -20,7 +20,7 @@ SAMPLING_RATE = 4e-3
 
 class PrimateReaching(NeuroBenchDataset):
     """
-    Dataset for the Primate Reaching Task
+    Dataset for the Primate Reaching Task.
 
     The Dataset can be downloaded from the following website:
     https://zenodo.org/record/583331
@@ -37,6 +37,7 @@ class PrimateReaching(NeuroBenchDataset):
     in the section: Variable names.
 
     Once these .mat files are downloaded, store them in the same directory.
+
     """
 
     url = "https://zenodo.org/record/583331/files/"
@@ -89,6 +90,7 @@ class PrimateReaching(NeuroBenchDataset):
                                              which represent subject inactivity. Default is False.
             download (bool): If True, downloads the dataset from the internet and puts it in root
                              directory. If dataset is already downloaded, it will not be downloaded again.
+
         """
         self.url = "https://zenodo.org/record/583331/files/"
 
@@ -172,9 +174,7 @@ class PrimateReaching(NeuroBenchDataset):
         return len(self.ind_train) + len(self.ind_test) + len(self.ind_val)
 
     def __getitem__(self, idx):
-        """
-        Getter method of the dataloader
-        """
+        """Getter method of the dataloader."""
         # compute indices of congruent binning windows
         mask = idx - np.arange(self.num_steps) * self.ratio
         if self.label_series:
@@ -207,10 +207,8 @@ class PrimateReaching(NeuroBenchDataset):
             print()
 
     def load_data(self):
-        """
-        Load the data from the matlab file and spike data
-        if spike data has been processed and stored already
-        """
+        """Load the data from the matlab file and spike data if spike data has been
+        processed and stored already."""
         # Assume input is the original dataset, instead of the reconstructed one
         print(f"Loading {self.filename}")
         dataset = h5py.File(self.file_path, "r")
@@ -272,17 +270,14 @@ class PrimateReaching(NeuroBenchDataset):
         self.labels = torch.gradient(self.labels, dim=1)[0]
 
     def apply_delay(self):
-        """
-        shift the labels by the delay to account for the biological delay between spikes and movement onset
-        """
+        """Shift the labels by the delay to account for the biological delay between
+        spikes and movement onset."""
         # Dimension: No_of_Channels*No_of_Records
         self.samples = self.samples[:, : -self.delay]
         self.labels = self.labels[:, self.delay :]
 
     def split_data(self):
-        """
-        Split segments into training/validation/test set
-        """
+        """Split segments into training/validation/test set."""
         # This is No. of chunks
         split_num = self.split_num
         total_segments = self.time_segments.shape[0]
@@ -328,10 +323,8 @@ class PrimateReaching(NeuroBenchDataset):
                     )
 
     def remove_segments_by_length(self):
-        """
-        remove the segments where its duration exceeds the limit set by
-        max_segment_length
-        """
+        """Remove the segments where its duration exceeds the limit set by
+        max_segment_length."""
         return np.nonzero(
             self.time_segments[:, 1] - self.time_segments[:, 0]
             < self.max_segment_length
@@ -339,18 +332,14 @@ class PrimateReaching(NeuroBenchDataset):
 
     @staticmethod
     def split_into_segments(indices):
-        """
-        Combine the start and end index into a NumPy array.
-        """
+        """Combine the start and end index into a NumPy array."""
         start_end = np.array([indices[:-1], indices[1:]])
 
         return np.transpose(start_end)
 
     @staticmethod
     def get_flag_index(target_pos):
-        """
-        Find where each segment begins and ends
-        """
+        """Find where each segment begins and ends."""
         target_diff = np.diff(
             target_pos, axis=1, append=target_pos[:, -1].reshape(2, 1)
         )

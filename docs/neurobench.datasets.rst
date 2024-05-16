@@ -15,21 +15,6 @@ as linear 16-bit, single-channel, pulse code modulated values, at a 16 kHz sampl
     :show-inheritance:
 
 
-DVS Gestures
-^^^^^^^^^^^^
-
-The IBM Dynamic Vision Sensor (DVS) Gesture dataset is composed of recordings of 29 distinct individuals executing 10 different
-types of gestures, including but not limited to clapping, waving, etc. Additionally, an 11th gesture class is included that comprises 
-gestures that cannot be categorized within the first 10 classes. The gestures are recorded under four distinct lighting conditions, 
-and each gesture is associated with a label that indicates the corresponding lighting condition under which it was performed.
-
-.. automodule:: neurobench.datasets.dvs_gesture
-    :special-members: __init__, __getitem__
-    :members:
-    :undoc-members:
-    :show-inheritance:
-
-
 Prophesee Megapixel Automotive
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 

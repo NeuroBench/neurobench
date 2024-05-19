@@ -99,7 +99,7 @@ class PrimateReaching(NeuroBenchDataset):
             "indy_20160630_01.mat": "197413a5339630ea926cbd22b8b43338",
             "indy_20160622_01.mat": "c33d5fff31320d709d23fe445561fb6e",
             "loco_20170301_05.mat": "47342da09f9c950050c9213c3df38ea3",
-            "loco_20170217_02.mat": "739b70762d838f3a1f358733c426bb02",
+            "loco_20170215_02.mat": "739b70762d838f3a1f358733c426bb02",
             "loco_20170210_03.mat": "4cae63b58c4cb9c8abd44929216c703b",
         }
 
@@ -224,7 +224,7 @@ class PrimateReaching(NeuroBenchDataset):
 
         # Define the segments' start & end indices
         self.start_end_indices = np.array(self.get_flag_index(target_pos))
-        self.time_segments = np.array(self.split_into_segments(self.start_end_indices))
+        self.time_segments = np.array(self.split_into_segments(self.start_end_indices, target_pos.shape[1]))
 
         spike_train = np.zeros((*spikes.shape, len(new_t)), dtype=np.int8)
 
@@ -290,7 +290,8 @@ class PrimateReaching(NeuroBenchDataset):
         train_len = math.floor(self.train_ratio * sub_length)
         val_len = math.floor((sub_length - train_len) / 2)
 
-        offset = int(np.round(self.bin_width / SAMPLING_RATE)) * self.num_steps
+        # offset = int(np.round(self.bin_width / SAMPLING_RATE)) * self.num_steps
+        offset = 0
 
         # split the data into 4 equal parts
         # for each part, split the data according to training, testing and validation split
@@ -331,8 +332,10 @@ class PrimateReaching(NeuroBenchDataset):
         )[0]
 
     @staticmethod
-    def split_into_segments(indices):
+    def split_into_segments(indices, last_idx):
         """Combine the start and end index into a NumPy array."""
+        indices = np.insert(indices, 0, 0)
+        indices = np.append(indices, [last_idx])
         start_end = np.array([indices[:-1], indices[1:]])
 
         return np.transpose(start_end)

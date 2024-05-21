@@ -224,7 +224,9 @@ class PrimateReaching(NeuroBenchDataset):
 
         # Define the segments' start & end indices
         self.start_end_indices = np.array(self.get_flag_index(target_pos))
-        self.time_segments = np.array(self.split_into_segments(self.start_end_indices, target_pos.shape[1]))
+        self.time_segments = np.array(
+            self.split_into_segments(self.start_end_indices, target_pos.shape[1])
+        )
 
         spike_train = np.zeros((*spikes.shape, len(new_t)), dtype=np.int8)
 

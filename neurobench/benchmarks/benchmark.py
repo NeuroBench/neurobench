@@ -5,7 +5,12 @@ from tqdm import tqdm
 from . import static_metrics, workload_metrics
 
 # workload metrics which require hooks
-requires_hooks = ["activation_sparsity", "number_neuron_updates", "synaptic_operations"]
+requires_hooks = [
+    "activation_sparsity",
+    "number_neuron_updates",
+    "synaptic_operations",
+    "membrane_updates",
+]
 
 
 class Benchmark:

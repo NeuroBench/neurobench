@@ -4,8 +4,8 @@ neurobench.benchmarks
 Benchmark
 ^^^^^^^^^
 
-.. automodule:: neurobench.benchmarks.benchmark
-    :members:
+.. automodule:: neurobench.benchmarks
+    :members: Benchmark
     :undoc-members:
     :show-inheritance:
 

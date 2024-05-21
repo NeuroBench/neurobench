@@ -21,6 +21,7 @@ from neurobench.benchmarks.workload_metrics import (
     detect_activations_connections,
     synaptic_operations,
     number_neuron_updates,
+    membrane_updates,
 )
 from torch.profiler import profile, record_function, ProfilerActivity
 
@@ -201,7 +202,7 @@ def test_r2():
 
     data = (
         torch.randn(2, batch_size),
-        torch.tensor(targets).transpose(0, 1),
+        torch.tensor(targets, dtype=torch.float).transpose(0, 1),
     )  # input and targets
 
     preds = [
@@ -529,6 +530,33 @@ def test_neuron_update_metric():
     print(neuron_updates)
     print("Manual check!")
     print("Passed neuron update metric")
+
+
+def test_membrane_potential_updates():
+
+    # test snn layers
+    net_snn = nn.Sequential(
+        # nn.Flatten(),
+        nn.Linear(20, 5, bias=False),
+        snn.Leaky(
+            beta=0.9, spike_grad=surrogate.fast_sigmoid(), init_hidden=True, output=True
+        ),
+    )
+
+    # simulate spiking input with only ones
+    inp = torch.ones(5, 10, 20)  # batch size, time steps, input size
+
+    model = SNNTorchModel(net_snn)
+
+    detect_activations_connections(model)
+
+    out = model(inp)
+    mem_updates = membrane_updates()
+    tot_mem_updates = mem_updates(model, out, (inp, 0))
+
+    assert tot_mem_updates == 50
+
+    print("Passed membrane updates")
 
 
 class simple_LSTM(nn.Module):

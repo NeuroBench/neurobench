@@ -52,7 +52,10 @@ using snnTorch.
         snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
     )
 
-To get started, we will load our desired dataset in a dataloader:
+To get started, we will load our desired dataset in a dataloader. Note that any
+torch.Dataloader can be used for the benchmark, it is not constrained to the datasets
+available in the harness. Check out the `Tonic library <https://tonic.readthedocs.io/en/latest/#>`_
+for an excellent resource for neuromorphic datasets!
 
 .. code:: python
 

@@ -1,0 +1,27 @@
+
+[tool.bumpversion]
+parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
+serialize = ["{major}.{minor}.{patch}"]
+regex = false
+current_version = "1.0.3"
+ignore_missing_version = false
+search = "{current_version}"
+replace = "{new_version}"
+tag = false
+sign_tags = false
+tag_name = "{new_version}"
+tag_message = "Bump version: {current_version} → {new_version}"
+allow_dirty = false
+commit = false
+message = "Bump version: {current_version} → {new_version}"
+commit_args = ""
+
+[[tool.bumpversion.files]]
+filename = "pyproject.toml"
+search = "version = \"{current_version}\""
+replace = "version = \"{new_version}\""
+
+[[tool.bumpversion.files]]
+filename = "docs/conf.py"
+search = "release = \"{current_version}\""
+replace = "release = \"{new_version}\""

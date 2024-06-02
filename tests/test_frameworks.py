@@ -1,41 +1,44 @@
-import pytest
-
-import torch
-import snntorch as snn
-
-from torch import nn
-from snntorch import surrogate
-
 from neurobench.models import SNNTorchModel
+import tests.models.model_list as models
+from snntorch import surrogate
+import snntorch as snn
+from torch import nn
+import unittest
+import torch
 
 
-def test_snntorch_framework():
-    beta = 0.9
-    spike_grad = surrogate.fast_sigmoid()
-    net = nn.Sequential(
-        nn.Flatten(),
-        nn.Linear(20, 256),
-        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-        nn.Linear(256, 256),
-        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-        nn.Linear(256, 256),
-        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True),
-        nn.Linear(256, 35),
-        snn.Leaky(beta=beta, spike_grad=spike_grad, init_hidden=True, output=True),
-    )
-    model = SNNTorchModel(net)
+class TestSNNTorchModel(unittest.TestCase):
+    """Tests SNNTorchModel class."""
 
-    # Random data of shape (batch=256, ts=1000, chan=20)
-    data = torch.rand((256, 1000, 20))
-    spikes = model(data)
-    assert data.shape == (256, 1000, 20)
-    assert spikes.shape == (256, 1000, 35)
+    def setUp(self):
+        """Set up the test data."""
+        self.input_size = 20
+        self.output_size = 35
+        self.batch_size = 256
+        self.timesteps = 1000
 
-    data = torch.rand((256, 1000, 2, 2, 5))
-    spikes = model(data)
-    assert data.shape == (256, 1000, 2, 2, 5)
-    assert spikes.shape == (256, 1000, 35)
+        net = models.net
+        self.model = SNNTorchModel(net)
 
-    data = torch.rand((256, 1000, 10, 5))
-    with pytest.raises(RuntimeError, match="mat1 and mat2 shapes cannot be multiplied"):
-        spikes = model(data)
+    def test_snntorch_framework_model_runtime(self):
+        """Test that the SNNTorchModel returns the correct shape."""
+
+        data = torch.rand((self.batch_size, self.timesteps, self.input_size))
+        spikes = self.model(data)
+        self.assertEqual(data.shape, (self.batch_size, self.timesteps, self.input_size))
+        self.assertEqual(
+            spikes.shape, (self.batch_size, self.timesteps, self.output_size)
+        )
+
+        data = torch.rand((self.batch_size, self.timesteps, 2, 2, 5))
+        spikes = self.model(data)
+        self.assertEqual(data.shape, (self.batch_size, self.timesteps, 2, 2, 5))
+        self.assertEqual(
+            spikes.shape, (self.batch_size, self.timesteps, self.output_size)
+        )
+
+    def test_snntorch_framework_model_runtime_error(self):
+        """Test that the SNNTorchModel raises an error if the input shape is
+        incorrect."""
+        data = torch.rand((self.batch_size, self.timesteps, 10, 5))
+        self.assertRaises(RuntimeError, self.model, data)

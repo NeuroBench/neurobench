@@ -65,4 +65,4 @@ jobs:
 
       - name: Run tests
         run: |
-          poetry run black pytest
+          poetry run pytest

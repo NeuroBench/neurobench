@@ -48,7 +48,7 @@ class ActivationHook:
 
         """
         self.activation_inputs.append(input)
-        if self.spiking:
+        if self.spiking and hasattr(layer, "mem"):
             self.pre_fire_mem_potential.append(layer.mem)
 
     def hook_fn(self, layer, input, output):
@@ -66,7 +66,8 @@ class ActivationHook:
         """
         if self.spiking:
             self.activation_outputs.append(output[0])
-            self.post_fire_mem_potential.append(layer.mem)
+            if hasattr(layer, "mem"):
+                self.post_fire_mem_potential.append(layer.mem)
 
         else:
             self.activation_outputs.append(output)

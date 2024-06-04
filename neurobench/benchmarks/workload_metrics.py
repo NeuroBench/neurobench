@@ -158,9 +158,10 @@ class membrane_updates(AccumulatedMetric):
                 post_fire_mem = hook.post_fire_mem_potential[index_mem + 1]
                 nr_updates = torch.count_nonzero(pre_fire_mem - post_fire_mem)
                 self.neuron_membrane_updates[str(type(hook.layer))] += int(nr_updates)
-            self.neuron_membrane_updates[str(type(hook.layer))] += int(
-                torch.numel(hook.post_fire_mem_potential[0])
-            )
+            if len(hook.post_fire_mem_potential) > 0:
+                self.neuron_membrane_updates[str(type(hook.layer))] += int(
+                    torch.numel(hook.post_fire_mem_potential[0])
+                )
         self.total_samples += data[0].size(0)
         return self.compute()
 

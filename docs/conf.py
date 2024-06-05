@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath(".."))
 project = "NeuroBench"
 copyright = "2024, Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe"
 author = "Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe"
-release = "1.0.4"
+release = "1.0.5"
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

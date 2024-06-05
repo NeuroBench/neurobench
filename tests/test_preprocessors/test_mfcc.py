@@ -1,14 +1,15 @@
-import unittest
-from pathlib import Path
 from neurobench.preprocessing.mfcc import MFCCPreProcessor
-import torch
+from pathlib import Path
 import torchaudio
-import numpy as np
+import unittest
 
 
 class TestMFCCPreProcessor(unittest.TestCase):
+    """Tests MFCCPreProcessor class."""
+
     def setUp(self):
-        sample_file = Path(__file__).parent.joinpath("sample_audio.wav")
+        """Set up the test data."""
+        sample_file = Path(__file__).parent.joinpath("test_data/sample_audio.wav")
 
         self.sample_audio, self.sampling_rate = torchaudio.load(sample_file)
         self.init_args = {
@@ -29,18 +30,22 @@ class TestMFCCPreProcessor(unittest.TestCase):
         self.sample_audio = self.sample_audio.permute(0, 1)
 
     def test_mfcc_non_tuple(self):
+        """Test that the MFCCPreProcessor raises an error if the input is not a
+        tuple."""
         mfcc = MFCCPreProcessor(**self.init_args)
         audio = [1, 2, 3]
-        with self.assertRaises(TypeError):
-            mfcc(audio)
+        self.assertRaises(TypeError, mfcc, audio)
 
     def test_mfcc_tuple_wrong_shape(self):
+        """Test that the MFCCPreProcessor raises an error if the input tuple has the
+        wrong shape."""
         mfcc = MFCCPreProcessor(**self.init_args)
         audio = (self.sample_audio, 2, 3, 4)
-        with self.assertRaises(ValueError):
-            mfcc(audio)
+        self.assertRaises(ValueError, mfcc, audio)
 
     def test_mfcc_tuple_correct_shape(self):
+        """Test that the MFCCPreProcessor runs correctly with the correct input
+        shape."""
         mfcc = MFCCPreProcessor(**self.init_args)
         audio = (self.sample_audio, 2)
         mfcc(audio)

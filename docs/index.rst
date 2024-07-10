@@ -1,6 +1,3 @@
-NeuroBench Documentation
-======================================
-
 .. include:: ../README.rst
 
 .. toctree::

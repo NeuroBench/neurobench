@@ -1,7 +1,7 @@
 .. raw:: html
 
    <picture>
-   <source media="(prefers-color-scheme: dark)" srcset="https://github.com/NeuroBench/neurobench/raw/main/docs/_static/neurobench_banner_light.png" width="800">
+   <source media="(prefers-color-scheme: light)" srcset="https://github.com/NeuroBench/neurobench/raw/main/docs/_static/neurobench_banner_light.png" width="800">
    <img alt="NeuroBench Banner" src="https://github.com/NeuroBench/neurobench/raw/main/docs/_static/neurobench_banner_dark.png" width="800">
    </picture>
    <br />

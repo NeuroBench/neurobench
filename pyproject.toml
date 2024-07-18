@@ -50,7 +50,6 @@ nehar = ["pytorch-lightning", "gdown"]
 [tool.black]
 exclude = '/neurobench/examples/'
 line-length = 88
-check = true
 
 [tool.docformatter]
 exclude = '/neurobench/examples/'

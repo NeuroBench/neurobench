@@ -32,7 +32,7 @@ jobs:
 
     - name: Check with Black
       run: |
-        poetry run black .
+        poetry run black --check .
 
     - name: Check with docformatter
       run: |

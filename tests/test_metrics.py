@@ -339,11 +339,11 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 1000)
 
         # test lstm network
-
+        batch_size = 2
         inp = [
-            torch.ones(1, 25),
-            (torch.ones(1, 5), torch.ones(1, 5)),
-        ]  # input, (hidden, cell)
+            torch.ones(batch_size, 25),
+            (torch.ones(batch_size, 5), torch.ones(batch_size, 5)),
+        ]  # input (batch_size, inp_size), (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_lstm)
 
@@ -353,7 +353,7 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         syn = synaptic_operations()
         syn_ops = syn(model, out, inp)
-
+        
         self.assertEqual(syn_ops["Effective_MACs"], 615)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
@@ -402,7 +402,9 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         self.assertEqual(tot_mem_updates, 50)
 
-
+test = TestWorkloadMetrics()
+test.setUp()
+test.test_synaptic_ops()
 # TODO: refactor this metric if needed
 # def test_neuron_update_metric():
 #     net_relu_0 = nn.Sequential(

@@ -3,7 +3,7 @@
 parse = "(?P<major>\\d+)\\.(?P<minor>\\d+)\\.(?P<patch>\\d+)"
 serialize = ["{major}.{minor}.{patch}"]
 regex = false
-current_version = "1.0.5"
+current_version = "1.0.6"
 ignore_missing_version = false
 search = "{current_version}"
 replace = "{new_version}"

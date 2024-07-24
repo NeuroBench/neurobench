@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "neurobench"
-version = "1.0.5"
+version = "1.0.6"
 description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
 authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
 readme = "README.rst"
@@ -34,12 +34,51 @@ sphinx = "^7.2.5"
 sphinx-rtd-theme = "^1.3.0"
 pre-commit = "*"
 
+[tool.poetry.group.code-quality]
+optional = true
+
+[tool.poetry.group.code-quality.dependencies]
+pyproject-flake8 = '7.0.0'
+black = '24.2.0'
+docformatter = '1.7.5'
+
+
 [tool.poetry.extras]
 mackey-glass = ["jitcdde"]
 nehar = ["pytorch-lightning", "gdown"]
 
 [tool.black]
-exclude = '/examples/'
+exclude = '/neurobench/examples/'
+line-length = 88
+
+[tool.docformatter]
+exclude = '/neurobench/examples/'
+check = true
+recursive = true
+wrap-summaries = 88
+wrap-descriptions = 88
+pre-summary-newline = true
+blank = true
+blck = true
+
+[tool.flake8]
+exclude = './neurobench/examples/'
+count = true
+statistics = true
+show-source = true
+max-line-length = 88
+extend-ignore = ["E501", "E203", "W291", "W503", "F403", "F401", "F821"]
+
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+testpaths = [
+    "tests/test_preprocessors",
+    "tests/test_accumulators.py",
+    "tests/test_benchmarks.py",
+    "tests/test_frameworks.py",
+    "tests/test_metrics.py",
+]
 
 [build-system]
 requires = ["poetry-core"]

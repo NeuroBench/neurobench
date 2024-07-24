@@ -25,9 +25,7 @@ import torch
 
 
 class TestStaticMetrics(unittest.TestCase):
-
     def setUp(self):
-
         self.dummy_net = nn.Module()
 
         self.net = models.net
@@ -339,11 +337,11 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 1000)
 
         # test lstm network
-
+        batch_size = 2
         inp = [
-            torch.ones(1, 25),
-            (torch.ones(1, 5), torch.ones(1, 5)),
-        ]  # input, (hidden, cell)
+            torch.ones(batch_size, 25),
+            (torch.ones(batch_size, 5), torch.ones(batch_size, 5)),
+        ]  # input (batch_size, inp_size), (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_lstm)
 
@@ -358,8 +356,11 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
         # test RNN network
-
-        inp = [torch.ones(1, 25), torch.ones(1, 5)]  # input, (hidden, cell)
+        batch_size = 2
+        inp = [
+            torch.ones(batch_size, 25),
+            torch.ones(batch_size, 5),
+        ]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_RNN)
 
@@ -374,7 +375,11 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
         # test GRU network
-        inp = [torch.ones(1, 25), torch.ones(1, 5)]  # input, (hidden, cell)
+        batch_size = 2
+        inp = [
+            torch.ones(batch_size, 25),
+            torch.ones(batch_size, 5),
+        ]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_GRU)
 

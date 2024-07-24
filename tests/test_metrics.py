@@ -374,7 +374,7 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
         # test GRU network
-        batch_size=2
+        batch_size = 2
         inp = [torch.ones(batch_size, 25), torch.ones(batch_size, 5)]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_GRU)
@@ -403,9 +403,6 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         self.assertEqual(tot_mem_updates, 50)
 
-test = TestWorkloadMetrics()
-test.setUp()
-test.test_synaptic_ops()
 # TODO: refactor this metric if needed
 # def test_neuron_update_metric():
 #     net_relu_0 = nn.Sequential(

@@ -25,9 +25,7 @@ import torch
 
 
 class TestStaticMetrics(unittest.TestCase):
-
     def setUp(self):
-
         self.dummy_net = nn.Module()
 
         self.net = models.net
@@ -353,13 +351,16 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         syn = synaptic_operations()
         syn_ops = syn(model, out, inp)
-        
+
         self.assertEqual(syn_ops["Effective_MACs"], 615)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
         # test RNN network
         batch_size = 2
-        inp = [torch.ones(batch_size, 25), torch.ones(batch_size, 5)]  # input, (hidden, cell)
+        inp = [
+            torch.ones(batch_size, 25),
+            torch.ones(batch_size, 5),
+        ]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_RNN)
 
@@ -375,7 +376,10 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         # test GRU network
         batch_size = 2
-        inp = [torch.ones(batch_size, 25), torch.ones(batch_size, 5)]  # input, (hidden, cell)
+        inp = [
+            torch.ones(batch_size, 25),
+            torch.ones(batch_size, 5),
+        ]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_GRU)
 
@@ -402,6 +406,7 @@ class TestWorkloadMetrics(unittest.TestCase):
         tot_mem_updates = mem_updates(model, out, (inp, 0))
 
         self.assertEqual(tot_mem_updates, 50)
+
 
 # TODO: refactor this metric if needed
 # def test_neuron_update_metric():

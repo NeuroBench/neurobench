@@ -358,8 +358,8 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
         # test RNN network
-
-        inp = [torch.ones(1, 25), torch.ones(1, 5)]  # input, (hidden, cell)
+        batch_size = 2
+        inp = [torch.ones(batch_size, 25), torch.ones(batch_size, 5)]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_RNN)
 
@@ -374,7 +374,8 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.assertEqual(syn_ops["Effective_ACs"], 0)
 
         # test GRU network
-        inp = [torch.ones(1, 25), torch.ones(1, 5)]  # input, (hidden, cell)
+        batch_size=2
+        inp = [torch.ones(batch_size, 25), torch.ones(batch_size, 5)]  # input, (hidden, cell)
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_GRU)
 

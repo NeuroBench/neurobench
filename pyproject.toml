@@ -80,6 +80,39 @@ testpaths = [
     "tests/test_metrics.py",
 ]
 
+[tool.coverage.run]
+branch = true
+include = [
+    "neurobench/*",
+]
+omit = [
+    "neurobench/examples/*",
+    "neurobench/datasets/*",
+    "neurobench/tests/*",
+]
+
+[tool.coverage.report]
+
+exclude_also = [
+    "def __repr__",
+    "if self\\.debug",
+    "raise AssertionError",
+    "raise NotImplementedError",
+
+    # Don't complain if non-runnable code isn't run:
+    "if 0:",
+    "if __name__ == .__main__.:",
+
+    # Don't complain about abstract methods, they aren't run:
+    "@(abc\\.)?abstractmethod",
+    ]
+
+ignore_errors = true
+format = 'markdown'
+
+[tool.coverage.xml]
+output = "coverage_report/coverage.xml"
+
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

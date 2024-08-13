@@ -66,12 +66,9 @@ jobs:
       - name: Run tests
         run: |
           poetry run pytest --cov --cov-report=xml
-          
-  coverage:
-    runs-on: ubuntu-latest
-    steps:
+
       - name: Get Coveage Report
         uses: orgoro/coverage@v3.2
         with:
-          coverageFile: coverage_report/coverage.xml
+          coverageFile: ./coverage_report/coverage.xml
           token: ${{ secrets.GITHUB_TOKEN }}

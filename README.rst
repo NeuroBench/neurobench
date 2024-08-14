@@ -1,10 +1,24 @@
 .. image:: https://github.com/NeuroBench/neurobench/blob/main/docs/_static/neurobench_banner_light.jpeg?raw=true
         :align: center
         :width: 800
-
 ============
 Introduction
 ============
+
+.. |coverage| image:: https://codecov.io/gh/NeuroBench/neurobench/graph/badge.svg?token=VDF40UROUM
+ :target: https://codecov.io/gh/NeuroBench/neurobench
+
+.. |docs| image:: https://readthedocs.org/projects/neurobench/badge/?version=latest
+   :target: https://neurobench.readthedocs.io/en/latest/
+
+.. |pypi| image:: https://img.shields.io/pypi/v/neurobench.svg
+   :target: https://pypi.org/project/neurobench/
+
+.. |downloads| image:: https://static.pepy.tech/personalized-badge/neurobench?period=total&units=international_system&left_color=grey&right_color=orange&left_text=downloads
+   :target: https://pepy.tech/project/neurobench
+
+
+|coverage| |pypi| |docs| |downloads|
 
 
 A harness for running evaluations on

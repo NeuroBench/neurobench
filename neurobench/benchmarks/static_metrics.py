@@ -56,6 +56,10 @@ def connection_sparsity(model):
     These layers inherently have 'weight' parameters that represent connections and
     are automatically included in the sparsity calculation.
 
+    Custom connections:
+    Your model may contain layers which are involved in operations that implement a connection, such as a matrix multiplication (e.g., torch.matmul), but are not part of the above list.
+    To make sure this metric tracks these layers, ensure that the weight tensors are a nn.Parameter which has weight in its name, e.g. self.weight1 = torch.nn.Parameter(data1), self.weight2 = torch.nn.Parameter(data2).
+
 
     Args:
         model: A NeuroBenchModel.

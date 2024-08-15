@@ -46,7 +46,7 @@ def connection_sparsity(model):
     based on the number of zero-valued parameters that contribute to connections between
     layers. Only parameters that are involved in connection operations (e.g., matrix
     multiplications) should be included in the calculation.
-    Supported layers: Linear, Conv1d, Conv2d, Conv3d, RNN, RNNBase, RNNCell, LSTM, LSTMBase, LSTMCell, GRU, GRUBase, GRUCell
+    Supported layers: Linear, Conv1d, Conv2d, Conv3d, RNN, RNNBase, RNNCell, LSTM, LSTMBase, LSTMCell, GRU, GRUBase, GRUCell.
 
     These layers inherently have 'weight' parameters that represent connections and
     are automatically included in the sparsity calculation.

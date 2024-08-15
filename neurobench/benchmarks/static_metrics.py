@@ -42,8 +42,12 @@ def footprint(model):
 
 
 def connection_sparsity(model):
-    """Sparsity of model connections between layers. Based on number of zeros
-    in supported layers, other layers are not taken into account in the computation:
+    """Sparsity of model connections between layers. This function calculates the
+    sparsity
+    based on the number of zero-valued parameters that contribute to connections
+    between
+    layers. Only parameters that are involved in connection operations
+     are included in the calculation.
     Supported layers:
     Linear
     Conv1d, Conv2d, Conv3d

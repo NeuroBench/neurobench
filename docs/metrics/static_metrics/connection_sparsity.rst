@@ -16,4 +16,13 @@ The layers that are supported include:
     - LSTM, LSTMBase, LSTMCell
     - GRU, GRUBase, GRUCell
 
+Custom connections:
+    Your model may contain layers which are involved in operations that implement a connection, such as a matrix multiplication (e.g., torch.matmul), but are not part of the above list.
+
+To ensure that your custom connection layers are tracked by metrics:
+
+1. **Define weights as `nn.Parameter`:** Any tensor used for matrix multiplication or custom operations should be defined as an `nn.Parameter`.
+2. **Name with 'weight':** Include the word `weight` in the variable name (e.g., `self.weight1 = torch.nn.Parameter(..)`) so it is recognized as a weight parameter by the tracking system.
+
+
 We go through the network, extract instances of these layers, count the number of weights and count the number of zero weights.

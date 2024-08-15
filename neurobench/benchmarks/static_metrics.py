@@ -53,7 +53,7 @@ def connection_sparsity(model):
     LSTM, LSTMBase, LSTMCell
     GRU, GRUBase, GRUCell
 
-    These layers inherently have weight parameters that represent connections and
+    These layers inherently have 'weight' parameters that represent connections and
     are automatically included in the sparsity calculation.
 
 

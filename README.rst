@@ -26,7 +26,7 @@ NeuroBench contains the following sections:
    * - **Section**
      - **Description**
    * - `neurobench.benchmarks <https://neurobench.readthedocs.io/en/latest/neurobench.benchmarks.html>`__
-     - Neurobench benchmarks, including data metrics and static metrics
+     - Neurobench benchmarks, including workload metrics and static metrics
    * - `neurobench.datasets <https://neurobench.readthedocs.io/en/latest/neurobench.datasets.html>`__
      - Neurobench benchmark datasets
    * - `neurobench.models <https://neurobench.readthedocs.io/en/latest/neurobench.models.html>`__

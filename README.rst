@@ -6,7 +6,7 @@ Introduction
 ============
 
 .. |coverage| image:: https://codecov.io/gh/NeuroBench/neurobench/graph/badge.svg?token=VDF40UROUM
- :target: https://codecov.io/gh/NeuroBench/neurobench
+    :target: https://codecov.io/gh/NeuroBench/neurobench
 
 .. |docs| image:: https://readthedocs.org/projects/neurobench/badge/?version=latest
    :target: https://neurobench.readthedocs.io/en/latest/

@@ -3,6 +3,8 @@ from contextlib import redirect_stdout
 from tqdm import tqdm
 
 from . import static_metrics, workload_metrics
+from neurobench.benchmarks.metrics.manager.static_manager import StaticMetricManager
+from neurobench.benchmarks.metrics.manager.workload_manager import WorkloadMetricManager
 
 # workload metrics which require hooks
 requires_hooks = [
@@ -32,7 +34,9 @@ class Benchmark:
         self.preprocessors = preprocessors
         self.postprocessors = postprocessors
 
-        self.static_metrics = {m: getattr(static_metrics, m) for m in metric_list[0]}
+        self.static_metric_orchestrator = StaticMetricManager(metric_list[0])
+        self.workload_metric_orchestrator = WorkloadMetricManager(metric_list[1])
+
         self.workload_metrics = {
             m: getattr(workload_metrics, m) for m in metric_list[1]
         }
@@ -66,9 +70,8 @@ class Benchmark:
             print("Running benchmark")
 
             # Static metrics
-            results = {}
-            for m in self.static_metrics.keys():
-                results[m] = self.static_metrics[m](self.model)
+            # Run static metrics using the orchestrator
+            results = self.static_metric_orchestrator.run_metrics(self.model)
 
             # add hooks to the model
             if any([m in requires_hooks for m in self.workload_metrics.keys()]):

@@ -11,7 +11,7 @@ python = "^3.10"
 numpy = "^1.24.3"
 torch = "^2.0.1"
 torchaudio = "^2.0.2"
-tqdm = "^4.65.0"
+tqdm = "^4.63.3"
 tonic = "^1.4.0"
 numba = "^0.57.1"
 llvmlite = "^0.40.1"
@@ -39,8 +39,9 @@ optional = true
 
 [tool.poetry.group.code-quality.dependencies]
 pyproject-flake8 = '7.0.0'
-black = '24.2.0'
+black = '24.3.0'
 docformatter = '1.7.5'
+pre-commit = "3.8.0"
 
 
 [tool.poetry.extras]
@@ -53,13 +54,12 @@ line-length = 88
 
 [tool.docformatter]
 exclude = '/neurobench/examples/'
-check = true
 recursive = true
 wrap-summaries = 88
 wrap-descriptions = 88
 pre-summary-newline = true
 blank = true
-blck = true
+black = true
 
 [tool.flake8]
 exclude = './neurobench/examples/'

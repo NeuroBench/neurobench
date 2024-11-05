@@ -158,11 +158,11 @@ or they can be stateful subclasses of AccumulatedMetric.
     def static_metric(model):
         ...
 
-    def data_metric(model, preds, data):
+    def workload_metric(model, preds, data):
         # must return an int or float to be accumulated with mean
         return compare(preds, data[1])
 
-    class data_metric_with_state(AccumulatedMetric):
+    class workload_metric_with_state(AccumulatedMetric):
         def __init__(self):
             ...
     

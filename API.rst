@@ -145,7 +145,7 @@ or they can be stateful subclasses of AccumulatedMetric.
 
 ::
 
-   **Data Metrics:**
+   **Workload Metrics:**
    Input:
        model: A NeuroBenchModel object.
        preds: A PyTorch tensor. To be compared with targets.

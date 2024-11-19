@@ -4,6 +4,8 @@ from neurobench.postprocessing.postprocessor import choose_max_count
 from neurobench.benchmarks import Benchmark
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks.metrics.base import StaticMetric
+from neurobench.benchmarks.metrics.workload import ActivationSparsity
+from neurobench.benchmarks.metrics.workload import MembraneUpdates
 
 
 if __name__ == "__main__":
@@ -34,10 +36,13 @@ if __name__ == "__main__":
 
     # #
     static_metrics = ["parameter_count", "footprint", CustomMetric]
-    workload_metrics = ["classification_accuracy", "membrane_updates"]
+    workload_metrics = [ActivationSparsity, MembraneUpdates]
     # #
     benchmark = Benchmark(
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
-    results = benchmark.run()
+    results = benchmark.run(verbose=True)
+    print(results)
+
+    results = benchmark.run(verbose=True)
     print(results)

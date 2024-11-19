@@ -3,6 +3,10 @@ from neurobench.benchmarks.metrics.base.workload_metric import WorkloadMetric
 
 
 class ActivationSparsity(WorkloadMetric):
+    def __init__(self):
+        """Init metric state."""
+        super().__init__(requires_hooks=True)
+
     def __call__(self, model, preds, data):
         """
         Sparsity of model activations.

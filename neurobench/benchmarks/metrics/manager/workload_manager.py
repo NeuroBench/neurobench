@@ -1,13 +1,9 @@
-from neurobench.benchmarks.metrics.base.workload_metric import WorkloadMetric
+from neurobench.benchmarks.metrics.base.workload_metric import (
+    WorkloadMetric,
+    AccumulatedMetric,
+)
 from neurobench.benchmarks.metrics import workload as workload_metrics
 from neurobench.benchmarks.workload_metrics import detect_activations_connections
-
-requires_hooks = [
-    "activation_sparsity",
-    "number_neuron_updates",
-    "synaptic_operations",
-    "membrane_updates",
-]
 
 
 class WorkloadMetricManager:
@@ -47,11 +43,11 @@ class WorkloadMetricManager:
                     raise TypeError(
                         f"Custom metric '{item.__name__}' must inherit from WorkloadMetric."
                     )
-                self.metrics[item.__name__] = item()
+                self.metrics[item.__name__]: WorkloadMetric = item()
 
         # Track whether hooks are required
         self.requires_hooks = any(
-            metric_name in requires_hooks for metric_name in self.metrics.keys()
+            metric.requires_hooks for metric in self.metrics.values()
         )
 
     def register_hooks(self, model):
@@ -65,7 +61,13 @@ class WorkloadMetricManager:
         if self.requires_hooks:
             detect_activations_connections(model)
 
-    def cleanup_hooks(self, model):
+    def initialize_metrics(self):
+
+        for m in self.metrics.keys():
+            if isinstance(self.metrics[m], AccumulatedMetric):
+                self.metrics[m].reset()
+
+    def reset_hooks(self, model):
         """
         Cleanup hooks on the model after metrics have been run.
 
@@ -75,6 +77,17 @@ class WorkloadMetricManager:
         """
         if self.requires_hooks:
             model.reset_hooks()
+
+    def cleanup_hooks(self, model):
+        """
+        Cleanup hooks on the model after metrics have been run.
+
+        Args:
+            model: The model on which the hooks will be cleaned up.
+
+        """
+        if self.requires_hooks:
+            model.cleanup_hooks()
 
     def run_metrics(self, model, preds, data):
         """
@@ -99,3 +112,7 @@ class WorkloadMetricManager:
                 results[name] = None  # Graceful fallback in case of errors
 
         return results
+
+    def close_hooks(self, model):
+        if self.requires_hooks:
+            model.close_hooks()

@@ -124,3 +124,23 @@ class NeuroBenchModel:
 
         for hook in self.connection_hooks:
             hook.reset()
+
+    def close_hooks(self):
+        """Closes all the hooks (activation hooks and connection hooks)"""
+        for hook in self.activation_hooks:
+            hook.close()
+
+        for hook in self.connection_hooks:
+            hook.close()
+
+    def cleanup_hooks(self):
+        """Closes all the hooks (activation hooks and connection hooks)"""
+        for hook in self.activation_hooks:
+            hook.reset()
+            hook.close()
+        for hook in self.connection_hooks:
+            hook.reset()
+            hook.close()
+
+        self.activation_hooks = []
+        self.connection_hooks = []

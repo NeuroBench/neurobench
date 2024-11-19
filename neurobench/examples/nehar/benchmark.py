@@ -6,6 +6,7 @@ from neurobench.models import SNNTorchModel
 from neurobench.benchmarks.metrics.base import StaticMetric
 from neurobench.benchmarks.metrics.workload import ActivationSparsity
 from neurobench.benchmarks.metrics.workload import MembraneUpdates
+import time
 
 
 if __name__ == "__main__":
@@ -30,19 +31,14 @@ if __name__ == "__main__":
     # # # postprocessors
     postprocessors = [choose_max_count]
 
-    class CustomMetric(StaticMetric):
-        def __call__(self, model):
-            return sum(p.numel() for p in model.__net__().parameters())
-
     # #
-    static_metrics = ["parameter_count", "footprint", CustomMetric]
+    static_metrics = ["parameter_count", "footprint"]
     workload_metrics = [ActivationSparsity, MembraneUpdates]
     # #
     benchmark = Benchmark(
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
+    start_time = time.time()
     results = benchmark.run(verbose=True)
-    print(results)
-
-    results = benchmark.run(verbose=True)
+    print(f"Time taken: {time.time() - start_time}")
     print(results)

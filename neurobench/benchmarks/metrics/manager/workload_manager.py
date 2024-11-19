@@ -1,3 +1,5 @@
+from black.trans import defaultdict
+
 from neurobench.benchmarks.metrics.base.workload_metric import (
     WorkloadMetric,
     AccumulatedMetric,
@@ -50,6 +52,11 @@ class WorkloadMetricManager:
             metric.requires_hooks for metric in self.metrics.values()
         )
 
+        self.results = defaultdict(float)
+
+    def clean_results(self):
+        self.results = defaultdict(float)
+
     def register_hooks(self, model):
         """
         Register hooks on the model for metrics that require them.
@@ -89,7 +96,7 @@ class WorkloadMetricManager:
         if self.requires_hooks:
             model.cleanup_hooks()
 
-    def run_metrics(self, model, preds, data):
+    def run_metrics(self, model, preds, data, batch_size, dataset_len):
         """
         Executes all workload metrics on the provided model and data.
 
@@ -102,16 +109,20 @@ class WorkloadMetricManager:
 
         """
 
-        results = {}
-
         for name, metric in self.metrics.items():
             try:
-                results[name] = metric(model, preds, data)
+                if isinstance(metric, AccumulatedMetric):
+                    self.results[name] = metric(model, preds, data)
+                else:
+                    self.results[name] += (
+                        metric(model, preds, data) * batch_size
+                    ) / dataset_len
+
             except Exception as e:
                 print(f"Error running workload metric '{name}': {e}")
-                results[name] = None  # Graceful fallback in case of errors
+                self.results[name] = 0.0  # Graceful fallback in case of errors
 
-        return results
+        return self.results
 
     def close_hooks(self, model):
         if self.requires_hooks:

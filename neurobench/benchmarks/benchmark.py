@@ -141,10 +141,10 @@ class Benchmark:
 
                 # Data metrics
                 batch_results = self.workload_metric_orchestrator.run_metrics(
-                    self.model, preds, data
+                    self.model, preds, data, batch_size, dataset_len
                 )
-                for key, value in batch_results.items():
-                    results[key] += value * batch_size / dataset_len
+
+                results.update(batch_results)
 
                 # for m, v in batch_results.items():
                 #     # AccumulatedMetrics are computed after all batches complete
@@ -184,6 +184,7 @@ class Benchmark:
             #             self.workload_metrics[m], workload_metrics.AccumulatedMetric
             #         ):
             #             results[m] = self.workload_metrics[m].compute()
+            self.workload_metric_orchestrator.clean_results()
 
         # close hooks
         # self.workload_metric_orchestrator.cleanup_hooks(self.model)

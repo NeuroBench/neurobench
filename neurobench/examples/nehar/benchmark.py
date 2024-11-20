@@ -3,9 +3,16 @@ from training import SpikingNetwork
 from neurobench.postprocessing.postprocessor import choose_max_count
 from neurobench.benchmarks import Benchmark
 from neurobench.models import SNNTorchModel
-from neurobench.benchmarks.metrics.base import StaticMetric
-from neurobench.benchmarks.metrics.workload import ActivationSparsity
-from neurobench.benchmarks.metrics.workload import MembraneUpdates
+from neurobench.benchmarks.metrics.workload import (
+    ActivationSparsity,
+    MembraneUpdates,
+    SynapticOperations,
+)
+from neurobench.benchmarks.metrics.static import (
+    ParameterCount,
+    Footprint,
+    ConnectionSparsity,
+)
 import time
 
 
@@ -32,13 +39,13 @@ if __name__ == "__main__":
     postprocessors = [choose_max_count]
 
     # #
-    static_metrics = ["parameter_count", "footprint"]
-    workload_metrics = [ActivationSparsity, MembraneUpdates]
+    static_metrics = ["parameter_count", "footprint", ConnectionSparsity]
+    workload_metrics = [ActivationSparsity, MembraneUpdates, SynapticOperations]
     # #
     benchmark = Benchmark(
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
     start_time = time.time()
-    results = benchmark.run(verbose=True)
+    results = benchmark.run(verbose=False)
     print(f"Time taken: {time.time() - start_time}")
     print(results)

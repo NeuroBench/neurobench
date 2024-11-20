@@ -1,30 +1,14 @@
 import sys
 from contextlib import redirect_stdout
 from tqdm import tqdm
-
-from . import static_metrics, workload_metrics
 from neurobench.benchmarks.metrics.manager.static_manager import StaticMetricManager
 from neurobench.benchmarks.metrics.manager.workload_manager import WorkloadMetricManager
-from collections import defaultdict
-
-# workload metrics which require hooks
-requires_hooks = [
-    "activation_sparsity",
-    "number_neuron_updates",
-    "synaptic_operations",
-    "membrane_updates",
-]
 
 
 class Benchmark:
     """Top-level benchmark class for running benchmarks."""
 
     def __del__(self):
-        print("Cleaning up hooks")
-        self.workload_metric_orchestrator.cleanup_hooks(self.model)
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        print("Cleaning up hooks exiting")
         self.workload_metric_orchestrator.cleanup_hooks(self.model)
 
     def __init__(self, model, dataloader, preprocessors, postprocessors, metric_list):
@@ -82,11 +66,7 @@ class Benchmark:
 
             # Static metrics
             # Run static metrics using the orchestrator
-            results = defaultdict(float)
-            for key, value in self.static_metric_orchestrator.run_metrics(
-                self.model
-            ).items():
-                results[key] = value
+            results = self.static_metric_orchestrator.run_metrics(self.model)
             # results += self.static_metric_orchestrator.run_metrics(self.model)
 
             # add hooks to the model
@@ -144,8 +124,6 @@ class Benchmark:
                     self.model, preds, data, batch_size, dataset_len
                 )
 
-                results.update(batch_results)
-
                 # for m, v in batch_results.items():
                 #     # AccumulatedMetrics are computed after all batches complete
                 #     if isinstance(
@@ -172,6 +150,7 @@ class Benchmark:
                     #         self.workload_metrics[m], workload_metrics.AccumulatedMetric
                     #     ):
                     #         results[m] = self.workload_metrics[m].compute()
+                    results.update(batch_results)
                     print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
                     print(dict(results))
 
@@ -184,6 +163,7 @@ class Benchmark:
             #             self.workload_metrics[m], workload_metrics.AccumulatedMetric
             #         ):
             #             results[m] = self.workload_metrics[m].compute()
+            results.update(self.workload_metric_orchestrator.results)
             self.workload_metric_orchestrator.clean_results()
 
         # close hooks

@@ -1,4 +1,3 @@
-import torch
 from .neurobench_model import NeuroBenchModel
 
 

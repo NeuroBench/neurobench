@@ -4,7 +4,7 @@ version = "1.0.6"
 description = "Collaborative, Fair, and Representative Benchmarks for Neuromorphic Computing"
 authors = ["NeuroBench Team <neurobench@googlegroups.com>"]
 readme = "README.rst"
-exclude = ["docs", "tests", "neurobench/examples"]
+exclude = ["docs", "tests", "examples"]
 
 [tool.poetry.dependencies]
 python = "^3.10"

@@ -1,8 +1,8 @@
 from abc import ABC, abstractmethod
-from neurobench.benchmarks.hooks.neuron import NeuronHook
-from neurobench.benchmarks.hooks.layer import LayerHook
-from neurobench.blocks.activations import SUPPORTED_ACTIVATIONS
-from neurobench.blocks.layers import SUPPORTED_LAYERS
+from neurobench.hooks.neuron import NeuronHook
+from neurobench.hooks.layer import LayerHook
+from neurobench.blocks.activation import SUPPORTED_ACTIVATIONS
+from neurobench.blocks.layer import SUPPORTED_LAYERS
 
 
 class NeuroBenchModel(ABC):

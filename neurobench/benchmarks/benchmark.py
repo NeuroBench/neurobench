@@ -1,8 +1,8 @@
 import sys
 from contextlib import redirect_stdout
 from tqdm import tqdm
-from neurobench.benchmarks.metrics.manager.static_manager import StaticMetricManager
-from neurobench.benchmarks.metrics.manager.workload_manager import WorkloadMetricManager
+from neurobench.metrics.manager.static_manager import StaticMetricManager
+from neurobench.metrics.manager.workload_manager import WorkloadMetricManager
 
 
 class Benchmark:
@@ -31,10 +31,6 @@ class Benchmark:
         self.workload_metric_orchestrator = WorkloadMetricManager(metric_list[1])
 
         self.workload_metric_orchestrator.register_hooks(model)
-
-        # self.workload_metrics = {
-        # m: getattr(workload_metrics, m) for m in metric_list[1]
-        # }
 
     def run(
         self,
@@ -65,13 +61,7 @@ class Benchmark:
             print("Running benchmark")
 
             # Static metrics
-            # Run static metrics using the orchestrator
             results = self.static_metric_orchestrator.run_metrics(self.model)
-            # results += self.static_metric_orchestrator.run_metrics(self.model)
-
-            # add hooks to the model
-            # if any([m in requires_hooks for m in self.workload_metrics.keys()]):
-            # workload_metrics.detect_activations_connections(self.model)
 
             dataloader = dataloader if dataloader is not None else self.dataloader
             preprocessors = (
@@ -80,17 +70,6 @@ class Benchmark:
             postprocessors = (
                 postprocessors if postprocessors is not None else self.postprocessors
             )
-
-            # Init/re-init stateful data metrics
-            # for m in self.workload_metrics.keys():
-            #     if isinstance(self.workload_metrics[m], type) and issubclass(
-            #         self.workload_metrics[m], workload_metrics.AccumulatedMetric
-            #     ):
-            #         self.workload_metrics[m] = self.workload_metrics[m]()
-            #     elif isinstance(
-            #         self.workload_metrics[m], workload_metrics.AccumulatedMetric
-            #     ):  # new benchmark run, reset metric state
-            #         self.workload_metrics[m].reset()
 
             self.workload_metric_orchestrator.initialize_metrics()
 
@@ -123,59 +102,16 @@ class Benchmark:
                 batch_results = self.workload_metric_orchestrator.run_metrics(
                     self.model, preds, data, batch_size, dataset_len
                 )
-
-                # for m, v in batch_results.items():
-                #     # AccumulatedMetrics are computed after all batches complete
-                #     if isinstance(
-                #         self.workload_metrics[m], workload_metrics.AccumulatedMetric
-                #     ):
-                #         continue
-                #     # otherwise accumulate via mean
-                #     else:
-                #         assert isinstance(v, float) or isinstance(
-                #             v, int
-                #         ), "Data metric must return float or int to be accumulated"
-                #         if m not in results:
-                #             results[m] = v * batch_size / dataset_len
-                #         else:
-                #             results[m] += v * batch_size / dataset_len
-
-                # delete hook contents
-                # self.model.reset_hooks()
                 self.workload_metric_orchestrator.reset_hooks(self.model)
 
                 if verbose:
-                    # for m in self.workload_metrics.keys():
-                    #     if isinstance(
-                    #         self.workload_metrics[m], workload_metrics.AccumulatedMetric
-                    #     ):
-                    #         results[m] = self.workload_metrics[m].compute()
                     results.update(batch_results)
                     print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
                     print(dict(results))
 
                 batch_num += 1
 
-            # compute AccumulatedMetrics after all batches if they are not calculated at every iteration
-            # if not verbose:
-            #     for m in self.workload_metrics.keys():
-            #         if isinstance(
-            #             self.workload_metrics[m], workload_metrics.AccumulatedMetric
-            #         ):
-            #             results[m] = self.workload_metrics[m].compute()
             results.update(self.workload_metric_orchestrator.results)
             self.workload_metric_orchestrator.clean_results()
-
-        # close hooks
-        # self.workload_metric_orchestrator.cleanup_hooks(self.model)
-        # self.workload_metric_orchestrator.close_hooks(self.model)
-        # for hook in self.model.activation_hooks:
-        #     hook.reset()
-        #     hook.close()
-        # for hook in self.model.connection_hooks:
-        #     hook.reset()
-        #     hook.close()
-        # self.model.activation_hooks = []
-        # self.model.connection_hooks = []
 
         return dict(results)

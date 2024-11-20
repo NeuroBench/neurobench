@@ -1,5 +1,5 @@
 import torch
-from neurobench.benchmarks.metrics.base.workload_metric import AccumulatedMetric
+from neurobench.benchmarks.metrics.abstract.workload_metric import AccumulatedMetric
 from collections import defaultdict
 
 
@@ -29,16 +29,26 @@ class MembraneUpdates(AccumulatedMetric):
 
         """
         for hook in model.activation_hooks:
-            for index_mem in range(len(hook.pre_fire_mem_potential) - 1):
-                pre_fire_mem = hook.pre_fire_mem_potential[index_mem + 1]
-                post_fire_mem = hook.post_fire_mem_potential[index_mem + 1]
-                nr_updates = torch.count_nonzero(pre_fire_mem - post_fire_mem)
-                self.neuron_membrane_updates[str(type(hook.layer))] += int(nr_updates)
-            if len(hook.post_fire_mem_potential) > 0:
-                self.neuron_membrane_updates[str(type(hook.layer))] += int(
-                    torch.numel(hook.post_fire_mem_potential[0])
-                )
+            layer_type = str(type(hook.layer))
+            updates = self.neuron_membrane_updates[layer_type]
+
+            # Vectorized computation of updates
+            if len(hook.pre_fire_mem_potential) > 1:
+                pre_fire_mem = torch.stack(hook.pre_fire_mem_potential[1:])
+                post_fire_mem = torch.stack(hook.post_fire_mem_potential[1:])
+                updates += torch.count_nonzero(pre_fire_mem - post_fire_mem).item()
+
+            # Add the number of elements in the first post_fire_mem_potential
+            if hook.post_fire_mem_potential:
+                updates += hook.post_fire_mem_potential[0].numel()
+
+            # Update the dictionary
+            self.neuron_membrane_updates[layer_type] = updates
+
+        # Increment total_samples
         self.total_samples += data[0].size(0)
+
+        # Return computed results
         return self.compute()
 
     def compute(self):
@@ -53,9 +63,6 @@ class MembraneUpdates(AccumulatedMetric):
         if self.total_samples == 0:
             return 0
 
-        total_mem_updates = 0
-        for key in self.neuron_membrane_updates:
-            total_mem_updates += self.neuron_membrane_updates[key]
+        total_mem_updates = sum(self.neuron_membrane_updates.values())
 
-        total_updates_per_sample = total_mem_updates / self.total_samples
-        return total_updates_per_sample
+        return total_mem_updates / self.total_samples

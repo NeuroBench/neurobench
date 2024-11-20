@@ -1,7 +1,8 @@
 import snntorch as snn
+from abc import ABC
 
 
-class ActivationHook:
+class NeuronHook(ABC):
     """
     Hook class for an activation layer in a NeuroBenchModel.
 
@@ -9,7 +10,7 @@ class ActivationHook:
 
     """
 
-    def __init__(self, layer, connection_layer=None, prev_act_layer_hook=None):
+    def __init__(self, layer):
         """
         Initializes the class.
 
@@ -72,17 +73,17 @@ class ActivationHook:
         else:
             self.activation_outputs.append(output)
 
-    def empty_hook(self):
-        """Deletes the contents of the hooks, but keeps the hook registered."""
-        self.activation_outputs = []
-        self.activation_inputs = []
+    # def empty_hook(self):
+    #     """Deletes the contents of the hooks, but keeps the hook registered."""
+    #     self.activation_outputs = []
+    #     self.activation_inputs = []
 
     def reset(self):
         """Resets the stored activation outputs and inputs."""
-        self.activation_outputs = []
-        self.activation_inputs = []
-        self.pre_fire_mem_potential = []
-        self.post_fire_mem_potential = []
+        self.activation_outputs.clear()
+        self.activation_inputs.clear()
+        self.pre_fire_mem_potential.clear()
+        self.post_fire_mem_potential.clear()
 
     def close(self):
         """Remove the registered hook."""
@@ -90,26 +91,3 @@ class ActivationHook:
             self.hook.remove()
         if self.hook_pre:
             self.hook_pre.remove()
-
-
-class LayerHook:
-    def __init__(self, layer) -> None:
-        self.layer = layer
-        self.inputs = []
-        if layer is not None:
-            self.hook = layer.register_forward_pre_hook(self.hook_fn)
-        else:
-            self.hook = None
-
-    def hook_fn(self, module, input):
-        self.inputs.append(input)
-
-    def register_hook(self):
-        self.hook = self.layer.register_forward_pre_hook(self.hook_fn)
-
-    def reset(self):
-        self.inputs = []
-
-    def close(self):
-        if self.hook:
-            self.hook.remove()

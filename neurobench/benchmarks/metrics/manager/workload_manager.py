@@ -1,11 +1,10 @@
 from black.trans import defaultdict
 
-from neurobench.benchmarks.metrics.base.workload_metric import (
+from neurobench.benchmarks.metrics.abstract.workload_metric import (
     WorkloadMetric,
     AccumulatedMetric,
 )
 from neurobench.benchmarks.metrics import workload as workload_metrics
-from neurobench.benchmarks.workload_metrics import detect_activations_connections
 
 
 class WorkloadMetricManager:
@@ -66,13 +65,7 @@ class WorkloadMetricManager:
 
         """
         if self.requires_hooks:
-            detect_activations_connections(model)
-
-    def initialize_metrics(self):
-
-        for m in self.metrics.keys():
-            if isinstance(self.metrics[m], AccumulatedMetric):
-                self.metrics[m].reset()
+            model.register_hooks()
 
     def reset_hooks(self, model):
         """
@@ -96,6 +89,16 @@ class WorkloadMetricManager:
         if self.requires_hooks:
             model.cleanup_hooks()
 
+    def close_hooks(self, model):
+        if self.requires_hooks:
+            model.close_hooks()
+
+    def initialize_metrics(self):
+
+        for m in self.metrics.keys():
+            if isinstance(self.metrics[m], AccumulatedMetric):
+                self.metrics[m].reset()
+
     def run_metrics(self, model, preds, data, batch_size, dataset_len):
         """
         Executes all workload metrics on the provided model and data.
@@ -111,19 +114,17 @@ class WorkloadMetricManager:
 
         for name, metric in self.metrics.items():
             try:
+                result = metric(model, preds, data)
+
+                # Handle AccumulatedMetric separately
                 if isinstance(metric, AccumulatedMetric):
-                    self.results[name] = metric(model, preds, data)
+                    self.results[name] = result
                 else:
-                    self.results[name] += (
-                        metric(model, preds, data) * batch_size
-                    ) / dataset_len
+                    # Accumulate results, normalizing by dataset length
+                    self.results[name] += (result * batch_size) / dataset_len
 
             except Exception as e:
                 print(f"Error running workload metric '{name}': {e}")
                 self.results[name] = 0.0  # Graceful fallback in case of errors
 
         return self.results
-
-    def close_hooks(self, model):
-        if self.requires_hooks:
-            model.close_hooks()

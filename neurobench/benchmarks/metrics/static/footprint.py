@@ -1,4 +1,4 @@
-from neurobench.benchmarks.metrics.base import StaticMetric
+from neurobench.benchmarks.metrics.abstract import StaticMetric
 
 
 class Footprint(StaticMetric):

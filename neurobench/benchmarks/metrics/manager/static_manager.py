@@ -1,5 +1,5 @@
 from neurobench.benchmarks.metrics import static as static_metrics
-from neurobench.benchmarks.metrics.base import StaticMetric
+from neurobench.benchmarks.metrics.abstract import StaticMetric
 
 
 def convert_to_class_name(metric_name):

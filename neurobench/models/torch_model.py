@@ -1,5 +1,5 @@
 import torch
-from .model import NeuroBenchModel
+from .neurobench_model import NeuroBenchModel
 
 
 class TorchModel(NeuroBenchModel):
@@ -13,7 +13,7 @@ class TorchModel(NeuroBenchModel):
             net: A PyTorch nn.Module.
 
         """
-        super().__init__(net)
+        super().__init__()
 
         self.net = net
         self.net.eval()

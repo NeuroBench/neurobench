@@ -1,9 +1,7 @@
 import torch
-
 import snntorch as snn
 from snntorch import utils
-
-from .model import NeuroBenchModel
+from .neurobench_model import NeuroBenchModel
 
 
 class SNNTorchModel(NeuroBenchModel):
@@ -18,7 +16,7 @@ class SNNTorchModel(NeuroBenchModel):
             net: A trained SNNTorch network.
 
         """
-        super().__init__(net)
+        super().__init__()
 
         self.net = net
         self.net.eval()
@@ -38,7 +36,6 @@ class SNNTorchModel(NeuroBenchModel):
             spikes: A PyTorch tensor of shape (batch, timesteps, ...)
 
         """
-        spikes = []
         # utils.reset(self.net) does not seem to delete all traces for the synaptic neuron model
         if hasattr(self.net, "reset"):
             self.net.reset()

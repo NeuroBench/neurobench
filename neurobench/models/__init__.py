@@ -1,4 +1,4 @@
-from .model import *
+from .neurobench_model import *
 from ..utils import _lazy_import
 
 

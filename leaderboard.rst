@@ -4,10 +4,11 @@ NeuroBench Leaderboards
 Following are leaderboards for the NeuroBench v1.0 algorithm track benchmarks.
 
 Current tasks for which a leaderboard is maintained are:
-- Keyword Few-Shot Class-Incremental Learning (FSCIL) :ref:`fscil-benchmark`
-- Event Camera Object Detection :ref:`event-camera-benchmark`
-- Non-Human Primate Motor Prediction :ref:`nhp-motor-benchmark`
-- Chaotic Function Prediction Leaderboard :ref:`chaotic-function-benchmark`
+- `Keyword Few-Shot Class-Incremental Learning (FSCIL) <#fscil-benchmark>`_
+- `Event Camera Object Detection <#event-camera-benchmark>`_
+- `Non-Human Primate Motor Prediction <#nhp-motor-benchmark>`_
+- `Chaotic Function Prediction Leaderboard <#chaotic-function-benchmark>`_
+
 
 An interactive leaderboard can be found on the webiste `neurobench.ai <https://neurobench.ai>`__.
 

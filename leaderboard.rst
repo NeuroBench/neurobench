@@ -72,9 +72,9 @@ dataset. B-SNN and B-ANN refer to the results in the original NeuroBench publica
 +------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
 | Rank | Baseline | R^2   | Footprint (bytes) | Model Exec. Rate (Hz) | Connection Sparsity | Activation Sparsity | Dense | Eff_MACs | Eff_ACs | Date Submitted|
 +------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
-| 1.   | 'bigSNN <http://1.117.17.41/neural-decoding-grand-challenge/>'__ | 0.698  | 4833360              | 250                   | 0.0                 | 0.968                 | 1206272   | 0        | 42003     | 2024-08-02             |
+| 1.   | `bigSNN <http://1.117.17.41/neural-decoding-grand-challenge/>`__ | 0.698  | 4833360              | 250                   | 0.0                 | 0.968                 | 1206272   | 0        | 42003     | 2024-08-02             |
 +------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
-| 2.   | 'tinyRSNN <http://1.117.17.41/neural-decoding-grand-challenge/>'__ | 0.66  | 27144              | 250                   | 0.455                 | 0.984                 | 13440   | 0        | 304     | 2024-08-02             |
+| 2.   | `tinyRSNN <http://1.117.17.41/neural-decoding-grand-challenge/>`__ | 0.66  | 27144              | 250                   | 0.455                 | 0.984                 | 13440   | 0        | 304     | 2024-08-02             |
 +------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
 | 3.   | B-SNN    | 0.593  | 19648              | 250                   | 0.0                 | 0.997                 | 4900   | 0        | 276     | -             |
 |      |          | 0.568 | 38848             | 250                   | 0.0                 | 0.999                  | 9700   | 0        | 551     | -             |
@@ -83,7 +83,7 @@ dataset. B-SNN and B-ANN refer to the results in the original NeuroBench publica
 |      |          | 0.558 | 33496              | 250                   | 0.0                 | 0.668               | 7776  | 6103     | 0       | -             |
 +------+----------+-------+-------------------+-----------------------+---------------------+---------------------+-------+----------+---------+---------------+
 
-The results from the 'BioCas challenge <http://1.117.17.41/neural-decoding-grand-challenge/>' are averaged over all primate datasets. One sees that the R^2 score is higher for the submitted solutions compared to the baselines, with the best solution achieving an R^2 score of 0.698.
+The results from the `BioCas challenge <http://1.117.17.41/neural-decoding-grand-challenge/>`__ are averaged over all primate datasets. One sees that the R^2 score is higher for the submitted solutions compared to the baselines, with the best solution achieving an R^2 score of 0.698.
 Intersetingly, the tinyRSNN model is able to achieve near optimal performance with an extremely small number of operations.
 
 

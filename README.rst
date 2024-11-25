@@ -71,6 +71,12 @@ v1.0 benchmarks
 - Non-human Primate (NHP) Motor Prediction
 - Chaotic Function Prediction
 
+Leaderboards
+~~~~~~~~~~~~
+Proposed solutions for the benchmark tasks are evaluated on a set of metrics and compared to the performance of other solutions.
+
+The leaderboards for these benchmarks can be found `here <leaderboard.rst>`__.
+
 Additional benchmarks
 ~~~~~~~~~~~~~~~~~~~~~
 - DVS Gesture Recognition

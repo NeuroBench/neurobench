@@ -3,6 +3,12 @@ NeuroBench Leaderboards
 
 Following are leaderboards for the NeuroBench v1.0 algorithm track benchmarks.
 
+Current tasks for which a leaderboard is maintained are:
+- Keyword Few-Shot Class-Incremental Learning (FSCIL) :ref:`fscil-benchmark`
+- Event Camera Object Detection :ref:`event-camera-benchmark`
+- Non-Human Primate Motor Prediction :ref:`nhp-motor-benchmark`
+- Chaotic Function Prediction Leaderboard :ref:`chaotic-function-benchmark`
+
 An interactive leaderboard can be found on the webiste `neurobench.ai <https://neurobench.ai>`__.
 
 TODO: table of contents to click to the different headers? Not sure how to do in RST file when it is not compiled by sphinx
@@ -13,21 +19,21 @@ TODO: table of contents to click to the different headers? Not sure how to do in
 |             |              | rrectness |                            |
 |             |              | metric    |                            |
 +=============+==============+===========+============================+
-| :ref: `fscil-benchmark` | MSWC         | Accuracy  | Few-shot, continual        |
-|             |              |           | learning of keyword        |
+| Keyword     | MSWC         | Accuracy  | Few-shot, continual        |
+| FSCIL       |              |           | learning of keyword        |
 |             |              |           | classes                    |
 +-------------+--------------+-----------+----------------------------+
-| :ref: `event-camera-benchmark`       | Prophesee    | COCO mAP  | Detecting automotive       |
-|             | 1MP          |           | objects from event camera  |
-|             | Automotive   |           | video                      |
-|             |              |           |                            |
+| Event       | Prophesee    | COCO mAP  | Detecting automotive       |
+| Camera      | 1MP          |           | objects from event camera  |
+| Object      | Automotive   |           | video                      |
+| Detection   |              |           |                            |
 +-------------+--------------+-----------+----------------------------+
-| :ref: `nhp-motor-benchmark`   | Primate      | R^2       | Predicting fingertip       |
-|             | Reaching     |           | velocity from cortical     |
+| NHP Motor   | Primate      | R^2       | Predicting fingertip       |
+| Prediction  | Reaching     |           | velocity from cortical     |
 |             |              |           | recordings                 |
 +-------------+--------------+-----------+----------------------------+
-| :ref: `chaotic-function-benchmark`     | Mackey-Glass | sMAPE     | Autoregressive modeling of |
-|             | time series  |           | chaotic functions          |
+| Chaotic     | Mackey-Glass | sMAPE     | Autoregressive modeling of |
+| Function    | time series  |           | chaotic functions          |
 +-------------+--------------+-----------+----------------------------+
 
 .. _fscil-benchmark:

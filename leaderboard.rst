@@ -33,7 +33,6 @@ TODO: table of contents to click to the different headers? Not sure how to do in
 | Function    | time series  |           | chaotic functions          |
 +-------------+--------------+-----------+----------------------------+
 
-.. _fscil-benchmark:
 Keyword Few-Shot Class-Incremental Learning (FSCIL)
 ---------------------------------------------------
 

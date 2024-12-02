@@ -4,10 +4,11 @@ NeuroBench Leaderboards
 The following are leaderboards for the **NeuroBench v1.0** algorithm track benchmarks, showcasing the performance of various methods across distinct tasks.
 
 The maintained leaderboards cover the following tasks:  
-- **[Keyword Few-Shot Class-Incremental Learning (FSCIL)](#fscil-benchmark)**  
-- **[Event Camera Object Detection](#event-camera-benchmark)**  
-- **[Non-Human Primate Motor Prediction](#nhp-motor-benchmark)**  
-- **[Chaotic Function Prediction](#chaotic-function-benchmark)**  
+
+- **Keyword Few-Shot Class-Incremental Learning (FSCIL)**  
+- **Event Camera Object Detection**  
+- **Non-Human Primate Motor Prediction**  
+- **Chaotic Function Prediction**  
 
 For an interactive version of the leaderboard, visit the official website: `neurobench.ai <https://neurobench.ai>`__.
 
@@ -77,20 +78,26 @@ Non-Human Primate Motor Prediction
 
 The benchmark provides separate solutions for each primate in the dataset, with models evaluated using the **R² metric**, representing the proportion of variance in the observed data explained by the predicted values. The challenge focuses on achieving high prediction accuracy while maintaining computational efficiency and leveraging sparsity for real-time applications.
 
-The table below presents performance comparisons, including baseline models from the original NeuroBench publication (B-SNN and B-ANN), and highlights improvements made by submitted solutions. Notably, the `tinyRSNN` model demonstrates competitive performance with minimal computational resources, showcasing its potential for lightweight deployment.
+The table below presents performance comparisons, including baseline models from the original NeuroBench publication (B-SNN and B-ANN), and highlights improvements made by submitted solutions. Notably, the `tinyRSNN` model demonstrates competitive performance with minimal computational resources, showcasing its potential for lightweight deployment. The `AEGRU <https://arxiv.org/abs/2409.01762>` models show improved performance at NOTE: WE HAVE TO RERUN THE EXPERIMENT STILL FOR FULL NEUROBENCH BENCHMARK RESULTS
  
 
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
 | Rank | Baseline                                                            | R^2   | Footprint (bytes) | Model Exec. Rate (Hz) | Connection Sparsity | Activation Sparsity | Dense   | Eff_MACs | Eff_ACs | Date Submitted|
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
-| 1.   | `bigSNN <http://1.117.17.41/neural-decoding-grand-challenge/>`__    | 0.698 | 4833360           | 250                   | 0.0                 | 0.968               | 1206272 | 0        | 42003   | 2024-08-02    |
+| 1.   | `AEGRU <https://arxiv.org/pdf/2410.22283>`__                        | 0.71  | 45500             | 250                   | TBC                 | TBC                 | 25100   | TBC      | TBC     | 2024-08-02    |
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
-| 2.   | `tinyRSNN <http://1.117.17.41/neural-decoding-grand-challenge/>`__  | 0.66  | 27144             | 250                   | 0.455               | 0.984               | 13440   | 0        | 304     | 2024-08-02    |
+| 1.   | `GRU-t1 <https://arxiv.org/pdf/2409.04428>`__                       | 0.707 | 352904N           | 250                   | 0.0                 | 0.0                 | 22342   | 8518     | 793     | 2024-08-02    |
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
-| 3.   | B-SNN                                                               | 0.593 | 19648             | 250                   | 0.0                 | 0.997               | 4900    | 0        | 276     | -             |
+| 2.   | `bigSNN <https://arxiv.org/abs/2409.01762>`__                       | 0.698 | 4833360           | 250                   | 0.0                 | 0.968               | 1206272 | 0        | 42003   | 2024-08-02    |
++------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
+| 3.   | `tinyRSNN <https://arxiv.org/abs/2409.01762>`__                     | 0.66  | 27144             | 250                   | 0.455               | 0.984               | 13440   | 0        | 304     | 2024-08-02    |
++------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
+| 4.   | `GRU-t2 <https://arxiv.org/pdf/2409.04428>`__                       | 0.621 | 174104            | 250                   | 0.0                 | 0.0                 | 4947    | 627      | 248     | 2024-08-02    |
++------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
+| 5.   | B-SNN                                                               | 0.593 | 19648             | 250                   | 0.0                 | 0.997               | 4900    | 0        | 276     | -             |
 |      |                                                                     | 0.568 | 38848             | 250                   | 0.0                 | 0.999               | 9700    | 0        | 551     | -             |
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
-| 4.   | B-ANN                                                               | 0.593 | 20824             | 250                   | 0.0                 | 0.683               | 4704    | 3836     | 0       | -             |
+| 6.   | B-ANN                                                               | 0.593 | 20824             | 250                   | 0.0                 | 0.683               | 4704    | 3836     | 0       | -             |
 |      |                                                                     | 0.558 | 33496             | 250                   | 0.0                 | 0.668               | 7776    | 6103     | 0       | -             |
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
 

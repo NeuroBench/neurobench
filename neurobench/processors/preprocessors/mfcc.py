@@ -1,4 +1,4 @@
-from . import NeuroBenchPreProcessor
+from neurobench.processors.abstract.preprocessor import NeuroBenchPreProcessor
 from torchaudio.transforms import MFCC
 import torch
 
@@ -22,7 +22,7 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
         melkwargs: dict = None,
         device=None,
     ):
-        super(NeuroBenchPreProcessor).__init__()
+        super().__init__()
         """
         Args:
             sample_rate (int, optional): Sample rate of the audio signal. (Default: 16000)

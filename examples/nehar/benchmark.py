@@ -1,8 +1,9 @@
 from neurobench.datasets import WISDM
 from training import SpikingNetwork
-from neurobench.postprocessing.postprocessor import choose_max_count
+from neurobench.processors.postprocessors import ChooseMaxCount
 from neurobench.benchmarks import Benchmark
 from neurobench.models import SNNTorchModel
+import torch
 from neurobench.metrics.workload import (
     ActivationSparsity,
     MembraneUpdates,
@@ -37,7 +38,7 @@ if __name__ == "__main__":
     test_set_loader = data_module.test_dataloader()
 
     # # # postprocessors
-    postprocessors = [choose_max_count]
+    postprocessors = [ChooseMaxCount()]
 
     # #
     static_metrics = [ParameterCount, Footprint, ConnectionSparsity]
@@ -47,6 +48,13 @@ if __name__ == "__main__":
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
     start_time = time.time()
-    results = benchmark.run(verbose=False)
+    #results = benchmark.run(verbose=False)
+    #benchmark.save_benchmark_results("./results", file_format="txt")
+    dummy_input = torch.randn(1, num_steps,  num_inputs)
+
+
     print(f"Time taken: {time.time() - start_time}")
-    print(results)
+    benchmark.to_nir(dummy_input, "model_data/nehar_snnTorch.nir")
+    print()
+
+

@@ -8,7 +8,7 @@ class SNNTorchModel(NeuroBenchModel):
     """The SNNTorch class wraps the forward pass of the SNNTorch framework and ensures
     that spikes are in the correct format for downstream NeuroBench components."""
 
-    def __init__(self, net):
+    def __init__(self, net, custom_forward=True):
         """
         Init using a trained network.
 
@@ -23,6 +23,7 @@ class SNNTorchModel(NeuroBenchModel):
 
         # add snntorch neuron layers as activation modules
         self.add_activation_module(snn.SpikingNeuron)
+        self.custom_forward = custom_forward
 
     def __call__(self, data):
         """
@@ -36,6 +37,9 @@ class SNNTorchModel(NeuroBenchModel):
             spikes: A PyTorch tensor of shape (batch, timesteps, ...)
 
         """
+        if self.custom_forward:
+            return self.net(data).transpose(0, 1)
+
         # utils.reset(self.net) does not seem to delete all traces for the synaptic neuron model
         if hasattr(self.net, "reset"):
             self.net.reset()

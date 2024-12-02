@@ -33,7 +33,7 @@ https://github.com/Accenture/speech2spikes
 
 """
 
-from .preprocessor import NeuroBenchPreProcessor
+from neurobench.processors.abstract.preprocessor import NeuroBenchPreProcessor
 import torch
 import torchaudio
 

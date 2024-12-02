@@ -1,4 +1,7 @@
-class NeuroBenchPreProcessor:
+from abc import ABC, abstractmethod
+
+
+class NeuroBenchPreProcessor(ABC):
     """
     Abstract class for NeuroBench pre-processors.
 
@@ -6,7 +9,8 @@ class NeuroBenchPreProcessor:
 
     """
 
-    def __init__(self, args):
+    @abstractmethod
+    def __init__(self, *args):
         """
         Initialize pre-processor with any parameters needed.
 
@@ -14,10 +18,8 @@ class NeuroBenchPreProcessor:
             args: Any arguments needed for pre-processing.
 
         """
-        raise NotImplementedError(
-            "Subclasses of NeuroBenchPreProcessor should implement __init__"
-        )
 
+    @abstractmethod
     def __call__(self, dataset):
         """
         Process dataset of format (data, targets), or (data, targets, kwargs) to prepare
@@ -27,6 +29,3 @@ class NeuroBenchPreProcessor:
             dataset: A tuple of (data, targets) or (data, targets, kwargs) where data is a PyTorch tensor of shape (batch, timesteps, ...)
 
         """
-        raise NotImplementedError(
-            "Subclasses of NeuroBenchPreProcessor should implement __call__"
-        )

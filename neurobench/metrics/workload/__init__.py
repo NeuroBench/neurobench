@@ -7,13 +7,8 @@ from .smape import SMAPE
 from .r2 import R2
 from .coco_map import CocoMap
 
-__all__ = [
-    "MembraneUpdates",
-    "ActivationSparsity",
-    "SynapticOperations",
-    "ClassificationAccuracy",
-    "MSE",
-    "SMAPE",
-    "R2",
-    "CocoMap",
-]
+__stateless__ = ["ClassificationAccuracy", "ActivationSparsity", "MSE", "SMAPE"]
+
+__stateful__ = ["MembraneUpdates", "SynapticOperations", "R2", "CocoMap"]
+
+__all__ = __stateful__ + __stateless__

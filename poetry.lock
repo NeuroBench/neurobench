@@ -3438,4 +3438,4 @@ nehar = ["gdown", "pytorch-lightning"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "659aebce315981f3a5fb06dde5c75d415e1d0fec1183b8d9a79a22df56ee687f"
+content-hash = "5de39f23a6e044f33d475781096f0ab9f3c73f665be304082f94f3c26ec75afa"

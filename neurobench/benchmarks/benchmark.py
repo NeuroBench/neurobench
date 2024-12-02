@@ -1,17 +1,42 @@
 import sys
 from contextlib import redirect_stdout
+from nodeenv import mkdir
 from tqdm import tqdm
 from neurobench.metrics.manager.static_manager import StaticMetricManager
 from neurobench.metrics.manager.workload_manager import WorkloadMetricManager
+from neurobench.processors.manager import ProcessorManager
+from neurobench.models import NeuroBenchModel
+from torch.utils.data import DataLoader
+from neurobench.processors.abstract import (
+    NeuroBenchPreProcessor,
+    NeuroBenchPostProcessor,
+)
+from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
+import json
+import csv
+import os
+from typing import Literal, List
+import pathlib
+from snntorch import export_to_nir
+import torch
+import nir
 
 
 class Benchmark:
     """Top-level benchmark class for running benchmarks."""
 
     def __del__(self):
-        self.workload_metric_orchestrator.cleanup_hooks(self.model)
+        if hasattr(self, "workload_metric_manager"):
+            self.workload_metric_manager.cleanup_hooks(self.model)
 
-    def __init__(self, model, dataloader, preprocessors, postprocessors, metric_list):
+    def __init__(
+        self,
+        model: NeuroBenchModel,
+        dataloader: DataLoader,
+        preprocessors: List[NeuroBenchPreProcessor],
+        postprocessors: List[NeuroBenchPostProcessor],
+        metric_list: List[List[StaticMetric], List[WorkloadMetric]],
+    ):
         """
         Args:
             model: A NeuroBenchModel.
@@ -24,13 +49,11 @@ class Benchmark:
 
         self.model = model
         self.dataloader = dataloader  # dataloader not dataset
-        self.preprocessors = preprocessors
-        self.postprocessors = postprocessors
-
-        self.static_metric_orchestrator = StaticMetricManager(metric_list[0])
-        self.workload_metric_orchestrator = WorkloadMetricManager(metric_list[1])
-
-        self.workload_metric_orchestrator.register_hooks(model)
+        self.processor_manager = ProcessorManager(preprocessors, postprocessors)
+        self.static_metric_manager = StaticMetricManager(metric_list[0])
+        self.workload_metric_manager = WorkloadMetricManager(metric_list[1])
+        self.workload_metric_manager.register_hooks(model)
+        self.results = None
 
     def run(
         self,
@@ -60,18 +83,17 @@ class Benchmark:
         with redirect_stdout(None if quiet else sys.stdout):
             print("Running benchmark")
 
-            # Static metrics
-            results = self.static_metric_orchestrator.run_metrics(self.model)
+            self.results = None
+            results = self.static_metric_manager.run_metrics(self.model)
 
             dataloader = dataloader if dataloader is not None else self.dataloader
-            preprocessors = (
-                preprocessors if preprocessors is not None else self.preprocessors
-            )
-            postprocessors = (
-                postprocessors if postprocessors is not None else self.postprocessors
-            )
 
-            self.workload_metric_orchestrator.initialize_metrics()
+            if preprocessors is not None:
+                self.processor_manager.replace_preprocessors(preprocessors)
+            if postprocessors is not None:
+                self.processor_manager.replace_postprocessors(postprocessors)
+
+            self.workload_metric_manager.initialize_metrics()
 
             dataset_len = len(dataloader.dataset)
 
@@ -89,20 +111,19 @@ class Benchmark:
                 batch_size = data[0].size(0)
 
                 # Preprocessing data
-                for alg in preprocessors:
-                    data = alg(data)
+                data = self.processor_manager.preprocess(data)
 
                 # Run model on test data
                 preds = self.model(data[0])
 
-                for alg in postprocessors:
-                    preds = alg(preds)
+                # Postprocessing data
+                preds = self.processor_manager.postprocess(preds)
 
                 # Data metrics
-                batch_results = self.workload_metric_orchestrator.run_metrics(
+                batch_results = self.workload_metric_manager.run_metrics(
                     self.model, preds, data, batch_size, dataset_len
                 )
-                self.workload_metric_orchestrator.reset_hooks(self.model)
+                self.workload_metric_manager.reset_hooks(self.model)
 
                 if verbose:
                     results.update(batch_results)
@@ -111,7 +132,70 @@ class Benchmark:
 
                 batch_num += 1
 
-            results.update(self.workload_metric_orchestrator.results)
-            self.workload_metric_orchestrator.clean_results()
+            results.update(self.workload_metric_manager.results)
+            self.workload_metric_manager.clean_results()
+            self.results = dict(results)
+        return self.results
 
-        return dict(results)
+    def save_benchmark_results(
+        self, file_path, file_format: Literal["json", "csv", "txt"] = "json"
+    ):
+        """
+        Save benchmark results to a specified file in the chosen format.
+
+        Args:
+            results (dict): Benchmark results to save.
+            file_path (str): Path to the output file (excluding the extension).
+            file_format (str): Format to save the file in ("json", "csv", "txt").
+
+        Raises:
+            ValueError: If the file format is unsupported.
+
+        """
+        file_format = file_format.lower()
+
+        # Ensure the directory exists
+        pathlib.Path(os.path.dirname(file_path)).mkdir(parents=True, exist_ok=True)
+
+        # JSON format
+        if file_format == "json":
+            with open(f"{file_path}.json", "w") as json_file:
+                json.dump(self.results, json_file, indent=4)
+            print(f"Results saved to {file_path}.json")
+
+        # CSV format
+        elif file_format == "csv":
+            with open(f"{file_path}.csv", "w", newline="") as csv_file:
+                writer = csv.writer(csv_file)
+
+                # Write header (keys)
+                writer.writerow(self.results.keys())
+
+                # Write values
+                writer.writerow(self.results.values())
+            print(f"Results saved to {file_path}.csv")
+
+        # Plain Text format
+        elif file_format == "txt":
+            with open(f"{file_path}.txt", "w") as txt_file:
+                for key, value in self.results.items():
+                    txt_file.write(f"{key}: {value}\n")
+            print(f"Results saved to {file_path}.txt")
+
+        else:
+            raise ValueError(f"Unsupported file format: {file_format}")
+
+    def to_nir(self, dummy_input, filename, **kwargs):
+        """Export the model to the NIR format."""
+        nir_graph = export_to_nir(self.model.__net__(), dummy_input, **kwargs)
+        nir.write(filename, nir_graph)
+        print("Model exported to ")
+
+    def to_onnx(self, dummy_input, filename, **kwargs):
+        """Export the model to the ONNX format."""
+        if dummy_input.requires_grad:
+            dummy_input = dummy_input.detach()
+
+        with torch.no_grad():
+            torch.onnx.export(self.model.__net__(), dummy_input, filename, **kwargs)
+        print("Model exported to ")

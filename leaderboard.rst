@@ -1,41 +1,46 @@
 NeuroBench Leaderboards
 =======================
 
-Following are leaderboards for the NeuroBench v1.0 algorithm track benchmarks.
+The following are leaderboards for the **NeuroBench v1.0** algorithm track benchmarks, showcasing the performance of various methods across distinct tasks.
 
-Current tasks for which a leaderboard is maintained are `Keyword Few-Shot Class-Incremental Learning (FSCIL) <#fscil-benchmark>`__, `Event Camera Object Detection <#event-camera-benchmark>`__, `Non-Human Primate Motor Prediction <#nhp-motor-benchmark>`__ and `Chaotic Function Prediction Leaderboard <#chaotic-function-benchmark>`__.
+The maintained leaderboards cover the following tasks:  
+- **[Keyword Few-Shot Class-Incremental Learning (FSCIL)](#fscil-benchmark)**  
+- **[Event Camera Object Detection](#event-camera-benchmark)**  
+- **[Non-Human Primate Motor Prediction](#nhp-motor-benchmark)**  
+- **[Chaotic Function Prediction](#chaotic-function-benchmark)**  
 
+For an interactive version of the leaderboard, visit the official website: `neurobench.ai <https://neurobench.ai>`__.
 
-An interactive leaderboard can be found on the webiste `neurobench.ai <https://neurobench.ai>`__.
++------------------------------+------------------+--------------+----------------------------------------------+
+| Task                         | Dataset          | Metric       | Task Description                              |
++==============================+==================+==============+==============================================+
+| **Keyword FSCIL**            | MSWC             | Accuracy     | Few-shot continual learning of keyword classes |
++------------------------------+------------------+--------------+----------------------------------------------+
+| **Event Camera Object        | Prophesee 1MP    | COCO mAP     | Detecting automotive objects from event camera |
+| Detection**                  | Automotive       |              | video                                         |
++------------------------------+------------------+--------------+----------------------------------------------+
+| **Non-Human Primate Motor    | Primate Reaching | R²           | Predicting fingertip velocity from cortical   |
+| Prediction**                 |                  |              | recordings                                    |
++------------------------------+------------------+--------------+----------------------------------------------+
+| **Chaotic Function Prediction** | Mackey-Glass  | sMAPE        | Autoregressive modeling of chaotic functions  |
+|                              | time series      |              |                                              |
++------------------------------+------------------+--------------+----------------------------------------------+
 
-
-+-------------+--------------+-----------+----------------------------+
-| Task        | Dataset      | Co        | Task description           |
-|             |              | rrectness |                            |
-|             |              | metric    |                            |
-+=============+==============+===========+============================+
-| Keyword     | MSWC         | Accuracy  | Few-shot, continual        |
-| FSCIL       |              |           | learning of keyword        |
-|             |              |           | classes                    |
-+-------------+--------------+-----------+----------------------------+
-| Event       | Prophesee    | COCO mAP  | Detecting automotive       |
-| Camera      | 1MP          |           | objects from event camera  |
-| Object      | Automotive   |           | video                      |
-| Detection   |              |           |                            |
-+-------------+--------------+-----------+----------------------------+
-| NHP Motor   | Primate      | R^2       | Predicting fingertip       |
-| Prediction  | Reaching     |           | velocity from cortical     |
-|             |              |           | recordings                 |
-+-------------+--------------+-----------+----------------------------+
-| Chaotic     | Mackey-Glass | sMAPE     | Autoregressive modeling of |
-| Function    | time series  |           | chaotic functions          |
-+-------------+--------------+-----------+----------------------------+
+Each leaderboard highlights key metrics such as accuracy, sparsity, model footprint, and computational efficiency. Below are detailed insights and rankings for each task.
 
 .. _fscil-benchmark:
+
 Keyword Few-Shot Class-Incremental Learning (FSCIL)
 ---------------------------------------------------
 
-Base accuracy refers to the base class, session 0 test set, while session average refers to the average accuracy across all sessions 0 to 10.
+The **Keyword Few-Shot Class-Incremental Learning (FSCIL)** task evaluates models on their ability to perform continual learning in the context of keyword spotting. Keyword spotting involves detecting and recognizing specific spoken words or phrases from audio input—a critical feature for voice-controlled applications.
+
+This benchmark focuses on the challenge of learning new keyword classes incrementally, with limited examples, while retaining performance on previously learned classes. Models are evaluated on two metrics:  
+- **Base Accuracy:** Accuracy on the base class (session 0) test set.  
+- **Session Average Accuracy:** Average accuracy across all sessions (0 to 10).  
+
+The table below compares methods in terms of accuracy, resource efficiency, and sparsity metrics, offering insights into their trade-offs and performance in this incremental learning scenario.
+
 
 +-----------+-----------+-----------------------------------+-----------+------------------+---------------------+---------------------+---------+--------------------+--------------------+---------------+
 | Method    | Reference | Accuracy (Base / Session Average) | Footprint | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense   | Eff_MACs           | Eff_ACs            | Date Submitted|
@@ -46,10 +51,14 @@ Base accuracy refers to the base class, session 0 test set, while session averag
 +-----------+-----------+-----------------------------------+-----------+------------------+---------------------+---------------------+---------+--------------------+--------------------+---------------+
 
 .. _event-camera-benchmark:
+
 Event Camera Object Detection
 -----------------------------
 
-Solution accuracy is measured by COCO mAP.
+**Event Camera Object Detection** evaluates models on their ability to detect and classify objects using data from event-based cameras. Unlike conventional cameras, event cameras capture changes in brightness asynchronously for each pixel, providing high temporal resolution and robustness to motion blur and lighting conditions. These unique properties make them ideal for applications like autonomous driving and robotics.
+
+In this benchmark, models are tasked with detecting automotive objects in event camera video streams. The primary evaluation metric is **COCO mAP (Mean Average Precision)**, which measures detection accuracy. The table below compares methods based on their detection performance, computational efficiency, and sparsity characteristics, highlighting trade-offs relevant for real-world deployments.
+
 
 +------+----------+----------+-------------+------------------+---------------------+---------------------+---------+------------+---------+---------------+
 | Rank | Baseline | COCO mAP | Footprint   | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense   |Eff_MACs    | Eff_ACs | Date Submitted|
@@ -60,12 +69,16 @@ Solution accuracy is measured by COCO mAP.
 +------+----------+----------+-------------+------------------+---------------------+---------------------+---------+------------+---------+---------------+
 
 .. _nhp-motor-benchmark:
+
 Non-Human Primate Motor Prediction
 ----------------------------------
 
-For each solution, two sets of metric results are provided, as an
-individual solution is provided per primate that is present in the
-dataset. B-SNN and B-ANN refer to the results in the original NeuroBench publication, which serve as a baseline to the submitted solutions. 
+**Non-Human Primate Motor Prediction** evaluates models on their ability to predict motor behavior, specifically fingertip velocity, from cortical neural recordings. This task is essential for advancing brain-machine interfaces (BMIs), which have applications in neuroprosthetics and understanding motor control mechanisms.
+
+The benchmark provides separate solutions for each primate in the dataset, with models evaluated using the **R² metric**, representing the proportion of variance in the observed data explained by the predicted values. The challenge focuses on achieving high prediction accuracy while maintaining computational efficiency and leveraging sparsity for real-time applications.
+
+The table below presents performance comparisons, including baseline models from the original NeuroBench publication (B-SNN and B-ANN), and highlights improvements made by submitted solutions. Notably, the `tinyRSNN` model demonstrates competitive performance with minimal computational resources, showcasing its potential for lightweight deployment.
+ 
 
 +------+---------------------------------------------------------------------+-------+-------------------+-----------------------+---------------------+---------------------+---------+----------+---------+---------------+
 | Rank | Baseline                                                            | R^2   | Footprint (bytes) | Model Exec. Rate (Hz) | Connection Sparsity | Activation Sparsity | Dense   | Eff_MACs | Eff_ACs | Date Submitted|
@@ -86,12 +99,15 @@ Intersetingly, the tinyRSNN model is able to achieve near optimal performance wi
 
 
 .. _chaotic-function-benchmark:
+
 Chaotic Function Prediction Leaderboard
 ---------------------------------------
 
-The submitted solutions for the chaotic function prediction task are
-evaluated based on the sMAPE metric. Execution rate is not reported as
-the data is a synthetic time series, with no real-time correlation.
+**Chaotic Function Prediction** challenges models to accurately predict values in chaotic time series data, a complex task due to the sensitivity of chaotic systems to initial conditions. This benchmark uses synthetic time series, such as the Mackey-Glass dataset, to evaluate the ability of models to perform autoregressive predictions in highly nonlinear and dynamic environments.
+
+The primary evaluation metric is **sMAPE (Symmetric Mean Absolute Percentage Error)**, which measures prediction accuracy while being robust to scale differences. Since the dataset is synthetic and not tied to real-time scenarios, execution rate is not considered for evaluation.
+
+The table below highlights the performance of various methods, emphasizing their ability to balance accuracy and computational efficiency. This task has implications for modeling in scientific simulations, financial forecasting, and other domains where chaotic systems are prevalent.
 
 +------+----------+----------+-----------+------------------+---------------------+---------------------+--------+-----------+---------+---------------+
 | Rank | Baseline | Accuracy | Footprint | Model Exec. Rate | Connection Sparsity | Activation Sparsity | Dense  | Eff_MACs  | Eff_ACs | Date Submitted|

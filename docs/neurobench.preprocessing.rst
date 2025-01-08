@@ -3,7 +3,7 @@ neurobench.preprocessing
 
 MFCC
 ^^^^
-.. automodule:: neurobench.preprocessing.mfcc
+.. automodule:: neurobench.processors.preprocessors.mfcc
     :special-members: __init__, __call__
     :members:
     :undoc-members:
@@ -11,7 +11,7 @@ MFCC
 
 Speech2Spikes
 ^^^^^^^^^^^^^
-.. automodule:: neurobench.preprocessing.speech2spikes
+.. automodule:: neurobench.processors.preprocessors.speech2spikes
     :special-members: __init__, __call__
     :members:
     :undoc-members:

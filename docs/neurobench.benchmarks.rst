@@ -5,20 +5,20 @@ Benchmark
 ^^^^^^^^^
 
 .. automodule:: neurobench.benchmarks
-    :members: Benchmark
+    :members:
     :undoc-members:
     :show-inheritance:
 
 Workload Metrics
 ^^^^^^^^^^^^^^^^
-.. automodule:: neurobench.benchmarks.workload_metrics
+.. automodule:: neurobench.metrics.workload
     :members:
     :undoc-members:
     :show-inheritance:
 
 Static Metrics
 ^^^^^^^^^^^^^^
-.. automodule:: neurobench.benchmarks.static_metrics
+.. automodule:: neurobench.metrics.static
     :members:
     :undoc-members:
     :show-inheritance:

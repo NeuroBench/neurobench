@@ -35,7 +35,7 @@ class Benchmark:
         dataloader: DataLoader,
         preprocessors: List[NeuroBenchPreProcessor],
         postprocessors: List[NeuroBenchPostProcessor],
-        metric_list: List[List[StaticMetric], List[WorkloadMetric]],
+        metric_list: List[List[StaticMetric | WorkloadMetric]],
     ):
         """
         Args:

@@ -1,6 +1,6 @@
 from neurobench.models import SNNTorchModel, TorchModel
-from neurobench.benchmarks.workload_metrics import (
-    classification_accuracy,
+from neurobench.metrics.workload import (
+    ClassificationAccuracy,
     MSE,
     sMAPE,
     r2,

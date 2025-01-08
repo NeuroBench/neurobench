@@ -8,7 +8,7 @@ class SNNTorchModel(NeuroBenchModel):
     """The SNNTorch class wraps the forward pass of the SNNTorch framework and ensures
     that spikes are in the correct format for downstream NeuroBench components."""
 
-    def __init__(self, net, custom_forward=True):
+    def __init__(self, net, custom_forward=False):
         """
         Init using a trained network.
 

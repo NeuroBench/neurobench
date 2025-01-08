@@ -5,6 +5,7 @@ import torch
 import torch.nn as nn
 
 
+
 class SCNN(nn.Module):
     def __init__(self):
         super().__init__()
@@ -17,10 +18,10 @@ class SCNN(nn.Module):
         self.leaky2 = snn.Leaky(beta=0.3, init_hidden=True, threshold=0.001)
         self.flatten = nn.Flatten()
         self.linear = nn.Linear(512, 7)
-        self.leaky3 = snn.Leaky(beta=0.5, output=False, init_hidden=True, threshold=0.001)
+        self.leaky3 = snn.Leaky(beta=0.5, output=True, init_hidden=True, threshold=0.001)
         self.num_steps = 40
 
-    def single_forward(self, input):
+    def forward(self, input):
         x = self.conv1(input.reshape(input.shape[0], input.shape[1], 1))
         x = self.max1(x)
         x = self.leaky1(x)
@@ -32,7 +33,7 @@ class SCNN(nn.Module):
         spk_out, mem_out = self.leaky3(x)
         return spk_out, mem_out
 
-    def forward(self, input):
+    def single_forward(self, input):
         # Initialize hidden states and outputs at t=0
         mem_rec = []
         spk_rec = []
@@ -51,8 +52,9 @@ class SCNN(nn.Module):
             x = self.leaky2(x)
             x = self.flatten(x)
             x = self.linear(x)
-            spk_out= self.leaky3(x)
+            spk_out, mem_out = self.leaky3(x)
 
             spk_rec.append(spk_out)
+            mem_rec.append(mem_out)
 
-        return torch.stack(spk_rec)
+        return torch.stack(spk_rec), torch.stack(mem_rec)

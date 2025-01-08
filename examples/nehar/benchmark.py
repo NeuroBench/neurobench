@@ -34,7 +34,7 @@ if __name__ == "__main__":
         "./model_data/WISDM_snnTorch.ckpt", map_location="cpu"
     )
 
-    model = SNNTorchModel(spiking_network.model)
+    model = SNNTorchModel(spiking_network.model, custom_forward=False)
     test_set_loader = data_module.test_dataloader()
 
     # # # postprocessors
@@ -48,13 +48,14 @@ if __name__ == "__main__":
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
     start_time = time.time()
-    #results = benchmark.run(verbose=False)
+    results = benchmark.run(verbose=False)
+    print(results)
     #benchmark.save_benchmark_results("./results", file_format="txt")
     dummy_input = torch.randn(1, num_steps,  num_inputs)
 
 
     print(f"Time taken: {time.time() - start_time}")
-    benchmark.to_nir(dummy_input, "model_data/nehar_snnTorch.nir")
+    #benchmark.to_nir(dummy_input, "model_data/nehar_snnTorch.nir")
     print()
 
 

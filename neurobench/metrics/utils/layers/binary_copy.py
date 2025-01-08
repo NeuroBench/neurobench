@@ -47,6 +47,10 @@ def make_binary_copy(layer, all_ones=False):
         for attr in attribute_names:
             with torch.no_grad():
                 attr_val = getattr(layer_copy, attr)
-                setattr(layer_copy, attr, binarize_tensor(attr_val, all_ones))
+                setattr(
+                    layer_copy,
+                    attr,
+                    torch.nn.Parameter(binarize_tensor(attr_val.data, all_ones)),
+                )
 
     return layer_copy

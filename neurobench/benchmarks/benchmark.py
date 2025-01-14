@@ -15,7 +15,7 @@ from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
 import json
 import csv
 import os
-from typing import Literal, List, Type
+from typing import Literal, List, Type, Optional
 import pathlib
 
 # from snntorch import export_to_nir
@@ -32,10 +32,10 @@ class Benchmark:
 
     def __init__(
         self,
-        model: Type[NeuroBenchModel],
-        dataloader: DataLoader,
-        preprocessors: List[NeuroBenchPreProcessor],
-        postprocessors: List[NeuroBenchPostProcessor],
+        model: NeuroBenchModel,
+        dataloader: Optional[DataLoader],
+        preprocessors: Optional[List[NeuroBenchPreProcessor]],
+        postprocessors: Optional[List[NeuroBenchPostProcessor]],
         metric_list: List[List[Type[StaticMetric | WorkloadMetric]]],
     ):
         """
@@ -58,7 +58,7 @@ class Benchmark:
 
     def run(
         self,
-        quiet=False,
+        quiet: bool = False,
         verbose: bool = False,
         dataloader=None,
         preprocessors=None,

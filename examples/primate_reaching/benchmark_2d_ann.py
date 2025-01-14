@@ -7,6 +7,16 @@ from neurobench.benchmarks import Benchmark
 
 from ANN import ANNModel2D
 
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    R2
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
 all_files = ["indy_20160622_01", "indy_20160630_01", "indy_20170131_02", 
              "loco_20170210_03", "loco_20170215_02", "loco_20170301_05"]
 
@@ -38,21 +48,21 @@ for filename in all_files:
 
     model = TorchModel(net)
 
-    static_metrics = ["footprint", "connection_sparsity"]
-    workload_metrics = ["r2", "activation_sparsity", "synaptic_operations"]
+    static_metrics = [Footprint, ConnectionSparsity]
+    workload_metrics = [R2, ActivationSparsity, SynapticOperations]
 
     # Benchmark expects the following:
     benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics])
     results = benchmark.run(device=device)
     print(results)
 
-    footprint.append(results['footprint'])
-    connection_sparsity.append(results['connection_sparsity'])
-    activation_sparsity.append(results['activation_sparsity'])
-    dense.append(results['synaptic_operations']['Dense'])
-    macs.append(results['synaptic_operations']['Effective_MACs'])
-    acs.append(results['synaptic_operations']['Effective_ACs'])
-    r2.append(results['r2'])
+    footprint.append(results['Footprint'])
+    connection_sparsity.append(results['ConnectionSparsity'])
+    activation_sparsity.append(results['ActivationSparsity'])
+    dense.append(results['SynapticOperations']['Dense'])
+    macs.append(results['SynapticOperations']['Effective_MACs'])
+    acs.append(results['SynapticOperations']['Effective_ACs'])
+    r2.append(results['R2'])
 
 print("Footprint: {}".format(footprint))
 print("Connection sparsity: {}".format(connection_sparsity))

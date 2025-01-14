@@ -10,6 +10,16 @@ from neurobench.benchmarks import Benchmark
 
 from neurobench.processors.abstract import NeuroBenchPreProcessor, NeuroBenchPostProcessor
 
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    ClassificationAccuracy
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
 from ANN import M5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -43,8 +53,8 @@ postprocessors = [convert_to_label()]
 ## Define model ##
 model = TorchModel(net)
 
-static_metrics = ["footprint", "connection_sparsity"]
-workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+static_metrics = [Footprint, ConnectionSparsity]
+workload_metrics = [ClassificationAccuracy, ActivationSparsity, SynapticOperations]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, workload_metrics])
 results = benchmark.run(device=device)

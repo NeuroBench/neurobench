@@ -9,6 +9,16 @@ from neurobench.processors.postprocessors import ChooseMaxCount
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
 
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    ClassificationAccuracy
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
 from SNN import net
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -26,8 +36,8 @@ model = SNNTorchModel(net)
 preprocessors = [S2SPreProcessor(device=device)]
 postprocessors = [ChooseMaxCount()]
 
-static_metrics = ["footprint", "connection_sparsity"]
-workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+static_metrics = [Footprint, ConnectionSparsity]
+workload_metrics = [ClassificationAccuracy, ActivationSparsity, SynapticOperations]
 
 benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [static_metrics, workload_metrics])
 results = benchmark.run(device=device)

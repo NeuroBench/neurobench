@@ -8,7 +8,7 @@ from neurobench.datasets import SpeechCommands
 from neurobench.models import TorchModel
 from neurobench.benchmarks import Benchmark
 
-from neurobench.preprocessing import NeuroBenchPreProcessor
+from neurobench.processors.abstract import NeuroBenchPreProcessor, NeuroBenchPostProcessor
 
 from ANN import M5
 
@@ -33,10 +33,12 @@ class resample(NeuroBenchPreProcessor):
 
 preprocessors = [resample()]
 
-def convert_to_label(output):
-	return output.argmax(dim=-1).squeeze()
+class  convert_to_label(NeuroBenchPostProcessor):
 
-postprocessors = [convert_to_label]
+	def __call__(self, output):
+		return output.argmax(dim=-1).squeeze()
+
+postprocessors = [convert_to_label()]
 
 ## Define model ##
 model = TorchModel(net)

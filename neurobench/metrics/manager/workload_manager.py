@@ -5,6 +5,7 @@ from neurobench.metrics.abstract.workload_metric import (
     AccumulatedMetric,
 )
 from neurobench.metrics import workload as workload_metrics
+from neurobench.metrics.utils.utils import convert_to_class_name
 
 
 class WorkloadMetricManager:
@@ -28,7 +29,14 @@ class WorkloadMetricManager:
         # Store workload metrics
         for item in metric_list:
             if isinstance(item, str):
-                metric_class = getattr(workload_metrics, item, None)
+                class_name = convert_to_class_name(item)
+                metric_class = getattr(workload_metrics, class_name, None)
+                print(
+                    f"[DEPRECATION WARNING]: Using string-based metric names ('{item}') is deprecated "
+                    "and will be removed in a future release. "
+                    "Please update your code to use the corresponding metric class directly instead. "
+                    f"For example, replace the string name with the class '{class_name}'."
+                )
                 if metric_class is None:
                     raise ValueError(
                         f"Metric '{item}' not found in the 'workload_metrics' module."

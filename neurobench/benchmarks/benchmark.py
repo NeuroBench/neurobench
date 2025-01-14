@@ -15,9 +15,10 @@ from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
 import json
 import csv
 import os
-from typing import Literal, List
+from typing import Literal, List, Type
 import pathlib
-from snntorch import export_to_nir
+
+# from snntorch import export_to_nir
 import torch
 import nir
 
@@ -31,11 +32,11 @@ class Benchmark:
 
     def __init__(
         self,
-        model: NeuroBenchModel,
+        model: Type[NeuroBenchModel],
         dataloader: DataLoader,
         preprocessors: List[NeuroBenchPreProcessor],
         postprocessors: List[NeuroBenchPostProcessor],
-        metric_list: List[List[StaticMetric | WorkloadMetric]],
+        metric_list: List[List[Type[StaticMetric | WorkloadMetric]]],
     ):
         """
         Args:
@@ -198,4 +199,4 @@ class Benchmark:
 
         with torch.no_grad():
             torch.onnx.export(self.model.__net__(), dummy_input, filename, **kwargs)
-        print("Model exported to ")
+        print(f"Model exported to {filename}")

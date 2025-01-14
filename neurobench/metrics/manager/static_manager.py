@@ -1,20 +1,6 @@
 from neurobench.metrics import static as static_metrics
 from neurobench.metrics.abstract import StaticMetric
-
-
-def convert_to_class_name(metric_name):
-    """
-    Convert a metric name from a string to a class name.
-
-    Args:
-        metric_name (str): The metric name in snake_case or other formatting.
-
-    Returns:
-        str: The corresponding class name in CamelCase.
-
-    """
-    # Convert snake_case to CamelCase
-    return "".join(word.title() for word in metric_name.split("_"))
+from neurobench.metrics.utils.utils import convert_to_class_name
 
 
 class StaticMetricManager:
@@ -40,7 +26,10 @@ class StaticMetricManager:
                 class_name = convert_to_class_name(item)
                 metric_class = getattr(static_metrics, class_name, None)
                 print(
-                    "Support for string-based metric names is deprecated and will be removed in a future release."
+                    f"[DEPRECATION WARNING]: Using string-based metric names ('{item}') is deprecated "
+                    "and will be removed in a future release. "
+                    "Please update your code to use the corresponding metric class directly instead. "
+                    f"For example, replace the string name with the class '{class_name}'."
                 )
                 if metric_class is None:
                     raise ValueError(

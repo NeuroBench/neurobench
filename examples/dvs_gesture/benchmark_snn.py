@@ -7,7 +7,7 @@ import tonic.transforms as transforms
 from torch.utils.data import DataLoader
 
 from neurobench.models import SNNTorchModel
-from neurobench.postprocessing import choose_max_count
+from neurobench.processors.postprocessors import ChooseMaxCount
 from neurobench.benchmarks import Benchmark
 
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
@@ -29,7 +29,7 @@ test_set_loader = DataLoader(test_set, batch_size=16,
                          collate_fn=tonic.collation.PadTensors(batch_first=True))
 
 preprocessors = []
-postprocessors = [choose_max_count]
+postprocessors = [ChooseMaxCount()]
 
 static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]

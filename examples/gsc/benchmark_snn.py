@@ -3,8 +3,8 @@ import torch
 from torch.utils.data import DataLoader
 
 from neurobench.datasets import SpeechCommands
-from neurobench.preprocessing import S2SPreProcessor
-from neurobench.postprocessing import choose_max_count
+from neurobench.processors.preprocessors import S2SPreProcessor
+from neurobench.processors.postprocessors import ChooseMaxCount
 
 from neurobench.models import SNNTorchModel
 from neurobench.benchmarks import Benchmark
@@ -24,7 +24,7 @@ net.load_state_dict(torch.load("model_data/s2s_gsc_snntorch", map_location=torch
 model = SNNTorchModel(net)
 
 preprocessors = [S2SPreProcessor(device=device)]
-postprocessors = [choose_max_count]
+postprocessors = [ChooseMaxCount()]
 
 static_metrics = ["footprint", "connection_sparsity"]
 workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]

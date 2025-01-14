@@ -42,7 +42,7 @@ if __name__ == "__main__":
 
     # #
     static_metrics = [ParameterCount, Footprint, ConnectionSparsity]
-    workload_metrics = ["activation_sparsity", MembraneUpdates, SynapticOperations, ClassificationAccuracy]
+    workload_metrics = [ActivationSparsity, MembraneUpdates, SynapticOperations, ClassificationAccuracy]
     # #
     benchmark = Benchmark(
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]

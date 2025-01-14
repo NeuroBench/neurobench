@@ -16,6 +16,16 @@ from neurobench.benchmarks import Benchmark
 
 from lstm_model import LSTMModel
 
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    SMAPE
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
 parser = argparse.ArgumentParser(formatter_class=argparse.RawTextHelpFormatter)
 parser.add_argument('--wb', dest='wandb_state', type=str, default="offline")
 parser.add_argument('--name', type=str, default='LSTM_MG')
@@ -162,22 +172,22 @@ for repeat_id in range(args.repeat):
     lstm.to(torch.device("cpu"))
     model = TorchModel(lstm)
 
-    static_metrics = ["footprint", "connection_sparsity"]
-    workload_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
+    static_metrics = [Footprint, ConnectionSparsity]
+    workload_metrics = [SMAPE, ActivationSparsity, SynapticOperations]
 
     benchmark = Benchmark(model, test_set_loader, [], [],
                           [static_metrics, workload_metrics])
     results = benchmark.run()
     print(results)
-    sMAPE_scores.append(results["sMAPE"])
-    connection_sparsities.append(results["connection_sparsity"])
-    activation_sparsities.append(results["activation_sparsity"])
-    synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
-    synop_dense.append(results["synaptic_operations"]["Dense"])
+    sMAPE_scores.append(results["SMAPE"])
+    connection_sparsities.append(results["ConnectionSparsity"])
+    activation_sparsities.append(results["ActivationSparsity"])
+    synop_macs.append(results["SynapticOperations"]["Effective_MACs"])
+    synop_dense.append(results["SynapticOperations"]["Dense"])
     if loaded_wandb:
-        wandb.log({"sMAPE_score_val": results["sMAPE"]})
+        wandb.log({"sMAPE_score_val": results["SMAPE"]})
 
-footprint = results["footprint"]
+footprint = results["Footprint"]
 
 avg_sMAPE_score = sum(sMAPE_scores)/args.repeat
 connection_sparsity = sum(connection_sparsities)/args.repeat

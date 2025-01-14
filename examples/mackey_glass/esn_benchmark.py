@@ -10,6 +10,16 @@ from neurobench.benchmarks import Benchmark
 
 from echo_state_network import EchoStateNetwork
 
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    SMAPE
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
 # Load hyperparameters of echo state networks found via the random search
 esn_parameters = pd.read_csv("model_data/echo_state_network_hyperparameters.csv")
 
@@ -66,15 +76,15 @@ for tau in range(17, 31):
     
         model = TorchModel(esn)
     
-        static_metrics = ["footprint", "connection_sparsity"]
-        workload_metrics = ["sMAPE", "activation_sparsity", "synaptic_operations"]
+        static_metrics = [Footprint, ConnectionSparsity]
+        workload_metrics = [SMAPE, ActivationSparsity, SynapticOperations]
     
         benchmark = Benchmark(model, test_set_loader, [], [], [static_metrics, workload_metrics]) 
         results = benchmark.run()
         print(results)
-        sMAPE_scores.append(results["sMAPE"])
-        synop_macs.append(results["synaptic_operations"]["Effective_MACs"])
-        synop_dense.append(results["synaptic_operations"]["Dense"])
+        sMAPE_scores.append(results["SMAPE"])
+        synop_macs.append(results["SynapticOperations"]["Effective_MACs"])
+        synop_dense.append(results["SynapticOperations"]["Dense"])
 
 print("Average sMAPE score accross all repeats and time series: ", sum(sMAPE_scores)/len(sMAPE_scores))
 print("Average synop MACs accross all repeats and time series: ", sum(synop_macs)/len(synop_macs))

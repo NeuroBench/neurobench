@@ -10,6 +10,6 @@ def convert_to_class_name(metric_name):
 
     """
     # Convert snake_case to CamelCase
-    if metric_name in ["sMAPE"]:
+    if metric_name in ["sMAPE", "r2", "mse"]:
         return metric_name.upper()
     return "".join(word.title() for word in metric_name.split("_"))

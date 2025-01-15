@@ -2,10 +2,11 @@ import sys
 from contextlib import redirect_stdout
 from nodeenv import mkdir
 from tqdm import tqdm
+from snntorch import utils
 from neurobench.metrics.manager.static_manager import StaticMetricManager
 from neurobench.metrics.manager.workload_manager import WorkloadMetricManager
 from neurobench.processors.manager import ProcessorManager
-from neurobench.models import NeuroBenchModel
+from neurobench.models import NeuroBenchModel, SNNTorchModel
 from torch.utils.data import DataLoader
 from neurobench.processors.abstract import (
     NeuroBenchPreProcessor,
@@ -204,6 +205,9 @@ class Benchmark:
 
         for param in self.model.__net__().parameters():
             param.requires_grad = False
+
+        if isinstance(self.model, SNNTorchModel):
+            utils.reset(self.model.__net__())
 
         for buffer in self.model.__net__().buffers():
             buffer.requires_grad = False

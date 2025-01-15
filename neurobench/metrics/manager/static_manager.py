@@ -1,17 +1,19 @@
 from neurobench.metrics import static as static_metrics
 from neurobench.metrics.abstract import StaticMetric
 from neurobench.metrics.utils.utils import convert_to_class_name
+from neurobench.models import NeuroBenchModel
+from typing import List, Dict
 
 
 class StaticMetricManager:
     """Orchestrator for managing and executing static metrics on a model."""
 
-    def __init__(self, metric_list):
+    def __init__(self, metric_list: List):
         """
         Initializes the orchestrator with a list of static metrics.
 
         Args:
-            metric_list (list): A list of metric identifiers, either as strings corresponding to internal
+            metric_list (List): A list of metric identifiers, either as strings corresponding to internal
                                 metric names or as custom metric objects.
 
         Raises:
@@ -48,7 +50,7 @@ class StaticMetricManager:
                     )
                 self.metrics[item.__name__] = item()
 
-    def run_metrics(self, model):
+    def run_metrics(self, model: NeuroBenchModel) -> Dict:
         """
         Executes all static metrics on the provided model.
 
@@ -56,7 +58,7 @@ class StaticMetricManager:
             model: The model on which the metrics will be run.
 
         Returns:
-            dict: A dictionary where the keys are metric names and the values are the results of the metric calculations.
+            Dict: A dictionary where the keys are metric names and the values are the results of the metric calculations.
 
         Raises:
             Exception: If a metric computation fails, it is caught and logged with an error message.

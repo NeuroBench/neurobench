@@ -7,11 +7,15 @@ from neurobench.metrics.abstract.workload_metric import (
 from neurobench.metrics import workload as workload_metrics
 from neurobench.metrics.utils.utils import convert_to_class_name
 
+from neurobench.models import NeuroBenchModel
+from torch import Tensor
+from typing import List, Dict
+
 
 class WorkloadMetricManager:
     """Orchestrator for managing and executing workload metrics on a model."""
 
-    def __init__(self, metric_list):
+    def __init__(self, metric_list: List):
         """
         Initializes the orchestrator with a list of workload metrics.
 
@@ -61,10 +65,11 @@ class WorkloadMetricManager:
 
         self.results = defaultdict(float)
 
-    def clean_results(self):
+    def clean_results(self) -> None:
+        """Reset the results dictionary to zero."""
         self.results = defaultdict(float)
 
-    def register_hooks(self, model):
+    def register_hooks(self, model: NeuroBenchModel) -> None:
         """
         Register hooks on the model for metrics that require them.
 
@@ -75,7 +80,7 @@ class WorkloadMetricManager:
         if self.requires_hooks:
             model.register_hooks()
 
-    def reset_hooks(self, model):
+    def reset_hooks(self, model: NeuroBenchModel) -> None:
         """
         Cleanup hooks on the model after metrics have been run.
 
@@ -86,7 +91,7 @@ class WorkloadMetricManager:
         if self.requires_hooks:
             model.reset_hooks()
 
-    def cleanup_hooks(self, model):
+    def cleanup_hooks(self, model: NeuroBenchModel) -> None:
         """
         Cleanup hooks on the model after metrics have been run.
 
@@ -97,26 +102,38 @@ class WorkloadMetricManager:
         if self.requires_hooks:
             model.cleanup_hooks()
 
-    def close_hooks(self, model):
+    def close_hooks(self, model: NeuroBenchModel) -> None:
+        """Close hooks on the model after metrics have been run."""
         if self.requires_hooks:
             model.close_hooks()
 
-    def initialize_metrics(self):
+    def initialize_metrics(self) -> None:
+        """Initialize the metrics for a new workload run."""
 
         for m in self.metrics.keys():
             if isinstance(self.metrics[m], AccumulatedMetric):
                 self.metrics[m].reset()
 
-    def run_metrics(self, model, preds, data, batch_size, dataset_len):
+    def run_metrics(
+        self,
+        model: NeuroBenchModel,
+        preds: Tensor,
+        data: tuple[Tensor, Tensor],
+        batch_size: int,
+        dataset_len: int,
+    ) -> Dict:
         """
         Executes all workload metrics on the provided model and data.
 
         Args:
             model: The model on which the metrics will be run.
+            preds: A tensor of model predictions.
             data: A tuple of inputs and targets.
+            batch_size: The size of the batch.
+            dataset_len: The length of the dataset.
 
         Returns:
-            dict: A dictionary where the keys are metric names and the values are the results of the metric calculations.
+            Dict: A dictionary where the keys are metric names and the values are the results of the metric calculations.
 
         """
 

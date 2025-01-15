@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from torch import Tensor
 
 
 class NeuroBenchPreProcessor(ABC):
@@ -20,12 +21,12 @@ class NeuroBenchPreProcessor(ABC):
         """
 
     @abstractmethod
-    def __call__(self, dataset):
+    def __call__(self, dataset: tuple[Tensor, Tensor]) -> tuple[Tensor, Tensor]:
         """
         Process dataset of format (data, targets), or (data, targets, kwargs) to prepare
         for model inference.
 
         Args:
-            dataset: A tuple of (data, targets) or (data, targets, kwargs) where data is a PyTorch tensor of shape (batch, timesteps, ...)
+            dataset (tuple): A tuple of (data, targets) or (data, targets, kwargs) where data is a PyTorch tensor of shape (batch, timesteps, ...)
 
         """

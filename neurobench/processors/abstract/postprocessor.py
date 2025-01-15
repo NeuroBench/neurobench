@@ -1,4 +1,5 @@
 from abc import ABC, abstractmethod
+from torch import Tensor
 
 
 class NeuroBenchPostProcessor(ABC):
@@ -12,13 +13,13 @@ class NeuroBenchPostProcessor(ABC):
     """
 
     @abstractmethod
-    def __call__(self, spikes):
+    def __call__(self, spikes: Tensor) -> Tensor:
         """
         Process tensor of spiking data of format (batch, timesteps, ...) to match spikes
         to ground truth.
 
         Args:
-            spikes: A torch tensor of spikes output by a NeuroBenchModel of
+            spikes (Tensor): A torch tensor of spikes output by a NeuroBenchModel of
                 shape (batch, timestep, ...)
 
         """

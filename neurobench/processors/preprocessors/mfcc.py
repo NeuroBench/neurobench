@@ -22,7 +22,6 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
         melkwargs: dict = None,
         device=None,
     ):
-        super().__init__()
         """
         Args:
             sample_rate (int, optional): Sample rate of the audio signal. (Default: 16000)
@@ -32,6 +31,7 @@ class MFCCPreProcessor(NeuroBenchPreProcessor):
             log_mels (bool, optional): Whether to use log-mel spectrograms instead of db-scaled. (Default: False)
             melkwargs (dict or None, optional): Arguments for MelSpectrogram. (Default: None)
         """
+        super().__init__()
         self.sample_rate = sample_rate
         self.n_mfcc = n_mfcc
         self.dct_type = 2

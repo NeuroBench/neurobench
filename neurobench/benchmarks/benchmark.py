@@ -196,7 +196,7 @@ class Benchmark:
             raise ValueError("Exporting to NIR requires snntorch version >= 0.9.0")
         nir_graph = export_to_nir(self.model.__net__(), dummy_input, **kwargs)
         nir.write(filename, nir_graph)
-        print("Model exported to ")
+        print(f"Model exported to {filename}")
 
     def to_onnx(self, dummy_input, filename, **kwargs):
         """Export the model to the ONNX format."""

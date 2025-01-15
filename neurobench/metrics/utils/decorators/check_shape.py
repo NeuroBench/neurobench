@@ -1,7 +1,11 @@
+from functools import wraps
+
+
 def check_shapes(func):
     """Decorator to check that the shapes of predictions and labels are the same before
     executing the decorated function."""
 
+    @wraps(func)
     def wrapper(*args, **kwargs):
         # Assuming `preds` and `labels` are the first two positional arguments
         if len(args) >= 2:

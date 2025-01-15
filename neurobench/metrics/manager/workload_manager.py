@@ -1,4 +1,4 @@
-from black.trans import defaultdict
+from collections import defaultdict
 
 from neurobench.metrics.abstract.workload_metric import (
     WorkloadMetric,

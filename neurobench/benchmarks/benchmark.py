@@ -1,6 +1,6 @@
 import sys
 from contextlib import redirect_stdout
-from nodeenv import mkdir
+from os import mkdir
 from tqdm import tqdm
 from snntorch import utils
 from neurobench.metrics.manager.static_manager import StaticMetricManager

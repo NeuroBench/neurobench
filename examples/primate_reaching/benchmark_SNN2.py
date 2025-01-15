@@ -34,7 +34,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 for filename in files:
     print("Processing {}".format(filename))
-    data_dir = "../../../data/primate_reaching/PrimateReachingDataset/" # data in repo root dir
+    data_dir = "../../data/primate_reaching/PrimateReachingDataset/" # data in repo root dir
     dataset = PrimateReaching(file_path=data_dir, filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
                             biological_delay=0, remove_segments_inactive=False)

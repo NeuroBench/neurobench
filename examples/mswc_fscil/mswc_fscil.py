@@ -100,7 +100,7 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 fscil_directory = os.path.dirname(os.path.abspath(__file__))
 MODEL_SAVE_DIR = os.path.join(fscil_directory, "model_data/")
-ROOT = os.path.join(fscil_directory, "../../../data/") # data in repo root dir
+ROOT = os.path.join(fscil_directory, "../../data/") # data in repo root dir
 NUM_WORKERS = 8 if device == torch.device("cuda") else 0
 BATCH_SIZE = 256
 NUM_REPEATS = 1

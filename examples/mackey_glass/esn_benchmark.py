@@ -36,7 +36,7 @@ lyaptime_pts = 75
 start_offset_range = start_offset_range * lyaptime_pts
 
 # data in repo root dir
-data_dir = "../../../data/mackey_glass/"
+data_dir = "../../data/mackey_glass/"
 
 for tau in range(17, 31):
     for repeat_id in range(repeat):

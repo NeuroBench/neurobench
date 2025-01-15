@@ -27,7 +27,7 @@ net.load_state_dict(torch.load("model_data/dvs_gesture_snn", map_location=device
 model = SNNTorchModel(net)
 
 # Load the dataset, here we are using the Tonic library
-data_dir = "../../../data/dvs_gesture" # data in repo root dir
+data_dir = "../../data/dvs_gesture" # data in repo root dir
 test_transform = transforms.Compose([transforms.Denoise(filter_time=10000),
                                      transforms.Downsample(spatial_factor=0.25),
                                      transforms.ToFrame(sensor_size=(32, 32, 2),

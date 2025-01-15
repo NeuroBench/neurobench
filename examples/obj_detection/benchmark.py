@@ -19,7 +19,7 @@ parser.add_argument('--mode', type=str, default="ann", help='mode of the model, 
 args = parser.parse_args()
 
 # dataloader itself takes about 7 minutes for loading, with model evaluation and score calculation is about 20 minutes on i9-12900KF, RTX3080
-test_set_dataloader = Gen4DetectionDataLoader(dataset_path="../../../data/Gen 4 Multi channel", # data in repo root dir
+test_set_dataloader = Gen4DetectionDataLoader(dataset_path="../../data/Gen 4 Multi channel", # data in repo root dir
         split="testing",
         batch_size = args.batch_size,
         num_tbins = 12,

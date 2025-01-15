@@ -24,7 +24,7 @@ from SNN import net
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 # data in repo root dir
-test_set = SpeechCommands(path="../../../data/speech_commands/", subset="testing")
+test_set = SpeechCommands(path="../../data/speech_commands/", subset="testing")
 
 test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 

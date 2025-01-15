@@ -16,9 +16,10 @@ from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
 import json
 import csv
 import os
-from typing import Literal, List, Type, Optional
+from typing import Literal, List, Type, Optional, Dict, Any
 import pathlib
 import snntorch
+from torch import Tensor
 
 if snntorch.__version__ >= "0.9.0":
     from snntorch import export_to_nir
@@ -64,25 +65,25 @@ class Benchmark:
         self,
         quiet: bool = False,
         verbose: bool = False,
-        dataloader=None,
-        preprocessors=None,
-        postprocessors=None,
-        device=None,
-    ):
+        dataloader: Optional[DataLoader] = None,
+        preprocessors: Optional[NeuroBenchPreProcessor] = None,
+        postprocessors: Optional[NeuroBenchPostProcessor] = None,
+        device=Optional[str],
+    ) -> Dict[str, Any]:
         """
         Runs batched evaluation of the benchmark.
 
         Args:
-            dataloader (optional): override DataLoader for this run.
-            preprocessors (optional): override preprocessors for this run.
-            postprocessors (optional): override postprocessors for this run.
+            dataloader (Optional): override DataLoader for this run.
+            preprocessors (Optional): override preprocessors for this run.
+            postprocessors (Optional): override postprocessors for this run.
             quiet (bool, default=False): If True, output is suppressed.
             verbose (bool, default=False): If True, metrics for each bach will be printed.
                                            If False (default), metrics are accumulated and printed after all batches are processed.
-            device (optional): use device for this run (e.g. 'cuda' or 'cpu').
+            device (Optional): use device for this run (e.g. 'cuda' or 'cpu').
 
         Returns:
-            results: A dictionary of results.
+            Dict[str, Any]: A dictionary of results.
 
         """
         with redirect_stdout(None if quiet else sys.stdout):
@@ -143,18 +144,28 @@ class Benchmark:
         return self.results
 
     def save_benchmark_results(
-        self, file_path, file_format: Literal["json", "csv", "txt"] = "json"
-    ):
+        self, file_path: str, file_format: Literal["json", "csv", "txt"] = "json"
+    ) -> None:
         """
         Save benchmark results to a specified file in the chosen format.
 
         Args:
-            results (dict): Benchmark results to save.
-            file_path (str): Path to the output file (excluding the extension).
-            file_format (str): Format to save the file in ("json", "csv", "txt").
+            file_path (str):
+                Path to the output file (excluding the extension). The method
+                automatically appends the appropriate extension based on the
+                chosen file format.
+            file_format (Literal["json", "csv", "txt"], default="json"):
+                The format in which the results should be saved. Supported formats:
+
+                - `"json"`: Saves the results as a JSON file with formatted indentation.
+
+                - `"csv"`: Saves the results as a CSV file with keys as headers and values as the first row.
+
+                - `"txt"`: Saves the results as a plain text file with one key-value pair per line.
 
         Raises:
-            ValueError: If the file format is unsupported.
+            ValueError:
+                If the provided `file_format` is not one of the supported formats (`"json"`, `"csv"`, `"txt"`).
 
         """
         file_format = file_format.lower()
@@ -190,16 +201,50 @@ class Benchmark:
         else:
             raise ValueError(f"Unsupported file format: {file_format}")
 
-    def to_nir(self, dummy_input, filename, **kwargs):
-        """Export the model to the NIR format."""
+    def to_nir(self, dummy_input: Tensor, filename: str, **kwargs) -> None:
+        """
+        Exports the model to the NIR (Neural Intermediate Representation) format.
+
+        Args:
+            dummy_input (torch.Tensor):
+                A sample input tensor that matches the input shape of the model.
+                This is required for tracing the model during export.
+            filename (str):
+                The file path where the exported NIR file will be saved.
+            **kwargs:
+                Additional keyword arguments passed to the `export_to_nir` function
+                for customization during the export process.
+
+        Raises:
+            ValueError:
+                If the installed version of `snntorch` is less than `0.9.0`.
+
+        """
         if snntorch.__version__ < "0.9.0":
             raise ValueError("Exporting to NIR requires snntorch version >= 0.9.0")
         nir_graph = export_to_nir(self.model.__net__(), dummy_input, **kwargs)
         nir.write(filename, nir_graph)
         print(f"Model exported to {filename}")
 
-    def to_onnx(self, dummy_input, filename, **kwargs):
-        """Export the model to the ONNX format."""
+    def to_onnx(self, dummy_input: Tensor, filename: str, **kwargs) -> None:
+        """
+        Exports the model to the ONNX (Open Neural Network Exchange) format.
+
+        Args:
+            dummy_input (torch.Tensor):
+                A sample input tensor that matches the input shape of the model.
+                This tensor is required for tracing the model during the export process.
+            filename (str):
+                The file path where the ONNX model will be saved, including the `.onnx` extension.
+            **kwargs:
+                Additional keyword arguments passed to the `torch.onnx.export` function
+                for customization during the export process.
+
+        Raises:
+            RuntimeError:
+                If an error occurs during the ONNX export process.
+
+        """
         if dummy_input.requires_grad:
             dummy_input = dummy_input.detach()
 

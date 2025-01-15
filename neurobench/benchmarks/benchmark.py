@@ -17,8 +17,11 @@ import csv
 import os
 from typing import Literal, List, Type, Optional
 import pathlib
+import snntorch
 
-# from snntorch import export_to_nir
+if snntorch.__version__ >= "0.9.0":
+    from snntorch import export_to_nir
+
 import torch
 import nir
 
@@ -188,6 +191,8 @@ class Benchmark:
 
     def to_nir(self, dummy_input, filename, **kwargs):
         """Export the model to the NIR format."""
+        if snntorch.__version__ < "0.9.0":
+            raise ValueError("Exporting to NIR requires snntorch version >= 0.9.0")
         nir_graph = export_to_nir(self.model.__net__(), dummy_input, **kwargs)
         nir.write(filename, nir_graph)
         print("Model exported to ")
@@ -197,6 +202,13 @@ class Benchmark:
         if dummy_input.requires_grad:
             dummy_input = dummy_input.detach()
 
+        for param in self.model.__net__().parameters():
+            param.requires_grad = False
+
+        for buffer in self.model.__net__().buffers():
+            buffer.requires_grad = False
+
         with torch.no_grad():
+            self.model.__net__().eval()
             torch.onnx.export(self.model.__net__(), dummy_input, filename, **kwargs)
         print(f"Model exported to {filename}")

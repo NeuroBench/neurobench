@@ -1,5 +1,4 @@
 import os
-import json
 
 import numpy as np
 
@@ -7,6 +6,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import copy
+
 from tqdm import tqdm
 
 from torch.utils.data import DataLoader, ConcatDataset
@@ -16,7 +16,9 @@ from neurobench.datasets.MSWC_IncrementalLoader import IncrementalFewShot
 from neurobench.models import TorchModel
 
 from neurobench.benchmarks import Benchmark
-from neurobench.preprocessing import MFCCPreProcessor, S2SPreProcessor
+from neurobench.processors.preprocessors import MFCCPreProcessor, S2SPreProcessor
+from neurobench.processors.abstract.preprocessor import NeuroBenchPreProcessor
+from neurobench.processors.abstract.postprocessor import NeuroBenchPostProcessor
 
 import argparse
 
@@ -24,9 +26,62 @@ from M5 import M5
 from sparchSNNs import SNN
 from sparchSNNs import RadLIFLayer
 
-squeeze = lambda x: (x[0].squeeze(), x[1])
-out2pred = lambda x: torch.argmax(x, dim=-1)
-to_device = lambda x: (x[0].to(device), x[1].to(device))
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    ClassificationAccuracy
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
+class SqueezeIn(NeuroBenchPreProcessor):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, dataset):
+        return (dataset[0].squeeze(), dataset[1])
+
+class ToDevice(NeuroBenchPreProcessor):
+
+    def __init__(self):
+        pass
+
+    def __call__(self, dataset):
+        return (dataset[0].to(device), dataset[1].to(device))
+
+class Out2Pred(NeuroBenchPostProcessor):
+
+        def __call__(self, spikes):
+            return torch.argmax(spikes, dim=-1)
+
+class SqueezeOut(NeuroBenchPostProcessor):
+
+         def __call__(self, spikes):
+            return torch.squeeze(spikes)
+
+
+class OutMask(NeuroBenchPostProcessor):
+
+        def __init__(self, mask):
+            self.mask = mask
+
+        def __call__(self, spikes):
+            return spikes - self.mask
+
+class Softmax(NeuroBenchPostProcessor):
+
+        def __call__(self, spikes):
+            return F.softmax(spikes)
+
+squeeze_in = SqueezeIn()
+out2pred = Out2Pred()
+to_device = ToDevice()
+squeeze_out = SqueezeOut()
+softmax = Softmax()
+
 
 
 def parse_arguments():
@@ -87,7 +142,7 @@ else:
     )
 
 
-def test(test_model, mask, set=None):
+def validate(test_model, mask, set=None):
     test_model.eval()
 
     if set is not None:
@@ -96,10 +151,12 @@ def test(test_model, mask, set=None):
         base_test_set = MSWC(root=ROOT, subset="base", procedure="testing")
         test_loader = DataLoader(base_test_set, batch_size=BATCH_SIZE, num_workers=NUM_WORKERS, pin_memory=PIN_MEMORY)
     
-    out_mask = lambda x: x - mask
+    out_mask = OutMask(mask)
 
-    benchmark = Benchmark(TorchModel(test_model), metric_list=[[],["classification_accuracy"]], dataloader=test_loader, 
-                          preprocessors=[to_device, encode, squeeze], postprocessors=[out_mask, out2pred, torch.squeeze])
+
+
+    benchmark = Benchmark(TorchModel(test_model), metric_list=[[],[ClassificationAccuracy]], dataloader=test_loader,
+                          preprocessors=[to_device, encode, squeeze_in], postprocessors=[out_mask, out2pred, squeeze_out])
 
     pre_train_results = benchmark.run()
     test_accuracy = pre_train_results['classification_accuracy']
@@ -142,8 +199,8 @@ def pre_train(model):
             optimizer.step()
 
         if epoch % 5 == 0:
-            train_acc = test(model, mask, set=base_train_set)
-            test_acc = test(model, mask)
+            train_acc = validate(model, mask, set=base_train_set)
+            test_acc = validate(model, mask)
 
             print(f"The train accuracy is {train_acc*100}%")
             print(f"The test accuracy is {test_acc*100}%")
@@ -298,30 +355,32 @@ if __name__ == '__main__':
         eval_model.net.eval()
 
         # Metrics
-        static_metrics = ["footprint", "connection_sparsity"]
-        workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+        static_metrics = [Footprint, ConnectionSparsity]
+        workload_metrics = [ClassificationAccuracy, ActivationSparsity, SynapticOperations]
 
         # Define benchmark object
         benchmark_all_test = Benchmark(eval_model, metric_list=[static_metrics, workload_metrics], dataloader=test_loader, 
-                            preprocessors=[to_device, encode, squeeze], postprocessors=[])
+                            preprocessors=[to_device, encode, squeeze_in], postprocessors=[])
 
         # Define specific post-processing with masking on the base classes
         mask = torch.full((200,), float('inf')).to(device)
         mask[torch.arange(0,100, dtype=int)] = 0
-        out_mask = lambda x: x - mask
+        out_mask = OutMask(mask)
+
+
 
         # Run session 0 benchmark on base classes
         print(f"Session: 0")
 
-        pre_train_results = benchmark_all_test.run(postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
+        pre_train_results = benchmark_all_test.run(postprocessors=[out_mask, softmax, out2pred, squeeze_out])
         
         print("Base results:", pre_train_results)
         
-        eval_accs.append(pre_train_results['classification_accuracy'])
-        act_sparsity.append(pre_train_results['activation_sparsity'])
-        syn_ops_dense.append(pre_train_results['synaptic_operations']['Dense'])
-        syn_ops_macs.append(pre_train_results['synaptic_operations']['Effective_MACs'])
-        syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
+        eval_accs.append(pre_train_results['ClassificationAccuracy'])
+        act_sparsity.append(pre_train_results['ActivationSparsity'])
+        syn_ops_dense.append(pre_train_results['SynapticOperations']['Dense'])
+        syn_ops_macs.append(pre_train_results['SynapticOperations']['Effective_MACs'])
+        syn_ops_acs.append(pre_train_results['SynapticOperations']['Effective_ACs'])
         
         print(f"The base accuracy is {eval_accs[-1]*100}%")
 
@@ -336,8 +395,8 @@ if __name__ == '__main__':
             print(f"Session: {session+1}")
 
             # Define benchmark object for new classes
-            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],["classification_accuracy"]], dataloader=None,
-                                preprocessors=[to_device, encode, squeeze], postprocessors=[])
+            benchmark_new_classes = Benchmark(eval_model, metric_list=[[],[ClassificationAccuracy]], dataloader=None,
+                                preprocessors=[to_device, encode, squeeze_in], postprocessors=[])
 
             ### Computing Prototypical Weights and Biases of new classes ###
             data = None
@@ -385,23 +444,25 @@ if __name__ == '__main__':
             session_classes = torch.cat((torch.arange(0,100, dtype=int), torch.IntTensor(query_classes))) 
             mask = torch.full((200,), float('inf')).to(device)
             mask[session_classes] = 0
-            out_mask = lambda x: x - mask
+            out_mask = OutMask(mask)
+
+
 
             # Run benchmark to evaluate accuracy of this specific session
-            session_results = benchmark_all_test.run(dataloader = full_session_test_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
+            session_results = benchmark_all_test.run(dataloader = full_session_test_loader, postprocessors=[out_mask, softmax, out2pred, squeeze_out])
             print("Session results:", session_results)
 
-            eval_accs.append(session_results['classification_accuracy'])
-            act_sparsity.append(session_results['activation_sparsity'])
-            syn_ops_dense.append(session_results['synaptic_operations']['Dense'])
-            syn_ops_macs.append(session_results['synaptic_operations']['Effective_MACs'])
-            syn_ops_acs.append(pre_train_results['synaptic_operations']['Effective_ACs'])
-            print(f"Session accuracy: {session_results['classification_accuracy']*100} %")
+            eval_accs.append(session_results['ClassificationAccuracy'])
+            act_sparsity.append(session_results['ActivationSparsity'])
+            syn_ops_dense.append(session_results['SynapticOperations']['Dense'])
+            syn_ops_macs.append(session_results['SynapticOperations']['Effective_MACs'])
+            syn_ops_acs.append(pre_train_results['SynapticOperations']['Effective_ACs'])
+            print(f"Session accuracy: {session_results['ClassificationAccuracy']*100} %")
 
             # Run benchmark on query classes only
-            query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, F.softmax, out2pred, torch.squeeze])
-            print(f"Accuracy on new classes: {query_results['classification_accuracy']*100} %")
-            query_accs.append(query_results['classification_accuracy'])
+            query_results = benchmark_new_classes.run(dataloader = query_loader, postprocessors=[out_mask, softmax, out2pred, squeeze_out])
+            print(f"Accuracy on new classes: {query_results['ClassificationAccuracy']*100} %")
+            query_accs.append(query_results['ClassificationAccuracy'])
 
         all_evals.append(eval_accs)
         all_query.append(query_accs)

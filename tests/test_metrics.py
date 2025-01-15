@@ -1,4 +1,5 @@
 from neurobench.models import SNNTorchModel, TorchModel
+import snntorch
 from neurobench.metrics.workload import (
     ClassificationAccuracy,
     MSE,
@@ -35,7 +36,10 @@ class TestStaticMetrics(unittest.TestCase):
 
     def test_footprint(self):
         model = SNNTorchModel(self.net)
-        self.assertEqual(self.footprint(model), 583900)
+        if snntorch.__version__ == "0.7.0":
+            self.assertEqual(self.footprint(model), 583900)
+        else:
+            self.assertEqual(self.footprint(model), 1406172)
 
     def test_parameter_count(self):
         model = SNNTorchModel(self.net)

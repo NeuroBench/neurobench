@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from torch import Tensor
+from neurobench.models import NeuroBenchModel
 
 
 class WorkloadMetric(ABC):
@@ -8,7 +9,9 @@ class WorkloadMetric(ABC):
         self._requires_hooks = requires_hooks
 
     @abstractmethod
-    def __call__(self, model, preds: Tensor, data: Tensor) -> float:
+    def __call__(
+        self, model: NeuroBenchModel, preds: Tensor, data: tuple[Tensor, Tensor]
+    ) -> float:
         pass
 
     @property

@@ -5,21 +5,29 @@ from snntorch import SpikingNeuron
 
 
 class ConnectionSparsity(StaticMetric):
+    """
+    Sparsity of model connections between layers.
+
+    Based on number of zeros
+    in supported layers, other layers are not taken into account in the computation:
+    Supported layers:
+    Linear
+    Conv1d, Conv2d, Conv3d
+    RNN, RNNBase, RNNCell
+    LSTM, LSTMBase, LSTMCell
+    GRU, GRUBase, GRUCell
+
+    """
 
     def __call__(self, model):
-        """Sparsity of model connections between layers. Based on number of zeros
-        in supported layers, other layers are not taken into account in the computation:
-        Supported layers:
-        Linear
-        Conv1d, Conv2d, Conv3d
-        RNN, RNNBase, RNNCell
-        LSTM, LSTMBase, LSTMCell
-        GRU, GRUBase, GRUCell
+        """
+        Compute connection sparsity.
 
         Args:
             model: A NeuroBenchModel.
         Returns:
             float: Connection sparsity, rounded to 3 decimals.
+
         """
 
         def get_nr_zeros_weights(module):

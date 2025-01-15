@@ -3,23 +3,29 @@ from neurobench.metrics.abstract.workload_metric import WorkloadMetric
 
 
 class ActivationSparsity(WorkloadMetric):
+    """
+    Sparsity of model activations.
+
+    Calculated as the number of zero activations over the total number of activations,
+    over all layers, timesteps, samples in data.
+
+    """
+
     def __init__(self):
-        """Init metric state."""
+        """Initialize the ActivationSparsity metric."""
+
         super().__init__(requires_hooks=True)
 
     def __call__(self, model, preds, data):
         """
-        Sparsity of model activations.
-
-        Calculated as the number of zero activations over the total number
-        of activations, over all layers, timesteps, samples in data.
+        Compute activation sparsity.
 
         Args:
             model: A NeuroBenchModel.
             preds: A tensor of model predictions.
             data: A tuple of data and labels.
         Returns:
-            float: Activation sparsity.
+            float: Activation sparsity
 
         """
         # TODO: for a spiking model, based on number of spikes over all timesteps over all samples from all layers

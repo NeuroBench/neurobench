@@ -6,11 +6,14 @@ class SynapticOperations(AccumulatedMetric):
     """
     Number of synaptic operations.
 
-    MACs for ANN ACs for SNN
+    This metric computes the number of Multiply-Accumulate operations (MACs) for
+    Artificial Neural Networks (ANN) and Accumulation operations (ACs) for Spiking
+    Neural Networks (SNN).
 
     """
 
     def __init__(self):
+        """Initialize SynapticOperations metric."""
 
         super().__init__(requires_hooks=True)
         self.MAC = 0
@@ -19,6 +22,13 @@ class SynapticOperations(AccumulatedMetric):
         self.total_samples = 0
 
     def reset(self):
+        """
+        Reset the metric state for a new evaluation.
+
+        Clears all accumulated values for MAC, AC, synaptic operations, and the total
+        number of samples.
+
+        """
         self.MAC = 0
         self.AC = 0
         self.total_synops = 0
@@ -26,7 +36,12 @@ class SynapticOperations(AccumulatedMetric):
 
     def __call__(self, model, preds, data):
         """
-        Multiply-accumulates (MACs) of the model forward.
+        Accumulate the Multiply-Accumulate (MAC) operations or Accumulation (AC)
+        operations during the forward pass.
+
+        This method accumulates the operations based on the model's connections, and differentiates between
+        ANN (MACs) and SNN (ACs) operations based on the spiking activity.
+
 
         Args:
             model: A NeuroBenchModel.
@@ -58,6 +73,20 @@ class SynapticOperations(AccumulatedMetric):
         return self.compute()
 
     def compute(self):
+        """
+        Compute the average number of operations per sample.
+
+        Returns:
+            dict: A dictionary containing:
+
+                - "Effective_MACs": The average MACs per sample.
+
+                - "Effective_ACs": The average ACs per sample.
+
+                - "Dense": The average total synaptic operations per sample.
+
+        """
+
         if self.total_samples == 0:
             return {"Effective_MACs": 0, "Effective_ACs": 0, "Dense": 0}
         ac = self.AC / self.total_samples

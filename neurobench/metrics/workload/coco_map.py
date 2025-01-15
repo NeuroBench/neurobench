@@ -24,7 +24,13 @@ class CocoMap(AccumulatedMetric):
     """
 
     def __init__(self):
-        """Initalize metric state."""
+        """
+        Initialize the CocoMap metric.
+
+        Raises:
+            ImportError: If the `metavision_ml` and `metavision_sdk_core` packages are not installed on a supported platform.
+
+        """
 
         if not METAVISION_AVAILABLE:
             raise ImportError(
@@ -42,7 +48,12 @@ class CocoMap(AccumulatedMetric):
         )
 
     def reset(self):
-        """Reset metric state."""
+        """
+        Reset metric state.
+
+        Clears all accumulated detections and reinitializes the `CocoEvaluator`.
+
+        """
         self.dt_detections = defaultdict(list)
         self.gt_detections = defaultdict(list)
         self.evaluator = CocoEvaluator(
@@ -118,7 +129,13 @@ class CocoMap(AccumulatedMetric):
         return 0.0  # too heavy to compute every iteration
 
     def compute(self):
-        """Compute COCO mAP using accumulated data."""
+        """
+        Compute COCO mAP using accumulated data.
+
+        Returns:
+            float: COCO mean average precision.
+
+        """
         print("Computing COCO mAP.")
         for key in self.gt_detections:
             self.evaluator.partial_eval(

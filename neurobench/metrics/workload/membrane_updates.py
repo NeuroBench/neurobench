@@ -4,21 +4,28 @@ from collections import defaultdict
 
 
 class MembraneUpdates(AccumulatedMetric):
+    """
+    Membrane potential updates metric.
+
+    This metric computes the number of membrane potential updates occurring during the
+    forward pass of the model. The updates are tracked per neuron, per layer.
+
+    """
 
     def __init__(self):
-        """Init metric state."""
+        """Initialize the MembraneUpdates metric."""
         super().__init__(requires_hooks=True)
         self.total_samples = 0
         self.neuron_membrane_updates = defaultdict(int)
 
     def reset(self):
-        """Reset metric state."""
+        """Reset the metric state for a new evaluation."""
         self.total_samples = 0
         self.neuron_membrane_updates = defaultdict(int)
 
     def __call__(self, model, preds, data):
         """
-        Number of membrane updates of the model forward.
+        Accumulate the number of membrane updates for each model forward pass.
 
         Args:
             model: A NeuroBenchModel.
@@ -53,7 +60,7 @@ class MembraneUpdates(AccumulatedMetric):
 
     def compute(self):
         """
-        Compute membrane updates using accumulated data.
+        Compute the total membrane updates normalized by the number of samples.
 
         Returns:
             float: Compute the total updates to each neuron's membrane potential within the model,

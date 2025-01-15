@@ -6,11 +6,17 @@ from neurobench.metrics.abstract.workload_metric import WorkloadMetric
 
 
 class MSE(WorkloadMetric):
+    """Mean squared error of the model predictions."""
+
+    def __init__(self):
+        """Initialize the MSE metric."""
+
+        super().__init__(requires_hooks=False)
 
     @check_shapes
     def __call__(self, model, preds: Tensor, data: Tensor) -> float:
         """
-        Mean squared error of the model predictions.
+        Compute mean squared error.
 
         Args:
             model: A NeuroBenchModel.

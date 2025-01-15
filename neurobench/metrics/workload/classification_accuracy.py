@@ -6,18 +6,23 @@ from neurobench.metrics.abstract.workload_metric import WorkloadMetric
 
 
 class ClassificationAccuracy(WorkloadMetric):
+    """Classification accuracy of the model predictions."""
+
+    def __init__(self):
+        """Initialize the ClassificationAccuracy metric."""
+        super().__init__(requires_hooks=False)
 
     @check_shapes
-    def __call__(self, model, preds: Tensor, data: Tensor) -> float:
+    def __call__(self, model, preds, data):
         """
-        Classification accuracy of the model predictions.
+        Compute classification accuracy.
 
         Args:
             model: A NeuroBenchModel.
             preds: A tensor of model predictions.
             data: A tuple of data and labels.
         Returns:
-            float: Classification accuracy.
+            float: Classification accuracy
 
         """
 

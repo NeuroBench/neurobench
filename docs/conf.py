@@ -35,6 +35,12 @@ master_doc = "index"
 autodoc_mock_imports = ["torch", "torchaudio", "metavision_ml", "pytorch_lightning"]
 todo_include_todos = True
 
+autodoc_default_options = {
+    "special-members": "__call__, __init__",  # Include __call__ in the docs
+    "undoc-members": True,  # Include undocumented members
+    "show-inheritance": True,  # Show inheritance hierarchy
+}
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 

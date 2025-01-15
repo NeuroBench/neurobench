@@ -21,5 +21,7 @@ class NeuroBenchPostProcessor(ABC):
         Args:
             spikes (Tensor): A torch tensor of spikes output by a NeuroBenchModel of
                 shape (batch, timestep, ...)
+        Returns:
+            Tensor: A tensor of shape (batch, ...) with the processed spikes
 
         """

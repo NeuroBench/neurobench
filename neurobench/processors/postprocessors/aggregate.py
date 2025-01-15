@@ -9,10 +9,10 @@ class Aggregate(NeuroBenchPostProcessor):
         Returns the aggregated spikes.
 
         Args:
-            spikes: A torch tensor of spikes of shape (batch, timestep, classes)
+            spikes (Tensor): A torch tensor of spikes of shape (batch, timestep, classes)
 
         Returns:
-            spikes: A torch tensor of spikes of shape (batch, classes)
+            Tensor: A torch tensor of spikes of shape (batch, classes)
 
         """
         return spikes.sum(1)

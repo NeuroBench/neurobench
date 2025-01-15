@@ -29,4 +29,7 @@ class NeuroBenchPreProcessor(ABC):
         Args:
             dataset (tuple): A tuple of (data, targets) or (data, targets, kwargs) where data is a PyTorch tensor of shape (batch, timesteps, ...)
 
+        Returns:
+            tuple: A tuple of (data, targets) or (data, targets, kwargs) where data is a PyTorch tensor of shape (batch, timesteps, ...)
+
         """

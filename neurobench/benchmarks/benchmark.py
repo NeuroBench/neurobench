@@ -68,7 +68,7 @@ class Benchmark:
         dataloader: Optional[DataLoader] = None,
         preprocessors: Optional[NeuroBenchPreProcessor] = None,
         postprocessors: Optional[NeuroBenchPostProcessor] = None,
-        device=Optional[str],
+        device: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
         Runs batched evaluation of the benchmark.
@@ -104,7 +104,7 @@ class Benchmark:
             dataset_len = len(dataloader.dataset)
 
             if device is not None:
-                self.model.net.to(device)
+                self.model.__net__().to(device)
 
             batch_num = 0
             for data in tqdm(dataloader, total=len(dataloader), disable=quiet):

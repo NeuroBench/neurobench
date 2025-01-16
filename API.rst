@@ -92,8 +92,6 @@ Accumulating predictions / postprocessing.
 .. code:: python
 
     class PostProcessor(NeuroBenchPostProcessor):
-        def __init__(self):
-            ...
         def __call__(self, preds):
             ...
 
@@ -155,23 +153,35 @@ or they can be stateful subclasses of AccumulatedMetric.
 
 .. code:: python
 
-    def static_metric(model):
-        ...
+    class CustomStaticMetric(StaticMetric):
 
-    def workload_metric(model, preds, data):
-        # must return an int or float to be accumulated with mean
-        return compare(preds, data[1])
+        def __call__(self, model):
+            ...
 
-    class workload_metric_with_state(AccumulatedMetric):
+    class CustomWorkloadMetric(WorkloadMetric):
+
         def __init__(self):
+            # requires_hook is a boolean that indicates whether the metric requires a hook to be registered on the model
+            super().__init__(requires_hook=...)
+            ...
+
+        def __call__(self, model, preds, data):
+            # must return an int or float to be accumulated with mean
+            ...
+
+    class CustomAccumulatedMetric(AccumulatedMetric):
+
+        def __init__(self):
+         #requires_hook is a boolean that indicates whether the metric requires a hook to be registered on the model
+            super().__init__(requires_hook=...)
             ...
     
-    def __call__(self, model, preds, data):
-        # accumulate state from this batch
-        return self.compute()
+        def __call__(self, model, preds, data):
+            # accumulate state from this batch
+            return self.compute()
     
-    def compute():
-        # compute metric from accumulated state
+        def compute():
+            # compute metric from accumulated state
 
 **Benchmark:**
 ~~~~~~~~~~~~~~
@@ -189,13 +199,20 @@ or they can be stateful subclasses of AccumulatedMetric.
 
 .. code:: python
 
+    from neurobench.models.torch_model import TorchModel
+    from neurobench.benchmarks import Benchmark
+    from neurobench.datasets.dataset import NeuroBenchDataset
+
+    from neurobench.metrics.workload import ActivationSparsity
+    from neurobench.metrics.static import Footprint, ConnectionSparsity
+
    model = TorchModel(net)
    test_set = NeuroBenchDataset(...)
    test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
    preprocessors = [PreProcessor1(), PreProcessor2()]
    postprocessors = [PostProcessor1()]
-   static_metrics = ["footprint", "connection_sparsity"]
-   data_metrics = ["accuracy", "activation_sparsity"]
+   static_metrics = [Footprint, ConnectionSparsity]
+   data_metrics = [Accuracy, ActivationSparsity]
 
    benchmark = Benchmark(
        model, 

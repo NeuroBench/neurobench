@@ -172,7 +172,7 @@ or they can be stateful subclasses of AccumulatedMetric.
     class CustomAccumulatedMetric(AccumulatedMetric):
 
         def __init__(self):
-         #requires_hook is a boolean that indicates whether the metric requires a hook to be registered on the model
+            #requires_hook is a boolean that indicates whether the metric requires a hook to be registered on the model
             super().__init__(requires_hook=...)
             ...
     
@@ -206,22 +206,22 @@ or they can be stateful subclasses of AccumulatedMetric.
     from neurobench.metrics.workload import ActivationSparsity
     from neurobench.metrics.static import Footprint, ConnectionSparsity
 
-   model = TorchModel(net)
-   test_set = NeuroBenchDataset(...)
-   test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
-   preprocessors = [PreProcessor1(), PreProcessor2()]
-   postprocessors = [PostProcessor1()]
-   static_metrics = [Footprint, ConnectionSparsity]
-   data_metrics = [Accuracy, ActivationSparsity]
+    model = TorchModel(net)
+    test_set = NeuroBenchDataset(...)
+    test_set_loader = DataLoader(test_set, batch_size=16, shuffle=False)
+    preprocessors = [PreProcessor1(), PreProcessor2()]
+    postprocessors = [PostProcessor1()]
+    static_metrics = [Footprint, ConnectionSparsity]
+    data_metrics = [Accuracy, ActivationSparsity]
 
-   benchmark = Benchmark(
-       model, 
+    benchmark = Benchmark(
+       model,
        test_set_loader,
        preprocessors,
-       postprocessors, 
+       postprocessors,
        [static_metrics, data_metrics]
-   )
-   results = benchmark.run()
+    )
+    results = benchmark.run()
 
 Known Errata
 ------------

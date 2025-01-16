@@ -1,6 +1,7 @@
 .. image:: https://github.com/NeuroBench/neurobench/blob/main/docs/_static/neurobench_banner_light.jpeg?raw=true
-        :align: center
-        :width: 800
+    :align: center
+    :width: 800
+
 ============
 Introduction
 ============

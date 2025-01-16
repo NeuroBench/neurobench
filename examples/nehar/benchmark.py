@@ -15,7 +15,6 @@ from neurobench.metrics.static import (
     Footprint,
     ConnectionSparsity,
 )
-import time
 
 
 if __name__ == "__main__":

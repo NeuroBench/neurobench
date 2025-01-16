@@ -86,8 +86,8 @@ Additional benchmarks
 Getting started
 ---------------
 
-Example benchmark scripts can be found under the ``neurobench/examples`` folder. 
-(`https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/ <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/>`__)
+Example benchmark scripts can be found under the ``examples`` folder.
+(`https://github.com/NeuroBench/neurobench/tree/main/examples/ <https://github.com/NeuroBench/neurobench/tree/main/examples/>`__)
 
 In general, the design flow for using the framework is as follows:
 
@@ -118,24 +118,24 @@ Google Speech Commands keyword classification benchmark:
 ::
 
    # ANN Benchmark Example
-   poetry run python neurobench/examples/gsc/benchmark_ann.py
+   poetry run python examples/gsc/benchmark_ann.py
    
    # Expected results:
-   # {'footprint': 109228, 'connection_sparsity': 0.0,
-   # 'classification_accuracy': 0.8653339397251905, 'activation_sparsity': 0.3854464619019532, 
-   # 'synaptic_operations': {'Effective_MACs': 1749994.1556565198, 'Effective_ACs': 0.0, 'Dense': 1902179.0}}
+   # {'Footprint': 109228, 'ConnectionSparsity': 0.0,
+   # 'ClassificationAccuracy': 0.8653339397251905, 'ActivationSparsity': 0.3854464619019532,
+   # 'SynapticOperations': {'Effective_MACs': 1749994.1556565198, 'Effective_ACs': 0.0, 'Dense': 1902179.0}}
 
 
    # SNN Benchmark Example
-   poetry run python neurobench/examples/gsc/benchmark_snn.py
+   poetry run python examples/gsc/benchmark_snn.py
    
    # Expected results:
-   # {'footprint': 583900, 'connection_sparsity': 0.0,
-   # 'classification_accuracy': 0.8484325295196562, 'activation_sparsity': 0.9675956131759854, 
-   # 'synaptic_operations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
+   # {'Footprint': 583900, 'ConnectionSparsity': 0.0,
+   # 'ClassificationAccuracy': 0.8484325295196562, 'ActivationSparsity': 0.9675956131759854,
+   # 'SynapticOperations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
 
 These demos should download the dataset, then run in a couple minutes. Other baseline result scripts and notebook
-tutorials are available in the ``neurobench/examples`` folder.
+tutorials are available in the ``examples`` folder.
 
 Developers
 ----------

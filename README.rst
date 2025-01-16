@@ -40,7 +40,7 @@ NeuroBench contains the following sections:
    * - **Section**
      - **Description**
    * - `neurobench.benchmarks <https://neurobench.readthedocs.io/en/latest/neurobench.benchmarks.html>`__
-     - Neurobench benchmarks, including data metrics and static metrics
+     - Neurobench benchmarks, including workload metrics and static metrics
    * - `neurobench.datasets <https://neurobench.readthedocs.io/en/latest/neurobench.datasets.html>`__
      - Neurobench benchmark datasets
    * - `neurobench.models <https://neurobench.readthedocs.io/en/latest/neurobench.models.html>`__
@@ -70,6 +70,12 @@ v1.0 benchmarks
 - Event Camera Object Detection
 - Non-human Primate (NHP) Motor Prediction
 - Chaotic Function Prediction
+
+Leaderboards
+~~~~~~~~~~~~
+Proposed solutions for the benchmark tasks are evaluated on a set of metrics and compared to the performance of other solutions.
+
+The leaderboards for these benchmarks can be found `here <leaderboard.rst>`__.
 
 Additional benchmarks
 ~~~~~~~~~~~~~~~~~~~~~

@@ -22,7 +22,7 @@ if __name__ == "__main__":
     batch_size = 256
     lr = 1.0e-3
     # data in repo root dir
-    dataset_path = "../../data/nehar/watch_subset2_40.npz"
+    dataset_path = "../data/nehar/watch_subset2_40.npz"
     data_module = WISDM(path=dataset_path, batch_size=batch_size)
     data_module.setup("test")
 

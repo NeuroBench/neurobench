@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "NeuroBench"
-copyright = "2024, Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe"
+copyright = "2024, Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe, Benedetto Leto"
 author = "Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe"
 release = "1.0.6"
 
@@ -48,5 +48,6 @@ autodoc_default_options = {
 html_theme = "sphinx_rtd_theme"
 
 html_static_path = ["_static"]
+html_logo = "_static/neurobench_banner_dark.png"
 
 pygments_style = "sphinx"

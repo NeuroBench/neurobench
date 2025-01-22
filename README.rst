@@ -144,14 +144,16 @@ Developers
 NeuroBench is a collaboration between industry and academic engineers
 and researchers. This framework is currently maintained by `Jason
 Yik <https://www.linkedin.com/in/jasonlyik/>`__, `Noah
-Pacik-Nelson <https://www.linkedin.com/in/noah-pacik-nelson/>`__, and
+Pacik-Nelson <https://www.linkedin.com/in/noah-pacik-nelson/>`__,
 `Korneel Van den
-Berghe <https://www.linkedin.com/in/korneel-van-den-berghe/>`__, and
+Berghe <https://www.linkedin.com/in/korneel-van-den-berghe/>`__ and
+`Benedetto
+Leto <https://www.linkedin.com/in/benedetto-leto/>`__ and
 there have been technical contributions from many others. A
 non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes
 Bouhadjar, Paul Hueber, Vincent Sun, Biyan Zhou, George Vathakkattil
 Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang,
-Anurag Kumar Mishra, Soikat Hasan Ahmed, Benedetto Leto, Aurora Micheli,
+Anurag Kumar Mishra, Soikat Hasan Ahmed, Aurora Micheli,
 Tao Sun.
 
 Contributing

@@ -32,6 +32,7 @@ Workload Metric Abstract Base Class
     :exclude-members: requires_hooks
 
 Accumulated Metric Abstract Base Class
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 .. automodule:: neurobench.metrics.abstract.workload_metric
     :members: AccumulatedMetric

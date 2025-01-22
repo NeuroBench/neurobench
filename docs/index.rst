@@ -14,6 +14,7 @@
    neurobench.models
    neurobench.preprocessing
    neurobench.postprocessing
+   custom_metrics
 
 Indices and tables
 ------------------------------

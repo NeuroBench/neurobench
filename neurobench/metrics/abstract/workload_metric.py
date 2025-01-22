@@ -13,8 +13,7 @@ class WorkloadMetric(ABC):
     that require computation over batches of data.
 
     Attributes:
-        requires_hooks (bool): Flag indicating if the metric requires
-        hooks for its computation.
+        requires_hooks (bool): Flag indicating if the metric requires hooks for its computation.
 
     """
 

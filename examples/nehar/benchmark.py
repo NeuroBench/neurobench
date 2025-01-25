@@ -1,3 +1,4 @@
+import os
 from neurobench.datasets import WISDM
 from training import SpikingNetwork
 from neurobench.processors.postprocessors import ChooseMaxCount
@@ -20,8 +21,11 @@ from neurobench.metrics.static import (
 if __name__ == "__main__":
     batch_size = 256
     lr = 1.0e-3
-    # data in repo root dir
-    dataset_path = "../data/nehar/watch_subset2_40.npz"
+
+    file_path = os.path.dirname(os.path.abspath(__file__))
+    model_path = os.path.join(file_path, "model_data/WISDM_snnTorch.ckpt")
+    dataset_path = os.path.join(file_path, "../../data/nehar/watch_subset2_40.npz") # data in repo root dir
+
     data_module = WISDM(path=dataset_path, batch_size=batch_size)
     data_module.setup("test")
 
@@ -30,7 +34,7 @@ if __name__ == "__main__":
     num_steps = data_module.num_steps
 
     spiking_network = SpikingNetwork.load_from_checkpoint(
-        "./model_data/WISDM_snnTorch.ckpt", map_location="cpu"
+        model_path, map_location="cpu"
     )
 
     model = SNNTorchModel(spiking_network.model, custom_forward=True)
@@ -50,10 +54,14 @@ if __name__ == "__main__":
     )
     results = benchmark.run(verbose=False)
     print(results)
-    benchmark.save_benchmark_results("./results")
 
-    #benchmark.to_nir(dummy_input, "model_data/nehar_snnTorch.nir")
+    results_path = os.path.join(file_path, "results")
+    benchmark.save_benchmark_results(results_path)
 
-    benchmark.to_onnx(dummy_input, "model_data/nehar_snnTorch.onnx")
+    # nir_path = os.path.join(file_path, "model_data/nehar_snnTorch.nir")
+    # benchmark.to_nir(dummy_input, nir_path)
+
+    onnx_path = os.path.join(file_path, "model_data/nehar_snnTorch.onnx")
+    benchmark.to_onnx(dummy_input, onnx_path)
 
 

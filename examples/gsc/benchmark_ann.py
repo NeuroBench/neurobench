@@ -1,3 +1,4 @@
+import os
 import torch
 
 from torch.utils.data import DataLoader
@@ -24,13 +25,16 @@ from ANN import M5
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-# data in repo root dir
-test_set = SpeechCommands(path="../../data/speech_commands/", subset="testing")
+file_path = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(file_path, "model_data/m5_ann")
+data_dir = os.path.join(file_path, "../../data/speech_commands") # data in repo root dir
+
+test_set = SpeechCommands(path=data_dir, subset="testing")
 
 test_set_loader = DataLoader(test_set, batch_size=500, shuffle=True)
 
 net = M5()
-net.load_state_dict(torch.load("model_data/m5_ann", map_location=device))
+net.load_state_dict(torch.load(model_path, map_location=device))
 
 class resample(NeuroBenchPreProcessor):
 	def __init__(self):

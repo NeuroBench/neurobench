@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.utils.data import DataLoader, Subset
 
@@ -30,11 +31,13 @@ r2 = []
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(file_path, "../../data/primate_reaching/PrimateReachingDataset/") # data in repo root dir
+
 for filename in all_files:
     print("Processing {}".format(filename))
 
     # The dataloader and preprocessor has been combined together into a single class
-    data_dir = "../../data/primate_reaching/PrimateReachingDataset/" # data in repo root dir
     dataset = PrimateReaching(file_path=data_dir, filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
                             biological_delay=0, remove_segments_inactive=False)
@@ -44,7 +47,8 @@ for filename in all_files:
     net = ANNModel2D(input_dim=dataset.input_feature_size, layer1=32, layer2=48, 
                      output_dim=2, bin_window=0.2, drop_rate=0.5)
 
-    net.load_state_dict(torch.load("./model_data/2D_ANN_Weight/"+filename+"_model_state_dict.pth", map_location=device))
+    model_path = os.path.join(file_path, "model_data/2D_ANN_Weight/"+filename+"_model_state_dict.pth")
+    net.load_state_dict(torch.load(model_path, map_location=device))
 
     model = TorchModel(net)
 

@@ -1,3 +1,4 @@
+import os
 import torch
 
 import spikingjelly
@@ -18,8 +19,12 @@ parser.add_argument('--batch_size', type=int, default=4, help='batch size for in
 parser.add_argument('--mode', type=str, default="ann", help='mode of the model, ann or hybrid')
 args = parser.parse_args()
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(file_path, "../../data/Gen 4 Multi channel") # data in repo root dir
+
 # dataloader itself takes about 7 minutes for loading, with model evaluation and score calculation is about 20 minutes on i9-12900KF, RTX3080
-test_set_dataloader = Gen4DetectionDataLoader(dataset_path="../../data/Gen 4 Multi channel", # data in repo root dir
+test_set_dataloader = Gen4DetectionDataLoader(
+        dataset_path=data_dir,
         split="testing",
         batch_size = args.batch_size,
         num_tbins = 12,
@@ -70,8 +75,10 @@ if mode == "ann":
     head = BoxHead(model.cout, box_coder.num_anchors, 3+1, 0)
     model = model.to('cuda')
     head = head.to('cuda')
-    model.load_state_dict(torch.load('model_data/save_models/25_ann_model.pth', map_location=torch.device('cuda')))
-    head.load_state_dict(torch.load('model_data/save_models/25_ann_pd.pth', map_location=torch.device('cuda')))
+    model_path = os.path.join(file_path, "model_data/save_models/25_ann_model.pth")
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda')))
+    head_path = os.path.join(file_path, "model_data/save_models/25_ann_pd.pth")
+    head.load_state_dict(torch.load(head_path, map_location=torch.device('cuda')))
 elif mode == "hybrid":
     # hybrid SNN of above architecture
     model = Vanilla_lif(cin = 6, cout = 256, base = 16)
@@ -79,8 +86,10 @@ elif mode == "hybrid":
     head = BoxHead(model.cout, box_coder.num_anchors, 3+1, 0)
     model = model.to('cuda')
     head = head.to('cuda')
-    model.load_state_dict(torch.load('model_data/save_models/14_hybrid_model.pth', map_location=torch.device('cuda')))
-    head.load_state_dict(torch.load('model_data/save_models/14_hybrid_pd.pth', map_location=torch.device('cuda')))
+    model_path = os.path.join(file_path, "model_data/save_models/14_hybrid_model.pth")
+    model.load_state_dict(torch.load(model_path, map_location=torch.device('cuda')))
+    head_path = os.path.join(file_path, "model_data/save_models/14_hybrid_pd.pth")
+    head.load_state_dict(torch.load(head_path, map_location=torch.device('cuda')))
 else:
     raise ValueError("mode must be ann or hybrid")
 

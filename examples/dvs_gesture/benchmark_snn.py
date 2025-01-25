@@ -1,3 +1,4 @@
+import os
 import torch
 from snn import Net
 
@@ -19,15 +20,18 @@ from neurobench.metrics.static import (
     ConnectionSparsity,
 )
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(file_path, "model_data/dvs_gesture_snn")
+data_dir = os.path.join(file_path, "../../data/dvs_gesture") # data in repo root dir
+
 device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
 
 net = Net()
-net.load_state_dict(torch.load("model_data/dvs_gesture_snn", map_location=device))
+net.load_state_dict(torch.load(model_path, map_location=device))
 
 model = SNNTorchModel(net)
 
 # Load the dataset, here we are using the Tonic library
-data_dir = "../../data/dvs_gesture" # data in repo root dir
 test_transform = transforms.Compose([transforms.Denoise(filter_time=10000),
                                      transforms.Downsample(spatial_factor=0.25),
                                      transforms.ToFrame(sensor_size=(32, 32, 2),

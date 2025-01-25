@@ -1,3 +1,4 @@
+import os
 import argparse
 import pandas as pd
 try:
@@ -88,8 +89,8 @@ start_offset_range = torch.arange(0., 0.5*args.repeat, 0.5)
 lyaptime_pts = 75
 start_offset_range = start_offset_range * lyaptime_pts
 
-# data in repo root dir
-data_dir = "../../data/mackey_glass/"
+file_path = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(file_path, "../../data/mackey_glass/") # data in repo root dir
 
 for repeat_id in range(args.repeat):
     tau = args.tau

@@ -1,3 +1,4 @@
+import os
 import torch
 
 from torch.utils.data import Subset, DataLoader
@@ -20,8 +21,12 @@ from neurobench.metrics.static import (
     ConnectionSparsity,
 )
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+hyperparam_path = os.path.join(file_path, "model_data/echo_state_network_hyperparameters.csv")
+data_dir = os.path.join(file_path, "../../data/mackey_glass/") # data in repo root dir
+
 # Load hyperparameters of echo state networks found via the random search
-esn_parameters = pd.read_csv("model_data/echo_state_network_hyperparameters.csv")
+esn_parameters = pd.read_csv(hyperparam_path)
 
 # benchmark run over 14 different series
 sMAPE_scores = []
@@ -34,9 +39,6 @@ repeat = 30
 start_offset_range = torch.arange(0., 0.5*repeat, 0.5) 
 lyaptime_pts = 75
 start_offset_range = start_offset_range * lyaptime_pts
-
-# data in repo root dir
-data_dir = "../../data/mackey_glass/"
 
 for tau in range(17, 31):
     for repeat_id in range(repeat):

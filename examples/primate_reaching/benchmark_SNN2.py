@@ -1,3 +1,4 @@
+import os
 import torch
 from torch.utils.data import DataLoader, Subset
 
@@ -32,9 +33,11 @@ r2 = []
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
+file_path = os.path.dirname(os.path.abspath(__file__))
+data_dir = os.path.join(file_path, "../../data/primate_reaching/PrimateReachingDataset/") # data in repo root dir
+
 for filename in files:
     print("Processing {}".format(filename))
-    data_dir = "../../data/primate_reaching/PrimateReachingDataset/" # data in repo root dir
     dataset = PrimateReaching(file_path=data_dir, filename=filename,
                             num_steps=1, train_ratio=0.5, bin_width=0.004,
                             biological_delay=0, remove_segments_inactive=False)
@@ -42,7 +45,8 @@ for filename in files:
     test_set_loader = DataLoader(Subset(dataset, dataset.ind_test), batch_size=len(dataset.ind_test), shuffle=False)
 
     net = SNN2(input_size=dataset.input_feature_size)
-    net.load_state_dict(torch.load("./model_data/SNN2_{}.pt".format(filename), map_location=torch.device('cpu'))
+    model_path = os.path.join(file_path, "model_data/SNN2_{}.pt".format(filename))
+    net.load_state_dict(torch.load(model_path, map_location=torch.device('cpu'))
                         ['model_state_dict'], strict=False)
 
     # init the model

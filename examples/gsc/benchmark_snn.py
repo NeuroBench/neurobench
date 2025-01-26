@@ -48,6 +48,6 @@ results = benchmark.run(device=device)
 print(results)
 
 # Results:
-# {'footprint': 583900, 'connection_sparsity': 0.0,
-# 'classification_accuracy': 0.8484325295196562, 'activation_sparsity': 0.9675956131759854, 
-# 'synaptic_operations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
+# {'Footprint': 583900, 'ConnectionSparsity': 0.0, 
+# 'ClassificationAccuracy': 0.85633802969095, 'ActivationSparsity': 0.9668664144456199, 
+# 'SynapticOperations': {'Effective_MACs': 0.0, 'Effective_ACs': 3289834.3206724217, 'Dense': 29030400.0}}

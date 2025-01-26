@@ -122,18 +122,18 @@ Google Speech Commands keyword classification benchmark:
    poetry run python examples/gsc/benchmark_ann.py
    
    # Expected results:
-   # {'Footprint': 109228, 'ConnectionSparsity': 0.0,
-   # 'ClassificationAccuracy': 0.8653339397251905, 'ActivationSparsity': 0.3854464619019532,
-   # 'SynapticOperations': {'Effective_MACs': 1749994.1556565198, 'Effective_ACs': 0.0, 'Dense': 1902179.0}}
+   # {'Footprint': 109228, 'ConnectionSparsity': 0.0, 
+   # 'ClassificationAccuracy': 0.8653339412687909, 'ActivationSparsity': 0.3854464619019532, 
+   # 'SynapticOperations': {'Effective_MACs': 1728071.1701953658, 'Effective_ACs': 0.0, 'Dense': 1880256.0}}
 
 
    # SNN Benchmark Example
    poetry run python examples/gsc/benchmark_snn.py
    
    # Expected results:
-   # {'Footprint': 583900, 'ConnectionSparsity': 0.0,
-   # 'ClassificationAccuracy': 0.8484325295196562, 'ActivationSparsity': 0.9675956131759854,
-   # 'SynapticOperations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
+   # {'Footprint': 583900, 'ConnectionSparsity': 0.0, 
+   # 'ClassificationAccuracy': 0.85633802969095, 'ActivationSparsity': 0.9668664144456199, 
+   # 'SynapticOperations': {'Effective_MACs': 0.0, 'Effective_ACs': 3289834.3206724217, 'Dense': 29030400.0}}
 
 These demos should download the dataset, then run in a couple minutes. Other baseline result scripts and notebook
 tutorials are available in the ``examples`` folder.

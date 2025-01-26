@@ -7,6 +7,7 @@
    readme
    tutorial/index
    metrics/index
+   custom_metrics
    contributing
    api
    neurobench.benchmarks
@@ -14,7 +15,6 @@
    neurobench.models
    neurobench.preprocessing
    neurobench.postprocessing
-   custom_metrics
 
 Indices and tables
 ------------------------------

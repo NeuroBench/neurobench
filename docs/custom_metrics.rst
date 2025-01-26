@@ -1,8 +1,8 @@
-Create you own metric
+Custom Metrics
 ======================
 
-This guide explains how to create custom metrics using the NeuroBench framework. Metrics are categorized into three types:
-**Static Metrics**, **Workload Metrics**, and **Accumulated Metrics**. Each type has a specific purpose and use case, and
+This guide explains how to create custom metrics using the NeuroBench framework. Metrics are categorized into two types:
+**Static Metrics** and **Workload Metrics**. Each type has a specific purpose and use case, and
 this document provides examples for defining metrics for each type.
 
 Metric Types
@@ -11,8 +11,11 @@ Metric Types
 The following metric types are available:
 
 - **Static Metrics**: Evaluate fixed properties of the model, such as the number of parameters.
-- **Workload Metrics**: Evaluate the model's performance during a single batch or inference step.
-- **Accumulated Metrics**: Aggregate performance over multiple batches and compute a final value after all data is processed.
+- **Workload Metrics**: Evaluate the model's performance during inference execution.
+
+By default, workload metrics will averaged across batched inference. Metrics like classification accuracy can be joined this way.
+
+Other workload metrics may depend on all data and inferences and cannot be averaged across batches, such as an R^2 score. These workload metrics should be *AccumulatedMetrics*, which is a subclass of workload metrics which stores performance over multiple batches and computes final metric values once data is processed.
 
 
 Static Metric Abstract Base Class
@@ -65,7 +68,7 @@ Example:
 Workload Metrics
 ^^^^^^^^^^^^^^^^
 
-Workload metrics evaluate the model’s performance for a single batch of input data.
+Workload metrics (which are not Accumulated) evaluate the model’s performance for each batch of input data, and the result is averaged across batches.
 
 Example:
     .. code-block:: python
@@ -85,34 +88,35 @@ Example:
 Accumulated Metrics
 ^^^^^^^^^^^^^^^^^^^
 
-Accumulated metrics aggregate values over multiple batches and compute a final result.
+Accumulated metrics are a type of workload metric which stores performance information over multiple batches and compute a final result. These should be used when the metric should not be averaged across batches.
 
 Example:
     .. code-block:: python
 
         from neurobench.metrics.abstract import AccumulatedMetric
 
-        class AverageLossMetric(AccumulatedMetric):
+        class MaximumLossMetric(AccumulatedMetric):
             """
-            Metric to compute the average loss over multiple batches.
+            Metric to compute the maximum loss over multiple batches.
             """
 
             def __init__(self):
                 super().__init__()
-                self.total_loss = 0.0
+                self.max_loss = 0.0
                 self.num_batches = 0
 
             def __call__(self, model, preds, data):
                 _, labels = data
                 loss = loss_function(preds, labels).item()
-                self.total_loss += loss
+                if loss > self.max_loss:
+                    self.max_loss = loss
                 self.num_batches += 1
 
             def compute(self):
-                return self.total_loss / self.num_batches if self.num_batches > 0 else 0.0
+                return self.max_loss
 
             def reset(self):
-                self.total_loss = 0.0
+                self.max_loss = 0.0
                 self.num_batches = 0
 
 Plugging Metrics into the Benchmark
@@ -138,7 +142,7 @@ Example:
 
         # Define metrics
         static_metrics = [ParameterCountMetric] # Replace with your custom static metric. Do not initialize the classes.
-        workload_metrics = [AccuracyMetric, AverageLossMetric]  # Replace with your custom workload and accumulated metrics. Do not initialize the classes.
+        workload_metrics = [AccuracyMetric, MaximumLossMetric]  # Replace with your custom workload and accumulated metrics. Do not initialize the classes.
 
         # Create the Benchmark instance
         benchmark = Benchmark(
@@ -176,8 +180,8 @@ The following table summarizes the available metric types:
    * - Workload Metric
      - ``WorkloadMetric``
      - ``__call__``
-     - Evaluate a single batch of data.
+     - Averages over batched inference.
    * - Accumulated Metric
      - ``AccumulatedMetric``
      - ``__call__``, ``compute``, ``reset``
-     - Aggregate metrics over multiple batches.
+     - Accumulates performance info over multiple batches.

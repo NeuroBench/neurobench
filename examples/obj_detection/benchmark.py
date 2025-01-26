@@ -12,6 +12,16 @@ from obj_det_model import Vanilla, Vanilla_lif
 from metavision_ml.detection.anchors import Anchors
 from metavision_ml.detection.rpn import BoxHead
 
+from neurobench.metrics.workload import (
+    ActivationSparsity,
+    SynapticOperations,
+    CocoMap
+)
+from neurobench.metrics.static import (
+    Footprint,
+    ConnectionSparsity,
+)
+
 import argparse
 
 parser = argparse.ArgumentParser(description='NeuroBench benchmark for object detection models')
@@ -103,8 +113,8 @@ if mode == "hybrid":
 preprocessors = []
 postprocessors = []
 
-static_metrics = ["footprint", "connection_sparsity"]
-workload_metrics = ["activation_sparsity", "COCO_mAP", "synaptic_operations"]
+static_metrics = [Footprint, ConnectionSparsity]
+workload_metrics = [ActivationSparsity, CocoMap, SynapticOperations]
 
 
 benchmark = Benchmark(model, test_set_dataloader, preprocessors, postprocessors, [static_metrics, workload_metrics])

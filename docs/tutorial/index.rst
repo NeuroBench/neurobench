@@ -11,7 +11,7 @@ The task is to classify keywords from the GSC dataset test split, after
 training using the train and val splits.
 
 First we will import the relevant libraries. These include the dataset,
-pre- and post-processors, model wrapper, and benchmark object.
+pre- and post-processors, model wrapper, metrics, and benchmark object.
 
 .. code:: python
 
@@ -21,13 +21,27 @@ pre- and post-processors, model wrapper, and benchmark object.
     
     # import the dataset, preprocessors and postprocessors you want to use
     from neurobench.datasets import SpeechCommands
-    from neurobench.preprocessing import S2SPreProcessor
-    from neurobench.postprocessing import choose_max_count
+    from neurobench.processors.preprocessors import S2SPreProcessor
+    from neurobench.processors.postprocessors import ChooseMaxCount
     
     # import the NeuroBench wrapper to wrap the snnTorch model
     from neurobench.models import SNNTorchModel
+    
+    # import metrics
+    from neurobench.metrics.workload import (
+        ActivationSparsity,
+        SynapticOperations,
+        ClassificationAccuracy
+    )
+    from neurobench.metrics.static import (
+        Footprint,
+        ConnectionSparsity,
+    )
+
     # import the benchmark class
     from neurobench.benchmarks import Benchmark
+
+    
 
 For this tutorial, we will make use of a simple feedforward SNN, written
 using snnTorch.
@@ -69,7 +83,7 @@ interfaces with the top-level Benchmark class.
 
 .. code:: python
 
-    net.load_state_dict(torch.load("neurobench/examples/gsc/model_data/s2s_gsc_snntorch"))
+    net.load_state_dict(torch.load("examples/gsc/model_data/s2s_gsc_snntorch"))
     
     # Wrap our net in the SNNTorchModel wrapper
     model = SNNTorchModel(net)
@@ -83,8 +97,8 @@ the neuron with the greatest number of spikes.
 
 .. code:: python
 
-    preprocessors = [S2SPreProcessor()]
-    postprocessors = [choose_max_count]
+    preprocessors = [S2SPreProcessor(device=device)]
+    postprocessors = [ChooseMaxCount()]
 
 Next specify the metrics which you want to calculate. The metrics
 include static metrics, which are computed before any model inference,
@@ -106,8 +120,8 @@ and workload metrics, which show inference results.
 
 .. code:: python
 
-    static_metrics = ["footprint", "connection_sparsity"]
-    workload_metrics = ["classification_accuracy", "activation_sparsity", "synaptic_operations"]
+    static_metrics = [Footprint, ConnectionSparsity]
+    workload_metrics = [ClassificationAccuracy, ActivationSparsity, SynapticOperations]
 
 Next, we instantiate the benchmark. We pass the model, the dataloader,
 the preprocessors, the postprocessor and the list of the static and data
@@ -125,7 +139,7 @@ Now, let’s run the benchmark and print our results!
     results = benchmark.run()
     print(results)
 
-Expected output: {‘footprint’: 583900, ‘connection_sparsity’: 0.0,
-‘classification_accuracy’: 0.8484325295196562, ‘activation_sparsity’:
-0.9675956131759854, ‘synaptic_operations’: {‘Effective_MACs’: 0.0,
-‘Effective_ACs’: 3556689.9895502045, ‘Dense’: 29336955.0}}
+Expected output: 
+{'Footprint': 583900, 'ConnectionSparsity': 0.0, 
+'ClassificationAccuracy': 0.85633802969095, 'ActivationSparsity': 0.9668664144456199, 
+'SynapticOperations': {'Effective_MACs': 0.0, 'Effective_ACs': 3289834.3206724217, 'Dense': 29030400.0}}

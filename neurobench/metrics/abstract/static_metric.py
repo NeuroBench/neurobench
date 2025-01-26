@@ -22,8 +22,7 @@ class StaticMetric(ABC):
         how the metric should be computed based on the model.
 
         Args:
-            model (NeuroBenchModel): The model whose performance or properties
-            the metric evaluates.
+            model (NeuroBenchModel): The model whose performance or properties the metric evaluates.
 
         Returns:
             float: The computed value of the metric for the model.

@@ -1,12 +1,13 @@
 .. image:: https://github.com/NeuroBench/neurobench/blob/main/docs/_static/neurobench_banner_light.jpeg?raw=true
-        :align: center
-        :width: 800
+    :align: center
+    :width: 800
+
 ============
 Introduction
 ============
 
 .. |coverage| image:: https://codecov.io/gh/NeuroBench/neurobench/graph/badge.svg?token=VDF40UROUM
- :target: https://codecov.io/gh/NeuroBench/neurobench
+    :target: https://codecov.io/gh/NeuroBench/neurobench
 
 .. |docs| image:: https://readthedocs.org/projects/neurobench/badge/?version=latest
    :target: https://neurobench.readthedocs.io/en/latest/
@@ -86,8 +87,8 @@ Additional benchmarks
 Getting started
 ---------------
 
-Example benchmark scripts can be found under the ``neurobench/examples`` folder. 
-(`https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/ <https://github.com/NeuroBench/neurobench/tree/main/neurobench/examples/>`__)
+Example benchmark scripts can be found under the ``examples`` folder.
+(`https://github.com/NeuroBench/neurobench/tree/main/examples/ <https://github.com/NeuroBench/neurobench/tree/main/examples/>`__)
 
 In general, the design flow for using the framework is as follows:
 
@@ -118,24 +119,24 @@ Google Speech Commands keyword classification benchmark:
 ::
 
    # ANN Benchmark Example
-   poetry run python neurobench/examples/gsc/benchmark_ann.py
+   poetry run python examples/gsc/benchmark_ann.py
    
    # Expected results:
-   # {'footprint': 109228, 'connection_sparsity': 0.0,
-   # 'classification_accuracy': 0.8653339397251905, 'activation_sparsity': 0.3854464619019532, 
-   # 'synaptic_operations': {'Effective_MACs': 1749994.1556565198, 'Effective_ACs': 0.0, 'Dense': 1902179.0}}
+   # {'Footprint': 109228, 'ConnectionSparsity': 0.0, 
+   # 'ClassificationAccuracy': 0.8653339412687909, 'ActivationSparsity': 0.3854464619019532, 
+   # 'SynapticOperations': {'Effective_MACs': 1728071.1701953658, 'Effective_ACs': 0.0, 'Dense': 1880256.0}}
 
 
    # SNN Benchmark Example
-   poetry run python neurobench/examples/gsc/benchmark_snn.py
+   poetry run python examples/gsc/benchmark_snn.py
    
    # Expected results:
-   # {'footprint': 583900, 'connection_sparsity': 0.0,
-   # 'classification_accuracy': 0.8484325295196562, 'activation_sparsity': 0.9675956131759854, 
-   # 'synaptic_operations': {'Effective_MACs': 0.0, 'Effective_ACs': 3556689.9895502045, 'Dense': 29336955.0}}
+   # {'Footprint': 583900, 'ConnectionSparsity': 0.0, 
+   # 'ClassificationAccuracy': 0.85633802969095, 'ActivationSparsity': 0.9668664144456199, 
+   # 'SynapticOperations': {'Effective_MACs': 0.0, 'Effective_ACs': 3289834.3206724217, 'Dense': 29030400.0}}
 
 These demos should download the dataset, then run in a couple minutes. Other baseline result scripts and notebook
-tutorials are available in the ``neurobench/examples`` folder.
+tutorials are available in the ``examples`` folder.
 
 Developers
 ----------
@@ -143,14 +144,16 @@ Developers
 NeuroBench is a collaboration between industry and academic engineers
 and researchers. This framework is currently maintained by `Jason
 Yik <https://www.linkedin.com/in/jasonlyik/>`__, `Noah
-Pacik-Nelson <https://www.linkedin.com/in/noah-pacik-nelson/>`__, and
+Pacik-Nelson <https://www.linkedin.com/in/noah-pacik-nelson/>`__,
 `Korneel Van den
-Berghe <https://www.linkedin.com/in/korneel-van-den-berghe/>`__, and
+Berghe <https://www.linkedin.com/in/korneel-van-den-berghe/>`__ and
+`Benedetto
+Leto <https://www.linkedin.com/in/benedetto-leto/>`__ and
 there have been technical contributions from many others. A
 non-exhaustive list includes Gregor Lenz, Denis Kleyko, Younes
 Bouhadjar, Paul Hueber, Vincent Sun, Biyan Zhou, George Vathakkattil
 Joseph, Douwe den Blanken, Maxime Fabre, Shenqi Wang, Guangzhi Tang,
-Anurag Kumar Mishra, Soikat Hasan Ahmed, Benedetto Leto, Aurora Micheli,
+Anurag Kumar Mishra, Soikat Hasan Ahmed, Aurora Micheli,
 Tao Sun.
 
 Contributing

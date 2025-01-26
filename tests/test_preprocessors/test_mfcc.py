@@ -1,4 +1,4 @@
-from neurobench.preprocessing.mfcc import MFCCPreProcessor
+from neurobench.processors.preprocessors.mfcc import MFCCPreProcessor
 from pathlib import Path
 import torchaudio
 import unittest

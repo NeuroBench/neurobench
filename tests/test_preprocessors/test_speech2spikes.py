@@ -1,4 +1,4 @@
-from neurobench.preprocessing.speech2spikes import S2SPreProcessor
+from neurobench.processors.preprocessors.speech2spikes import S2SPreProcessor
 from pathlib import Path
 import torchaudio
 import unittest

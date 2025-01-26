@@ -7,6 +7,7 @@
    readme
    tutorial/index
    metrics/index
+   custom_metrics
    contributing
    api
    neurobench.benchmarks
@@ -16,7 +17,7 @@
    neurobench.postprocessing
 
 Indices and tables
-==================
+------------------------------
 
 * :ref:`genindex`
 * :ref:`modindex`

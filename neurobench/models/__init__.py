@@ -1,14 +1,6 @@
-from .model import *
+from .neurobench_model import NeuroBenchModel
+from .snntorch_models import SNNTorchModel
+from .torch_model import TorchModel
 from ..utils import _lazy_import
 
-
-def SNNTorchModel(*args, **kwargs):
-    return _lazy_import("neurobench.models", ".snntorch_models", "SNNTorchModel")(
-        *args, **kwargs
-    )
-
-
-def TorchModel(*args, **kwargs):
-    return _lazy_import("neurobench.models", ".torch_model", "TorchModel")(
-        *args, **kwargs
-    )
+__all__ = ["NeuroBenchModel", "SNNTorchModel", "TorchModel"]

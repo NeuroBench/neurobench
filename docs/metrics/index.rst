@@ -1,5 +1,5 @@
 ================
-Metrics
+Included Metrics
 ================
 
 .. toctree::

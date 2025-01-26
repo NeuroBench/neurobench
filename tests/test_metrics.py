@@ -1,19 +1,18 @@
 from neurobench.models import SNNTorchModel, TorchModel
-from neurobench.benchmarks.workload_metrics import (
-    classification_accuracy,
+import snntorch
+from neurobench.metrics.workload import (
+    ClassificationAccuracy,
     MSE,
-    sMAPE,
-    r2,
-    activation_sparsity,
-    detect_activations_connections,
-    synaptic_operations,
-    number_neuron_updates,
-    membrane_updates,
+    SMAPE,
+    R2,
+    ActivationSparsity,
+    SynapticOperations,
+    MembraneUpdates,
 )
-from neurobench.benchmarks.static_metrics import (
-    footprint,
-    parameter_count,
-    connection_sparsity,
+from neurobench.metrics.static import (
+    Footprint,
+    ParameterCount,
+    ConnectionSparsity,
 )
 import tests.models.model_list as models
 import torch.nn as nn
@@ -31,33 +30,39 @@ class TestStaticMetrics(unittest.TestCase):
         self.net = models.net
 
         self.net_rnn = models.net_rnn
+        self.footprint = Footprint()
+        self.parameter_count = ParameterCount()
+        self.connection_sparsity = ConnectionSparsity()
 
     def test_footprint(self):
         model = SNNTorchModel(self.net)
-        self.assertEqual(footprint(model), 583900)
+        if snntorch.__version__ == "0.7.0":
+            self.assertEqual(self.footprint(model), 583900)
+        else:
+            self.assertEqual(self.footprint(model), 1406172)
 
     def test_parameter_count(self):
         model = SNNTorchModel(self.net)
-        self.assertEqual(parameter_count(model), 145955)
+        self.assertEqual(self.parameter_count(model), 145955)
 
     def test_connection_sparsity(self):
         # Set all the weights to zero
         for param in self.net.parameters():
             param.data = torch.zeros_like(param.data)
         model = SNNTorchModel(self.net)
-        self.assertEqual(connection_sparsity(model), 1.0)
+        self.assertEqual(self.connection_sparsity(model), 1.0)
 
         # Set all the weights to one
         for param in self.net.parameters():
             param.data = torch.ones_like(param.data)
         model = SNNTorchModel(self.net)
-        self.assertEqual(connection_sparsity(model), 0.0)
+        self.assertEqual(self.connection_sparsity(model), 0.0)
 
         # Set all the weights to a random value
         for param in self.net.parameters():
             param.data = torch.rand_like(param.data)
         model = SNNTorchModel(self.net)
-        self.assertEqual(connection_sparsity(model), 0.0)
+        self.assertEqual(self.connection_sparsity(model), 0.0)
 
         # Set half the weights to zero and half the weights to one
         for param in self.net.parameters():
@@ -69,10 +74,10 @@ class TestStaticMetrics(unittest.TestCase):
             )
         model = SNNTorchModel(self.net)
         # Assert the connection sparsity is within 0.001 of 0.5
-        self.assertLess(abs(connection_sparsity(model) - 0.5), 0.001)
+        self.assertLess(abs(self.connection_sparsity(model) - 0.5), 0.001)
 
         model = SNNTorchModel(self.net_rnn)
-        self.assertLess(connection_sparsity(model), 0.001)
+        self.assertLess(self.connection_sparsity(model), 0.001)
 
 
 class TestWorkloadMetrics(unittest.TestCase):
@@ -92,6 +97,14 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.net_GRU = models.simple_GRU()
         self.net_lstm = models.simple_LSTM()
 
+        self.classification_accuracy = ClassificationAccuracy()
+        self.mse = MSE()
+        self.smape = SMAPE()
+        self.r2 = R2()
+        self.activation_sparsity = ActivationSparsity()
+        self.synaptic_operations = SynapticOperations()
+        self.mem_updates = MembraneUpdates()
+
     def test_classification_accuracy(self):
         model = SNNTorchModel(self.dummy_net)
 
@@ -103,19 +116,27 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         # all wrong
         preds = torch.zeros(batch_size)
-        self.assertEqual(round(classification_accuracy(model, preds, data), 1), 0.0)
+        self.assertEqual(
+            round(self.classification_accuracy(model, preds, data), 1), 0.0
+        )
 
         # one correct
         preds = torch.ones(batch_size)
-        self.assertEqual(round(classification_accuracy(model, preds, data), 1), 0.1)
+        self.assertEqual(
+            round(self.classification_accuracy(model, preds, data), 1), 0.1
+        )
 
         # half correct
         preds = torch.tensor([0 if i % 2 == 0 else i + 1 for i in range(batch_size)])
-        self.assertEqual(round(classification_accuracy(model, preds, data), 1), 0.5)
+        self.assertEqual(
+            round(self.classification_accuracy(model, preds, data), 1), 0.5
+        )
 
         # all correct
         preds = torch.arange(1, batch_size + 1)
-        self.assertEqual(round(classification_accuracy(model, preds, data), 1), 1.0)
+        self.assertEqual(
+            round(self.classification_accuracy(model, preds, data), 1), 1.0
+        )
 
     def test_MSE(self):
         # dummy model
@@ -133,7 +154,7 @@ class TestWorkloadMetrics(unittest.TestCase):
         diff = [i**2 for i in diff]
         correct = sum(diff) / batch_size
 
-        self.assertEqual(round(MSE(model, preds, data), 3), round(correct, 3))
+        self.assertEqual(round(self.mse(model, preds, data), 3), round(correct, 3))
 
     def test_sMAPE(self):
         # dummy model
@@ -153,7 +174,7 @@ class TestWorkloadMetrics(unittest.TestCase):
         diff = [i / j for i, j in zip(diff, added)]
         correct = sum(diff) * 200 / batch_size
 
-        self.assertEqual(round(sMAPE(model, preds, data), 3), round(correct, 3))
+        self.assertEqual(round(self.smape(model, preds, data), 3), round(correct, 3))
 
     def test_r2(self):
         # dummy model
@@ -186,24 +207,24 @@ class TestWorkloadMetrics(unittest.TestCase):
         y_r2 = 1 - y_num / y_den
         correct = (x_r2 + y_r2) / 2
 
-        R2 = r2()
-        self.assertEqual(round(R2(model, preds, data), 3), round(correct, 3))
+        self.assertEqual(round(self.r2(model, preds, data), 3), round(correct, 3))
 
     def test_activation_sparsity(self):
         # test spiking model
         model = SNNTorchModel(self.net)
-        detect_activations_connections(model)
+        # detect_activations_connections(model)
+        model.register_hooks()
         self.assertEqual(len(model.activation_hooks), 4)
 
         # test ReLU model
 
         model_relu_0 = TorchModel(self.net_relu_0)
-        detect_activations_connections(model_relu_0)
+        # detect_activations_connections(model_relu_0)
+        model_relu_0.register_hooks()
         inp = torch.ones(20)
 
         out_relu = model_relu_0(inp)
-        act_sp_relu_0 = activation_sparsity(model_relu_0, out_relu, inp)
-
+        act_sp_relu_0 = self.activation_sparsity(model_relu_0, out_relu, inp)
         self.assertEqual(act_sp_relu_0, 0.0)
 
         # test ReLU model with half-negative inputs
@@ -211,21 +232,23 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[0:10] = -1
 
         model_relu_50 = TorchModel(self.net_relu_50)
-        detect_activations_connections(model_relu_50)
+        model_relu_50.register_hooks()
         out_relu_50 = model_relu_50(inp)
 
-        act_sp_relu_50 = activation_sparsity(model_relu_50, out_relu_50, inp)
+        act_sp_relu_50 = self.activation_sparsity(model_relu_50, out_relu_50, inp)
 
         self.assertEqual(act_sp_relu_50, 0.5)
 
         # test duplicating activation layers in the model
 
         model_torch_relu_0 = TorchModel(self.net_torch_relu_0)
-        detect_activations_connections(model_torch_relu_0)
+        model_torch_relu_0.register_hooks()
         inp = torch.ones(20)
 
         out_relu = model_torch_relu_0(inp)
-        act_sp_torch_relu_0 = activation_sparsity(model_torch_relu_0, out_relu, inp)
+        act_sp_torch_relu_0 = self.activation_sparsity(
+            model_torch_relu_0, out_relu, inp
+        )
 
         self.assertEqual(act_sp_torch_relu_0, 0.0)
 
@@ -233,31 +256,31 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp = torch.ones(20)
         inp[0:10] = -1
         out_relu = model_torch_relu_0(inp)
-        act_sp_relu_50 = activation_sparsity(model_torch_relu_0, out_relu, inp)
+        act_sp_relu_50 = self.activation_sparsity(model_torch_relu_0, out_relu, inp)
 
         self.assertEqual(act_sp_relu_50, 0.5)
 
         # test Sigmoid model
 
         model_sigm = TorchModel(self.net_sigm)
-        detect_activations_connections(model_sigm)
+        model_sigm.register_hooks()
 
         inp = torch.ones(20)
         out_sigm = model_sigm(inp)
-        act_sp_sigm = activation_sparsity(model_sigm, out_sigm, inp)
+        act_sp_sigm = self.activation_sparsity(model_sigm, out_sigm, inp)
         self.assertEqual(act_sp_sigm, 0.0)
 
     def test_synaptic_ops(self):
         # test ReLU model
 
         model_relu_0 = TorchModel(self.net_relu_0_2)
-        detect_activations_connections(model_relu_0)
+        model_relu_0.register_hooks()
         inp = torch.ones(1, 20)
         inp[:, 0:10] = 5
 
         out_relu = model_relu_0(inp)
-        syn = synaptic_operations()
-        syn_ops = syn(model_relu_0, out_relu, (inp, 0))
+        syn_ops = self.synaptic_operations(model_relu_0, out_relu, (inp, 0))
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 1125)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -268,11 +291,11 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[:, 0:10] = 5
 
         model_relu_50 = TorchModel(self.net_relu_50_2)
-        detect_activations_connections(model_relu_50)
+        model_relu_50.register_hooks()
         out_relu_50 = model_relu_50(inp)
 
-        syn = synaptic_operations()
-        syn_ops = syn(model_relu_50, out_relu_50, (inp, 0))
+        syn_ops = self.synaptic_operations(model_relu_50, out_relu_50, (inp, 0))
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], (2 * 625 + 400 + 500))
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -282,11 +305,11 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[0, 0, 0, 0] = 4  # avoid getting classified as snn
 
         model = TorchModel(self.net_conv_2d)
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, (inp, 0))
+        syn_ops = self.synaptic_operations(model, out, (inp, 0))
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 9)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -298,8 +321,8 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[0, 0, 0, 0] = 4  # avoid getting classified as snn
 
         out = model(inp)
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, (inp, 0))
+        syn_ops = self.synaptic_operations(model, out, (inp, 0))
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 900)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -309,11 +332,11 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         model = TorchModel(self.net_conv_1d)
 
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, (inp, 0))
+        syn_ops = self.synaptic_operations(model, out, (inp, 0))
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 150)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -327,11 +350,11 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         model = SNNTorchModel(self.net_snn)
 
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, (inp, 0))
+        syn_ops = self.synaptic_operations(model, out, (inp, 0))
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 0)
         self.assertEqual(syn_ops["Effective_ACs"], 1000)
@@ -345,12 +368,12 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_lstm)
 
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
 
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, inp)
+        syn_ops = self.synaptic_operations(model, out, inp)
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 615)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -364,12 +387,12 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_RNN)
 
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
 
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, inp)
+        syn_ops = self.synaptic_operations(model, out, inp)
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 150)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -383,12 +406,12 @@ class TestWorkloadMetrics(unittest.TestCase):
         inp[0][0, 0] = 4  # avoid getting classified as snn
         model = TorchModel(self.net_GRU)
 
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
 
-        syn = synaptic_operations()
-        syn_ops = syn(model, out, inp)
+        syn_ops = self.synaptic_operations(model, out, inp)
+        self.synaptic_operations.reset()
 
         self.assertEqual(syn_ops["Effective_MACs"], 465)
         self.assertEqual(syn_ops["Effective_ACs"], 0)
@@ -399,11 +422,10 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         model = SNNTorchModel(self.net_snn)
 
-        detect_activations_connections(model)
+        model.register_hooks()
 
         out = model(inp)
-        mem_updates = membrane_updates()
-        tot_mem_updates = mem_updates(model, out, (inp, 0))
+        tot_mem_updates = self.mem_updates(model, out, (inp, 0))
 
         self.assertEqual(tot_mem_updates, 50)
 

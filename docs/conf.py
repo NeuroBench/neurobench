@@ -12,7 +12,7 @@ sys.path.insert(0, os.path.abspath(".."))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "NeuroBench"
-copyright = "2024, Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe"
+copyright = "2024, Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe, Benedetto Leto"
 author = "Jason Yik, Noah Pacik-Nelson, Korneel Van Den Berghe"
 release = "1.0.6"
 
@@ -35,6 +35,12 @@ master_doc = "index"
 autodoc_mock_imports = ["torch", "torchaudio", "metavision_ml", "pytorch_lightning"]
 todo_include_todos = True
 
+autodoc_default_options = {
+    "special-members": "__call__, __init__",  # Include __call__ in the docs
+    "undoc-members": True,  # Include undocumented members
+    "show-inheritance": True,  # Show inheritance hierarchy
+}
+
 # -- Options for HTML output -------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
@@ -42,5 +48,6 @@ todo_include_todos = True
 html_theme = "sphinx_rtd_theme"
 
 html_static_path = ["_static"]
+html_logo = "_static/neurobench_banner_dark.png"
 
 pygments_style = "sphinx"

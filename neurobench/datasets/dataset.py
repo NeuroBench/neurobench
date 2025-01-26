@@ -1,4 +1,5 @@
 from torch.utils.data import Dataset
+from abc import abstractmethod
 
 
 class NeuroBenchDataset(Dataset):
@@ -12,18 +13,14 @@ class NeuroBenchDataset(Dataset):
 
     def __init__(self):
         """Init dataset."""
-        raise NotImplementedError(
-            "Subclasses of NeuroBenchDataset should implement __init__"
-        )
+        super().__init__()
 
+    @abstractmethod
     def __len__(self):
         """Returns length of dataset."""
-        raise NotImplementedError(
-            "Subclasses of NeuroBenchDataset should implement __len__"
-        )
+        pass
 
+    @abstractmethod
     def __getitem__(self, idx):
         """Returns a sample from the dataset."""
-        raise NotImplementedError(
-            "Subclasses of NeuroBenchDataset should implement __getitem__"
-        )
+        pass

@@ -49,11 +49,11 @@ mackey-glass = ["jitcdde"]
 nehar = ["pytorch-lightning", "gdown"]
 
 [tool.black]
-exclude = '/neurobench/examples/'
+exclude = '/examples/'
 line-length = 88
 
 [tool.docformatter]
-exclude = '/neurobench/examples/'
+exclude = '/examples/'
 recursive = true
 wrap-summaries = 88
 wrap-descriptions = 88
@@ -62,7 +62,7 @@ blank = true
 black = true
 
 [tool.flake8]
-exclude = './neurobench/examples/'
+exclude = './examples/'
 count = true
 statistics = true
 show-source = true
@@ -86,7 +86,7 @@ include = [
     "neurobench/*",
 ]
 omit = [
-    "neurobench/examples/*",
+    "examples/*",
     "neurobench/datasets/*",
     "neurobench/tests/*",
 ]

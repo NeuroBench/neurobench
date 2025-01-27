@@ -49,7 +49,7 @@ mackey-glass = ["jitcdde"]
 nehar = ["pytorch-lightning", "gdown"]
 
 [tool.black]
-exclude = '/neurobench/examples/'
+exclude = '/examples/'
 line-length = 88
 
 [tool.docformatter]

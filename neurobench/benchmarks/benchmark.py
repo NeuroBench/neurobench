@@ -21,9 +21,6 @@ import pathlib
 import snntorch
 from torch import Tensor
 
-if snntorch.__version__ >= "0.9.0":
-    from snntorch import export_to_nir
-
 import torch
 import nir
 
@@ -222,6 +219,10 @@ class Benchmark:
         """
         if snntorch.__version__ < "0.9.0":
             raise ValueError("Exporting to NIR requires snntorch version >= 0.9.0")
+
+        if snntorch.__version__ >= "0.9.0":
+            from snntorch.export_nir import export_to_nir
+
         nir_graph = export_to_nir(self.model.__net__(), dummy_input, **kwargs)
         nir.write(filename, nir_graph)
         print(f"Model exported to {filename}")

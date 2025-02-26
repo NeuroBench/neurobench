@@ -8,7 +8,7 @@ exclude = ["docs", "tests", "examples"]
 
 [tool.poetry.dependencies]
 python = "^3.10"
-numpy = "^1.24.3"
+numpy = ">=1.24.3"
 torch = ">=2.0.1"
 torchaudio = ">=2.0.2"
 tqdm = "^4.63.3"

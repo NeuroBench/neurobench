@@ -28,11 +28,7 @@ jobs:
 
     - name: Install dependencies
       run: |
-        if [ "${{ matrix.python-version }}" = "3.11" ]; then
-            poetry run pytest --cov --cov-report=xml
-          else
-            poetry run pytest
-          fi
+        poetry install --with code-quality
 
     - name: Check with Black
       run: |
@@ -72,7 +68,11 @@ jobs:
 
       - name: Run tests
         run: |
-          poetry run pytest --cov --cov-report=xml
+          if [ "${{ matrix.python-version }}" = "3.11" ]; then
+            poetry run pytest --cov --cov-report=xml
+          else
+            poetry run pytest
+          fi
 
       - name: Upload coverage to Codecov
         if: matrix.python-version == '3.11'

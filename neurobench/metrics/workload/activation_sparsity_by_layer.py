@@ -5,7 +5,7 @@ import torch
 
 class ActivationSparsityByLayer(AccumulatedMetric):
     """
-    Sparsity layer by layer of model activations.
+    Sparsity layer-wise of model activations.
 
     Calculated as the number of zero activations over the number of activations layer by
     layer, over all timesteps, samples in data.

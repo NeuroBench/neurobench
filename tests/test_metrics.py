@@ -428,6 +428,7 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         out = model(inp)
         tot_mem_updates = self.mem_updates(model, out, (inp, 0))
+        self.mem_updates.reset()
 
         self.assertEqual(tot_mem_updates, 50)
 
@@ -441,6 +442,7 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         out = model(inp)
         act_sparsity_by_layer = self.activation_sparsity_by_layer(model, out, (inp, 0))
+        self.activation_sparsity_by_layer.reset()
 
         self.assertEqual(act_sparsity_by_layer["1"], 0.96)
 

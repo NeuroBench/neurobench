@@ -1,7 +1,5 @@
 import sys
 from contextlib import redirect_stdout
-from os import mkdir
-from tqdm import tqdm
 from snntorch import utils
 from neurobench.metrics.manager.static_manager import StaticMetricManager
 from neurobench.metrics.manager.workload_manager import WorkloadMetricManager
@@ -20,9 +18,22 @@ from typing import Literal, List, Type, Optional, Dict, Any
 import pathlib
 import snntorch
 from torch import Tensor
-
+from rich.console import Console
+from rich.table import Table
 import torch
 import nir
+from rich.live import Live
+from rich.progress import (
+    Progress,
+    SpinnerColumn,
+    BarColumn,
+    TextColumn,
+    TimeRemainingColumn,
+)
+from rich.panel import Panel
+from rich.layout import Layout
+from rich.columns import Columns
+import rich
 
 
 class Benchmark:
@@ -84,7 +95,6 @@ class Benchmark:
 
         """
         with redirect_stdout(None if quiet else sys.stdout):
-            print("Running benchmark")
 
             self.results = None
             results = self.static_metric_manager.run_metrics(self.model)
@@ -104,40 +114,140 @@ class Benchmark:
                 self.model.__net__().to(device)
 
             batch_num = 0
-            for data in tqdm(dataloader, total=len(dataloader), disable=quiet):
-                # convert data to tuple
-                data = tuple(data) if not isinstance(data, tuple) else data
+            print("\n")
 
-                if device is not None:
-                    data = (data[0].to(device), data[1].to(device))
-
-                batch_size = data[0].size(0)
-
-                # Preprocessing data
-                data = self.processor_manager.preprocess(data)
-
-                # Run model on test data
-                preds = self.model(data[0])
-
-                # Postprocessing data
-                preds = self.processor_manager.postprocess(preds)
-
-                # Data metrics
-                batch_results = self.workload_metric_manager.run_metrics(
-                    self.model, preds, data, batch_size, dataset_len
-                )
-                self.workload_metric_manager.reset_hooks(self.model)
-
+            def make_layout():
+                layout = Layout()
                 if verbose:
-                    results.update(batch_results)
-                    print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
-                    print(dict(results))
+                    layout.split(
+                        Layout(name="progress", size=3),
+                        Layout(name="content"),
+                    )
+                else:
+                    layout.split(
+                        Layout(name="progress", size=3),
+                    )
 
-                batch_num += 1
+                return layout
+
+            # Create a custom progress bar
+            progress = Progress(
+                SpinnerColumn(spinner_name="dots"),
+                TextColumn("[bold cyan]Processing[/bold cyan]"),
+                BarColumn(bar_width=40, style="magenta", complete_style="cyan"),
+                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
+                TextColumn("•"),
+                TextColumn(
+                    "[bold blue]{task.completed}/{task.total}[/bold blue] batches"
+                ),
+                TextColumn("•"),
+                TimeRemainingColumn(),
+                expand=True,
+                transient=False,
+            )
+
+            layout = make_layout()
+            layout["progress"].update(Panel(progress))
+            if verbose:
+                layout["content"].update(Panel(""))
+
+            console = Console()
+            console.clear()
+
+            with Live(
+                layout,
+                refresh_per_second=10,
+                vertical_overflow="visible",
+                screen=True,  # This will clear the screen and create a new canvas
+                console=console,
+            ) as live:
+                task = progress.add_task(
+                    "[cyan]Running Benchmark...", total=len(dataloader)
+                )
+
+                for data in dataloader:
+                    # convert data to tuple
+                    data = tuple(data) if not isinstance(data, tuple) else data
+
+                    if device is not None:
+                        data = (data[0].to(device), data[1].to(device))
+
+                    batch_size = data[0].size(0)
+
+                    # Preprocessing data
+                    data = self.processor_manager.preprocess(data)
+
+                    # Run model on test data
+                    preds = self.model(data[0])
+
+                    # Postprocessing data
+                    preds = self.processor_manager.postprocess(preds)
+
+                    # Data metrics
+                    batch_results = self.workload_metric_manager.run_metrics(
+                        self.model, preds, data, batch_size, dataset_len
+                    )
+                    self.workload_metric_manager.reset_hooks(self.model)
+
+                    progress.update(task, advance=1)
+
+                    if verbose:
+                        # Create a list of panels for each metric
+                        panels = []
+                        for key, value in batch_results.items():
+                            if isinstance(value, dict):
+                                sub_panels = [
+                                    Panel(
+                                        f"Value: {sub_value}",
+                                        title=sub_key,
+                                        border_style="green",
+                                    )
+                                    for sub_key, sub_value in value.items()
+                                ]
+                                panels.append(
+                                    Panel(
+                                        Columns(sub_panels),
+                                        title=key,
+                                        border_style="blue",
+                                    )
+                                )
+                            else:
+                                panels.append(
+                                    Panel(
+                                        f"Value: {value}",
+                                        title=key,
+                                        border_style="blue",
+                                    )
+                                )
+
+                        # Create a structured panel for the content section
+                        content_panel = Panel(
+                            Columns(panels),
+                            title=f"Processing batch {progress.tasks[0].completed}/{progress.tasks[0].total}",
+                            title_align="left",
+                            border_style="cyan",
+                        )
+
+                        # Update the content section with the history of panels
+                        layout["content"].update(
+                            Panel(
+                                content_panel,
+                                title="Batch History",
+                                border_style="cyan",
+                            )
+                        )
+
+                    batch_num += 1
+
+                # Keep the progress bar base at the end without collapsing it
+                progress.update(task, completed=len(dataloader))
+                live.refresh()
+                # live.stop()
 
             results.update(self.workload_metric_manager.results)
             self.workload_metric_manager.clean_results()
             self.results = dict(results)
+            self._show_results(console)
         return self.results
 
     def save_benchmark_results(
@@ -262,3 +372,38 @@ class Benchmark:
             self.model.__net__().eval()
             torch.onnx.export(self.model.__net__(), dummy_input, filename, **kwargs)
         print(f"Model exported to {filename}")
+
+    def _show_results(self, console):
+        """Print the results of the benchmark."""
+        if self.results is None:
+            raise ValueError("No results to show. Run the benchmark first.")
+
+        # Create console and table
+
+        table = Table(
+            title="[bold magenta]\nBenchmark Results:[/bold magenta]",
+            show_lines=True,
+            expand=True,
+            header_style="bold cyan",
+            title_justify="center",
+            title_style="bold magenta",
+            border_style="cyan",
+            box=rich.box.ROUNDED,
+        )
+
+        # Define columns
+        table.add_column("Metric", style="bold magenta", justify="left")
+        table.add_column("Value", style="bold yellow", justify="right")
+
+        # Add metrics to the table
+        for key, value in self.results.items():
+            if isinstance(value, dict):
+                table.add_section()
+                table.add_row(f"[bold green]{key}[/]", "")
+                for sub_key, sub_value in value.items():
+                    table.add_row(f"  {sub_key}", f"{sub_value}")
+            else:
+                table.add_row(key, f"{value}")
+
+        # Print the table
+        console.print(table)

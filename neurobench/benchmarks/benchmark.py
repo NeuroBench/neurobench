@@ -242,7 +242,7 @@ class Benchmark:
                 # Keep the progress bar base at the end without collapsing it
                 progress.update(task, completed=len(dataloader))
                 live.refresh()
-                # live.stop()
+                live.stop()
 
             results.update(self.workload_metric_manager.results)
             self.workload_metric_manager.clean_results()

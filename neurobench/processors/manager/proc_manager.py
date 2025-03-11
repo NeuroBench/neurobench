@@ -3,7 +3,7 @@ from neurobench.processors.abstract import (
     NeuroBenchPreProcessor,
     NeuroBenchPostProcessor,
 )
-from typing import List
+from typing import List, Callable, Tuple
 from torch import Tensor
 
 
@@ -26,8 +26,11 @@ class ProcessorManager(ABC):
 
     def __init__(
         self,
-        preprocessors: List[NeuroBenchPreProcessor],
-        postprocessors: List[NeuroBenchPostProcessor],
+        preprocessors: List[
+            NeuroBenchPreProcessor
+            | Callable[[Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor]]
+        ],
+        postprocessors: List[NeuroBenchPostProcessor | Callable[[Tensor], Tensor]],
     ):
         """
         Initialize the ProcessorManager with the given preprocessors and postprocessors.
@@ -45,19 +48,31 @@ class ProcessorManager(ABC):
 
         """
 
-        if any(not isinstance(p, NeuroBenchPreProcessor) for p in preprocessors):
+        if any(
+            not (isinstance(p, NeuroBenchPreProcessor) or callable(p))
+            for p in preprocessors
+        ):
             raise TypeError(
-                "All preprocessors must be instances of NeuroBenchPreProcessor"
+                "All preprocessors must be instances of NeuroBenchPreProcessor or callable functions"
             )
-        if any(not isinstance(p, NeuroBenchPostProcessor) for p in postprocessors):
+        if any(
+            not (isinstance(p, NeuroBenchPostProcessor) or callable(p))
+            for p in postprocessors
+        ):
             raise TypeError(
-                "All postprocessors must be instances of NeuroBenchPostProcessor"
+                "All postprocessors must be instances of NeuroBenchPostProcessor or callable functions"
             )
 
         self.preprocessors = preprocessors
         self.postprocessors = postprocessors
 
-    def replace_preprocessors(self, preprocessors: List[NeuroBenchPreProcessor]):
+    def replace_preprocessors(
+        self,
+        preprocessors: List[
+            NeuroBenchPreProcessor
+            | Callable[[Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor]]
+        ],
+    ):
         """
         Replace the current list of preprocessors with the provided list.
 
@@ -70,13 +85,18 @@ class ProcessorManager(ABC):
             NeuroBenchPreProcessor.
 
         """
-        if any(not isinstance(p, NeuroBenchPreProcessor) for p in preprocessors):
+        if any(
+            not (isinstance(p, NeuroBenchPreProcessor) or callable(p))
+            for p in preprocessors
+        ):
             raise TypeError(
-                "All preprocessors must be instances of NeuroBenchPreProcessor"
+                "All preprocessors must be instances of NeuroBenchPreProcessor or callable functions"
             )
         self.preprocessors = preprocessors
 
-    def replace_postprocessors(self, postprocessors: List[NeuroBenchPostProcessor]):
+    def replace_postprocessors(
+        self, postprocessors: List[NeuroBenchPostProcessor | Callable[[Tensor], Tensor]]
+    ):
         """
         Replace the current list of postprocessors with the provided list.
 
@@ -89,13 +109,16 @@ class ProcessorManager(ABC):
             NeuroBenchPostProcessor.
 
         """
-        if any(not isinstance(p, NeuroBenchPostProcessor) for p in postprocessors):
+        if any(
+            not (isinstance(p, NeuroBenchPostProcessor) or callable(p))
+            for p in postprocessors
+        ):
             raise TypeError(
-                "All postprocessors must be instances of NeuroBenchPostProcessor"
+                "All postprocessors must be instances of NeuroBenchPostProcessor or callable functions"
             )
         self.postprocessors = postprocessors
 
-    def preprocess(self, data: tuple[Tensor, Tensor]) -> tuple[Tensor, Tensor]:
+    def preprocess(self, data: Tuple[Tensor, Tensor]) -> tuple[Tensor, Tensor]:
         """
         Apply preprocessing steps to the input data.
 

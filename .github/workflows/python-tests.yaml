@@ -44,6 +44,9 @@ jobs:
 
   test-code:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
 
     steps:
       - uses: actions/checkout@v4
@@ -51,23 +54,28 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: ${{ matrix.python-version }}
 
       - name: Install Poetry
         run: |
           python -m pip install --upgrade pip
+          pip install --upgrade setuptools
           pip install poetry
 
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
           poetry install --with dev
 
       - name: Run tests
         run: |
-          poetry run pytest --cov --cov-report=xml
+          if [ "${{ matrix.python-version }}" = "3.11" ]; then
+            poetry run pytest --cov --cov-report=xml
+          else
+            poetry run pytest
+          fi
 
       - name: Upload coverage to Codecov
+        if: matrix.python-version == '3.11'
         uses: codecov/codecov-action@v4
         with:
           directory: ./coverage/reports/

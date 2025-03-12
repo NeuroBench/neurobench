@@ -14,7 +14,7 @@ from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
 import json
 import csv
 import os
-from typing import Literal, List, Type, Optional, Dict, Any
+from typing import Literal, List, Type, Optional, Dict, Any, Callable, Tuple
 import pathlib
 import snntorch
 from torch import Tensor
@@ -47,18 +47,25 @@ class Benchmark:
         self,
         model: NeuroBenchModel,
         dataloader: Optional[DataLoader],
-        preprocessors: Optional[List[NeuroBenchPreProcessor]],
-        postprocessors: Optional[List[NeuroBenchPostProcessor]],
+        preprocessors: Optional[
+            List[
+                NeuroBenchPreProcessor
+                | Callable[[Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor]]
+            ]
+        ],
+        postprocessors: Optional[
+            List[NeuroBenchPostProcessor | Callable[[Tensor], Tensor]]
+        ],
         metric_list: List[List[Type[StaticMetric | WorkloadMetric]]],
     ):
         """
         Args:
             model: A NeuroBenchModel.
             dataloader: A PyTorch DataLoader.
-            preprocessors: A list of NeuroBenchPreProcessors.
-            postprocessors: A list of NeuroBenchPostProcessors.
-            metric_list: A list of lists of strings of metrics to run.
-                First item is static metrics, second item is data metrics.
+            preprocessors: A list of NeuroBenchPreProcessors or callable functions (e.g. lambda) with matching interfaces.
+            postprocessors: A list of NeuroBenchPostProcessors or callable functions (e.g. lambda) with matching interfaces.
+            metric_list: A list of lists of StaticMetric and WorkloadMetric classes of metrics to run.
+                First item is StaticMetrics, second item is WorkloadMetrics.
         """
 
         self.model = model
@@ -74,8 +81,13 @@ class Benchmark:
         quiet: bool = False,
         verbose: bool = False,
         dataloader: Optional[DataLoader] = None,
-        preprocessors: Optional[NeuroBenchPreProcessor] = None,
-        postprocessors: Optional[NeuroBenchPostProcessor] = None,
+        preprocessors: Optional[
+            NeuroBenchPreProcessor
+            | Callable[[Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor]]
+        ] = None,
+        postprocessors: Optional[
+            NeuroBenchPostProcessor | Callable[[Tensor], Tensor]
+        ] = None,
         device: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
@@ -114,7 +126,31 @@ class Benchmark:
                 self.model.__net__().to(device)
 
             batch_num = 0
+
             print("\n ")
+            for data in tqdm(dataloader, total=len(dataloader), disable=quiet):
+                # convert data to tuple
+                data = tuple(data) if not isinstance(data, tuple) else data
+
+                if device is not None:
+                    data = (data[0].to(device), data[1].to(device))
+
+                batch_size = data[0].size(0)
+
+                # Preprocessing data
+                input, target = self.processor_manager.preprocess(data)
+
+                # Run model on test data
+                preds = self.model(input)
+
+                # Postprocessing data
+                preds = self.processor_manager.postprocess(preds)
+
+                # Data metrics
+                batch_results = self.workload_metric_manager.run_metrics(
+                    self.model, preds, data, batch_size, dataset_len
+                )
+                self.workload_metric_manager.reset_hooks(self.model)
 
             def make_layout():
                 layout = Layout()

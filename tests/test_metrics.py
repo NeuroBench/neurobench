@@ -8,6 +8,7 @@ from neurobench.metrics.workload import (
     ActivationSparsity,
     SynapticOperations,
     MembraneUpdates,
+    ActivationSparsityByLayer,
 )
 from neurobench.metrics.static import (
     Footprint,
@@ -104,6 +105,7 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.activation_sparsity = ActivationSparsity()
         self.synaptic_operations = SynapticOperations()
         self.mem_updates = MembraneUpdates()
+        self.activation_sparsity_by_layer = ActivationSparsityByLayer()
 
     def test_classification_accuracy(self):
         model = SNNTorchModel(self.dummy_net)
@@ -426,8 +428,23 @@ class TestWorkloadMetrics(unittest.TestCase):
 
         out = model(inp)
         tot_mem_updates = self.mem_updates(model, out, (inp, 0))
+        self.mem_updates.reset()
 
         self.assertEqual(tot_mem_updates, 50)
+
+    def test_activation_sparsity_by_layer(self):
+
+        inp = torch.ones(5, 10, 20)  # batch size, time steps, input size
+
+        model = SNNTorchModel(self.net_snn)
+
+        model.register_hooks()
+
+        out = model(inp)
+        act_sparsity_by_layer = self.activation_sparsity_by_layer(model, out, (inp, 0))
+        self.activation_sparsity_by_layer.reset()
+
+        self.assertEqual(act_sparsity_by_layer["1"], 0.96)
 
 
 # TODO: refactor this metric if needed

@@ -79,9 +79,9 @@ class NeuroBenchModel(ABC):
         def find_activation_layers(module):
             """Recursively find activation layers in a module."""
             layers = []
-            for child in module.children():
+            for child_name, child in module.named_children():
                 if is_activation_layer(child):
-                    layers.append(child)
+                    layers.append({"layer_name": child_name, "layer": child})
                 elif list(child.children()):  # Check for nested submodules
                     layers.extend(find_activation_layers(child))
             return layers
@@ -135,7 +135,9 @@ class NeuroBenchModel(ABC):
 
         # Registered activation hooks
         for layer in self.activation_layers():
-            self.activation_hooks.append(NeuronHook(layer))
+            layer_name = layer["layer_name"]
+            layer = layer["layer"]
+            self.activation_hooks.append(NeuronHook(layer, layer_name))
 
         for layer in self.connection_layers():
             self.connection_hooks.append(LayerHook(layer))

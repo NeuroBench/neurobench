@@ -1,9 +1,12 @@
 import torch.nn as nn
 import snntorch as snn
+from torch import manual_seed
 import snntorch.surrogate as surrogate
 
 beta = 0.9
+manual_seed(0)
 spike_grad = surrogate.fast_sigmoid()
+
 
 net = nn.Sequential(
     nn.Flatten(),

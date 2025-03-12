@@ -114,7 +114,7 @@ class Benchmark:
                 self.model.__net__().to(device)
 
             batch_num = 0
-            print("\n")
+            print("\n ")
 
             def make_layout():
                 layout = Layout()

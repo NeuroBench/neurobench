@@ -53,8 +53,7 @@ if __name__ == "__main__":
     benchmark = Benchmark(
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
-    results = benchmark.run(verbose=False)
-    print(results)
+    results = benchmark.run(verbose=True)
 
     results_path = os.path.join(file_path, "results")
     benchmark.save_benchmark_results(results_path)

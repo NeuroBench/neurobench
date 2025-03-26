@@ -19,21 +19,13 @@ import pathlib
 import snntorch
 from torch import Tensor
 from rich.console import Console
+from rich.panel import Panel
 from rich.table import Table
 import torch
 import nir
 from rich.live import Live
-from rich.progress import (
-    Progress,
-    SpinnerColumn,
-    BarColumn,
-    TextColumn,
-    TimeRemainingColumn,
-)
-from rich.panel import Panel
-from rich.layout import Layout
-from rich.columns import Columns
 import rich
+from .utils import make_layout, create_progress_bar, create_content_panel
 
 
 class Benchmark:
@@ -116,37 +108,8 @@ class Benchmark:
             batch_num = 0
             print("\n")
 
-            def make_layout():
-                layout = Layout()
-                if verbose:
-                    layout.split(
-                        Layout(name="progress", size=3),
-                        Layout(name="content"),
-                    )
-                else:
-                    layout.split(
-                        Layout(name="progress", size=3),
-                    )
-
-                return layout
-
-            # Create a custom progress bar
-            progress = Progress(
-                SpinnerColumn(spinner_name="dots"),
-                TextColumn("[bold cyan]Processing[/bold cyan]"),
-                BarColumn(bar_width=40, style="magenta", complete_style="cyan"),
-                TextColumn("[progress.percentage]{task.percentage:>3.0f}%"),
-                TextColumn("•"),
-                TextColumn(
-                    "[bold blue]{task.completed}/{task.total}[/bold blue] batches"
-                ),
-                TextColumn("•"),
-                TimeRemainingColumn(),
-                expand=True,
-                transient=False,
-            )
-
-            layout = make_layout()
+            progress = create_progress_bar(total=len(dataloader))
+            layout = make_layout(verbose)
             layout["progress"].update(Panel(progress))
             if verbose:
                 layout["content"].update(Panel(""))
@@ -193,42 +156,9 @@ class Benchmark:
 
                     if verbose:
                         # Create a list of panels for each metric
-                        panels = []
-                        for key, value in batch_results.items():
-                            if isinstance(value, dict):
-                                sub_panels = [
-                                    Panel(
-                                        f"Value: {sub_value}",
-                                        title=sub_key,
-                                        border_style="green",
-                                    )
-                                    for sub_key, sub_value in value.items()
-                                ]
-                                panels.append(
-                                    Panel(
-                                        Columns(sub_panels),
-                                        title=key,
-                                        border_style="blue",
-                                    )
-                                )
-                            else:
-                                panels.append(
-                                    Panel(
-                                        f"Value: {value}",
-                                        title=key,
-                                        border_style="blue",
-                                    )
-                                )
-
-                        # Create a structured panel for the content section
-                        content_panel = Panel(
-                            Columns(panels),
-                            title=f"Processing batch {progress.tasks[0].completed}/{progress.tasks[0].total}",
-                            title_align="left",
-                            border_style="cyan",
+                        content_panel = create_content_panel(
+                            progress, batch_results, verbose
                         )
-
-                        # Update the content section with the history of panels
                         layout["content"].update(
                             Panel(
                                 content_panel,

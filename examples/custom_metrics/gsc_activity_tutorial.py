@@ -49,6 +49,8 @@ benchmark = Benchmark(model, test_set_loader, preprocessors, postprocessors, [st
 results = benchmark.run(device=device)
 pprint(results)
 
+# plot activity distributions
+AverageActivityMetric.plot_activity_distributions(results)
 
 # Results:
 # {'Footprint': 583900, 'ConnectionSparsity': 0.0, 

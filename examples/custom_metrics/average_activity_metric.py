@@ -68,11 +68,6 @@ class AverageActivityMetric(AccumulatedMetric):
         """
         # Get activities for all layers
         self._get_layer_activities(model)
-
-        # calculate the min, max, mean, q1, q3 of the activities
-
-        
-        # Process each layer's activities
         
         self.num_batches += 1
 
@@ -106,6 +101,7 @@ class AverageActivityMetric(AccumulatedMetric):
                 'median': np.median(spike_percentages),
                 'q1': np.percentile(spike_percentages, 25),
                 'q3': np.percentile(spike_percentages, 75),
+                'histogram': spike_percentages
             }
         return results
     
@@ -115,33 +111,44 @@ class AverageActivityMetric(AccumulatedMetric):
         self.num_batches = 0
         # self.all_spikes = {}
     
-    def plot_activity_distributions(self, results: Dict[str, Dict[str, np.ndarray]]):
+    @classmethod
+    def plot_activity_distributions(cls, results: Dict[str, Dict[str, np.ndarray]]):
         """
-        Plot activity distributions for each layer.
+        Plot boxplots of activity distributions for each layer side by side on one figure.
         
         Args:
             results: Results from compute() method
         """
-        num_layers = len(results)
-        fig, axes = plt.subplots(num_layers, 1, figsize=(10, 4*num_layers))
+        # Create a single figure
+        plt.figure(figsize=(12, 6))
         
-        if num_layers == 1:
-            axes = [axes]
+        results = results['AverageActivityMetric']
+        # Prepare data for plotting
+        layer_names = list(results.keys())
+        activity_data = [results[layer]['histogram'] for layer in layer_names]
         
-        for (layer_name, stats), ax in zip(results.items(), axes):
-            hist, bins = stats['histogram']
-            bin_centers = (bins[:-1] + bins[1:]) / 2
-            
-            ax.bar(bin_centers, hist, width=np.diff(bins)[0])
-            ax.set_title(f'Activity Distribution - {layer_name}')
-            ax.set_xlabel('Average Activity')
-            ax.set_ylabel('Count')
-            
-            # Add mean and std information
-            mean = np.mean(stats['mean'])
-            std = np.mean(stats['std'])
-            ax.text(0.02, 0.98, f'Mean: {mean:.3f}\nStd: {std:.3f}',
-                   transform=ax.transAxes, verticalalignment='top')
+        # Create boxplot
+        bp = plt.boxplot(activity_data, 
+                        labels=layer_names,
+                        vert=True,
+                        widths=0.5,
+                        showmeans=True,
+                        meanline=True,
+                        patch_artist=True)
         
+        # Customize the plot
+        plt.title('Average Activity of Neurons per Layer')
+        plt.xlabel('Layer')
+        plt.ylabel('Activity')
+        plt.ylim(0, 0.5)
+        
+        # Rotate x-axis labels for better readability
+        plt.xticks(rotation=45, ha='right')
+        
+        # Add grid for better readability
+        plt.grid(True, axis='y', linestyle='--', alpha=0.7)
+        
+        # Adjust layout to prevent label cutoff
         plt.tight_layout()
+        
         plt.show()

@@ -20,7 +20,6 @@ from typing import Literal, List, Type, Optional, Dict, Any
 import pathlib
 import snntorch
 from torch import Tensor
-
 import torch
 import nir
 

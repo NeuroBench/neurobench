@@ -10,7 +10,7 @@ from neurobench.metrics.abstract.workload_metric import AccumulatedMetric
 class AverageActivityMetric(AccumulatedMetric):
     """
     A workload metric that computes activity statistics for each layer in a neural network.
-    For each layer, it tracks the average activity per neuron and generates histograms.
+    For each layer, it tracks the min, max, mean, median, and q1 and q3 of the activity of its neurons.
     
     This metric is particularly useful for analyzing:
     1. Layer-wise activation patterns

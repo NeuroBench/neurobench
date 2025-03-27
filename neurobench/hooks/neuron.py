@@ -1,6 +1,6 @@
 import snntorch as snn
 from abc import ABC
-
+import warnings
 
 class NeuronHook(ABC):
     """
@@ -32,7 +32,6 @@ class NeuronHook(ABC):
             self.hook_pre = None
 
         self.layer = layer  # the activation layer
-
         # Check if the layer is a spiking layer (SpikingNeuron is the superclass of all snnTorch spiking layers)
         self.spiking = isinstance(layer, snn.SpikingNeuron)
 
@@ -66,7 +65,11 @@ class NeuronHook(ABC):
 
         """
         if self.spiking:
-            self.activation_outputs.append(output[0])
+            if self.layer.init_hidden and not self.layer.output and not isinstance(output, tuple):
+                warnings.warn("init_hidden is True, but output is False. Spiking neuron now only returns spikes and not memory, default to using full output!")
+                self.activation_outputs.append(output)
+            else:
+                self.activation_outputs.append(output[0])
             if hasattr(layer, "mem"):
                 self.post_fire_mem_potential.append(layer.mem)
 

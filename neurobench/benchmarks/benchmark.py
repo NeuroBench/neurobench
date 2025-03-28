@@ -16,16 +16,11 @@ from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
 import json
 import csv
 import os
-from typing import Literal, List, Type, Optional, Dict, Any
+from typing import Literal, List, Type, Optional, Dict, Any, Callable, Tuple
 import pathlib
 import snntorch
 from torch import Tensor
-
-if snntorch.__version__ >= "0.9.0":
-    from snntorch import export_to_nir
-
 import torch
-import nir
 
 
 class Benchmark:
@@ -39,18 +34,25 @@ class Benchmark:
         self,
         model: NeuroBenchModel,
         dataloader: Optional[DataLoader],
-        preprocessors: Optional[List[NeuroBenchPreProcessor]],
-        postprocessors: Optional[List[NeuroBenchPostProcessor]],
+        preprocessors: Optional[
+            List[
+                NeuroBenchPreProcessor
+                | Callable[[Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor]]
+            ]
+        ],
+        postprocessors: Optional[
+            List[NeuroBenchPostProcessor | Callable[[Tensor], Tensor]]
+        ],
         metric_list: List[List[Type[StaticMetric | WorkloadMetric]]],
     ):
         """
         Args:
             model: A NeuroBenchModel.
             dataloader: A PyTorch DataLoader.
-            preprocessors: A list of NeuroBenchPreProcessors.
-            postprocessors: A list of NeuroBenchPostProcessors.
-            metric_list: A list of lists of strings of metrics to run.
-                First item is static metrics, second item is data metrics.
+            preprocessors: A list of NeuroBenchPreProcessors or callable functions (e.g. lambda) with matching interfaces.
+            postprocessors: A list of NeuroBenchPostProcessors or callable functions (e.g. lambda) with matching interfaces.
+            metric_list: A list of lists of StaticMetric and WorkloadMetric classes of metrics to run.
+                First item is StaticMetrics, second item is WorkloadMetrics.
         """
 
         self.model = model
@@ -66,8 +68,13 @@ class Benchmark:
         quiet: bool = False,
         verbose: bool = False,
         dataloader: Optional[DataLoader] = None,
-        preprocessors: Optional[NeuroBenchPreProcessor] = None,
-        postprocessors: Optional[NeuroBenchPostProcessor] = None,
+        preprocessors: Optional[
+            NeuroBenchPreProcessor
+            | Callable[[Tuple[Tensor, Tensor]], Tuple[Tensor, Tensor]]
+        ] = None,
+        postprocessors: Optional[
+            NeuroBenchPostProcessor | Callable[[Tensor], Tensor]
+        ] = None,
         device: Optional[str] = None,
     ) -> Dict[str, Any]:
         """
@@ -117,10 +124,10 @@ class Benchmark:
                 batch_size = data[0].size(0)
 
                 # Preprocessing data
-                data = self.processor_manager.preprocess(data)
+                input, target = self.processor_manager.preprocess(data)
 
                 # Run model on test data
-                preds = self.model(data[0])
+                preds = self.model(input)
 
                 # Postprocessing data
                 preds = self.processor_manager.postprocess(preds)
@@ -220,8 +227,18 @@ class Benchmark:
                 If the installed version of `snntorch` is less than `0.9.0`.
 
         """
+        try:
+            import nir
+        except ImportError:
+            raise ImportError(
+                "Exporting to NIR requires the `nir` package. Install it using `pip install nir`."
+            )
         if snntorch.__version__ < "0.9.0":
             raise ValueError("Exporting to NIR requires snntorch version >= 0.9.0")
+
+        if snntorch.__version__ >= "0.9.0":
+            from snntorch.export_nir import export_to_nir
+
         nir_graph = export_to_nir(self.model.__net__(), dummy_input, **kwargs)
         nir.write(filename, nir_graph)
         print(f"Model exported to {filename}")

@@ -10,7 +10,7 @@ class NeuronHook(ABC):
 
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer, name=None):
         """
         Initializes the class.
 
@@ -24,6 +24,7 @@ class NeuronHook(ABC):
         self.activation_inputs = []
         self.pre_fire_mem_potential = []
         self.post_fire_mem_potential = []
+        self.name = name
         if layer is not None:
             self.hook = layer.register_forward_hook(self.hook_fn)
             self.hook_pre = layer.register_forward_pre_hook(self.pre_hook_fn)

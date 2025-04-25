@@ -1,3 +1,3 @@
-from .benchmark import Benchmark
+from .benchmark import Benchmark, BenchmarkClosedLoop
 
-__all__ = ["Benchmark"]
+__all__ = ["Benchmark", "BenchmarkClosedLoop"]

@@ -279,13 +279,13 @@ class Benchmark:
             torch.onnx.export(self.model.__net__(), dummy_input, filename, **kwargs)
         print(f"Model exported to {filename}")
 
-class Benchmark_Closed_Loop():
+class BenchmarkClosedLoop():
     """ Top-level benchmark class for running closed loop benchmarks.
     """
 
     def __del__(self):
         if hasattr(self, "workload_metric_manager"):
-            self.workload_metric_manager.cleanup_hooks(self.model)
+            self.workload_metric_manager.cleanup_hooks(self.agent)
 
     def __init__(
         self, 
@@ -340,9 +340,7 @@ class Benchmark_Closed_Loop():
             print("Running benchmark")
 
             self.results = None
-            results = self.static_metric_manager.run_metrics(self.model)
-
-            dataloader = dataloader if dataloader is not None else self.dataloader
+            results = self.static_metric_manager.run_metrics(self.agent)
 
             # if preprocessors is not None:
             #     self.processor_manager.replace_preprocessors(preprocessors)
@@ -351,71 +349,75 @@ class Benchmark_Closed_Loop():
 
             self.workload_metric_manager.initialize_metrics()
 
-            dataset_len = len(dataloader.dataset)
-
             if device is not None:
-                self.model.__net__().to(device)
+                self.agent.__net__().to(device)
 
             batch_num = 0
+            successful_trials = 0
             rewards = []
 
-            for _ in tqdm(range(nr_interactions)):
-                env = self.env
-                self.agent.reset() 
+            with torch.no_grad():
+                for _ in tqdm(range(nr_interactions)):
+                    env = self.env
+                    # self.agent.reset() # Is this needed?
 
-                # get initial state
-                state, _ = env.reset()
-                # state = env.set_state(constant_state)
+                    # get initial state
+                    state, _ = env.reset()
+                    # state = env.set_state(constant_state)
 
-                if device is not None:
-                    state = state.to(device)
-                
-                t_sim = 0
-                reward_tot = 0
-                times = []
-                terminal = False
+                    if device is not None:
+                        state = state.to(device)
+                    
+                    t_sim = 0   # Might not need this as our environment keep track of time
+                    reward_tot = 0
+                    times = []
+                    terminal = False
 
-                while not terminal and t_sim < max_length:
-                    # Preprocessing data
-                    input, target = self.processor_manager.preprocess(state)
+                    while not terminal and t_sim < max_length:
+                        # Preprocessing data
+                        # input, target = self.processor_manager.preprocess(state) # Check if this is needed
 
-                    # get network outputs on given state
-                    output = self.agent(state.unsqueeze(0).unsqueeze(0))
+                        # get network outputs on given state
+                        output = self.agent(state.unsqueeze(0).unsqueeze(0))
 
-                    # Postprocessing data
-                    output = self.processor_manager.postprocess(output)
+                        # Postprocessing data
+                        output = self.processor_manager.postprocess(output)
 
-                    # perform action
-                    obs, reward, terminal, _, _ = env.step(output)
+                        # perform action
+                        obs, reward, terminal, _, _ = env.step(output)  # Do we need to include reward here, as this is used for benchmarking, not training?
 
-                    reward_tot += reward
-                    if not terminal:
-                        state = obs
+                        reward_tot += reward
+                        if not terminal:
+                            state = obs
 
-                    t_sim += 1
-                    times.append(t_sim)
-                rewards.append(reward_tot)
+                        t_sim += 1
+                        times.append(t_sim)
+                    rewards.append(reward_tot)
+                    # print(env.t*env.ops.time_step)
+                    if terminal:
+                        successful_trials += 1
 
-                # Data metrics
-                # Need to check how to handle this part
-                batch_results = self.workload_metric_manager.run_metrics(
-                    self.model, preds, data, batch_size, dataset_len
-                )
-                self.workload_metric_manager.reset_hooks(self.model)
+                    # Data metrics
+                    ######## Need to check how to handle this part
+                #     batch_results = self.workload_metric_manager.run_metrics(
+                #         self.model, preds, data, batch_size, dataset_len
+                #     )
+                #     self.workload_metric_manager.reset_hooks(self.model)
 
-                if verbose:
-                    results.update(batch_results)
-                    print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
-                    print(dict(results))
+                #     if verbose:
+                #         results.update(batch_results)
+                #         print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
+                #         print(dict(results))
 
-                # delete hook contents
-                self.agent.reset_hooks() # Is this still necessary with the line self.workload_metric_manager.reset_hooks(self.model)
+                #     # delete hook contents
+                #     self.agent.reset_hooks() # Is this still necessary with the line self.workload_metric_manager.reset_hooks(self.model)
 
-                batch_num += 1
+                #     batch_num += 1
 
-            results.update(self.workload_metric_manager.results)
-            self.workload_metric_manager.clean_results()
-            self.results = dict(results)
+                # results.update(self.workload_metric_manager.results)
+                # self.workload_metric_manager.clean_results()
+                # self.results = dict(results)
+            print(f"Percentage of successful trials: {successful_trials / nr_interactions}")
             
         return self.results
     

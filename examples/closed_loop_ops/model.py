@@ -28,7 +28,6 @@ class ANNModel(nn.Module):
         self.register_buffer("data_buffer", torch.zeros(1, input_dim).type(torch.float32), persistent=False)
 
     def single_forward(self, x):
-
         x = self.activation(self.fc1(x.view(self.batch_size, -1)))
         x = self.activation(self.dropout(self.fc2(x)))
         x = self.fc3(x)

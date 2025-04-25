@@ -22,7 +22,8 @@ from neurobench.metrics.static import (
 model_path = "examples/closed_loop_ops/OPS_model_state_dict.pth"
 # model_path = "OPS_model_state_dict.pth"
 
-device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+device = torch.device("cpu")
 
 time_step = 0.01
 num_neurons=96
@@ -45,7 +46,7 @@ env = OPSEnv(
     max_duration=max_duration,
     min_time_in_target=min_time_in_target,
     side_radius=10,
-    min_distance=0,
+    min_distance=8,
     target_size=target_size,
     device=device
 )
@@ -59,6 +60,6 @@ workload_metrics = [ActivationSparsity, SynapticOperations]
 
 benchmark = BenchmarkClosedLoop(model, env, [], [], [static_metrics, workload_metrics])
 
-results = benchmark.run(nr_interactions=50, max_length=500, device=device)
+results = benchmark.run(nr_interactions=50, max_length=300, device=device)
 print(results)
 

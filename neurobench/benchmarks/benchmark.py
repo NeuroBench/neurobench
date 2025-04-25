@@ -381,7 +381,7 @@ class BenchmarkClosedLoop():
                         output = self.agent(state.unsqueeze(0).unsqueeze(0))
 
                         # Postprocessing data
-                        output = self.processor_manager.postprocess(output)
+                        # output = self.processor_manager.postprocess(output)
 
                         # perform action
                         obs, reward, terminal, _, _ = env.step(output)  # Do we need to include reward here, as this is used for benchmarking, not training?
@@ -393,8 +393,8 @@ class BenchmarkClosedLoop():
                         t_sim += 1
                         times.append(t_sim)
                     rewards.append(reward_tot)
-                    # print(env.t*env.ops.time_step)
-                    if terminal:
+
+                    if env.time_in_range * env.ops.time_step >= env.min_time_in_target:
                         successful_trials += 1
 
                     # Data metrics
@@ -417,7 +417,7 @@ class BenchmarkClosedLoop():
                 # results.update(self.workload_metric_manager.results)
                 # self.workload_metric_manager.clean_results()
                 # self.results = dict(results)
-            print(f"Percentage of successful trials: {successful_trials / nr_interactions}")
+            print(f"Percentage of successful trials: {successful_trials}/{nr_interactions}")
             
         return self.results
     

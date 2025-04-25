@@ -167,19 +167,19 @@ class OPSEnv():
         max_duration: float,
         min_time_in_target: float=0.5,
         side_radius=10,
-        min_distance=0,
+        min_distance=8,
         target_size=1, 
         device='cpu'
     ):
         """
         Args:
             ops: A NeuroBenchAgent (SNNTorchAgent/TorchModel).
-            max_duration: A Gym environment.
-            min_time_in_target: A list of NeuroBenchPreProcessors or callable functions (e.g. lambda) with matching interfaces.
-            side_radius: A list of NeuroBenchPostProcessors or callable functions (e.g. lambda) with matching interfaces.
-            min_distance: A list of lists of StaticMetric and WorkloadMetric classes of metrics to run.
-            target_size:
-            device:
+            max_duration: The maximum duration of the simulation (s).
+            min_time_in_target: min time for the model output to stay in target area
+            side_radius: radius of the OPS environment.
+            min_distance: minimum distance to the target from the origin.
+            target_size: size of the target area.
+            device: device to run the OPS on (cpu or cuda)
         """
         self.rng_manager = torch.Generator()
         self.rng_manager.manual_seed(SIMULATOR_SEED)
@@ -235,6 +235,7 @@ class OPSEnv():
             self.terminate = False
         else:
             self.terminate = True
+        # print("sdafasdfsdf: ", self.t, self.time_in_range)
 
         return spikes, 1, self.terminate, None, None
 
@@ -259,6 +260,7 @@ class OPSEnv():
         self.velocity = new_vel
         self.t += 1
         target_dist = np.linalg.norm(self.position.cpu() - self.target.cpu())
+        # print(self.t, target_dist, self.target_size, self.position, self.target)
         if (target_dist < self.target_size):
             self.time_in_range += 1
         else:

@@ -2,8 +2,16 @@ import torch
 import torch.nn as nn
 
 class ANNModel(nn.Module):
-    def __init__(self, input_dim, layer1=16, layer2=32, output_dim=2,
-                 bin_window=0.2, sampling_rate=0.004, drop_rate=0.5):
+    def __init__(
+        self, 
+        input_dim, 
+        layer1=16, 
+        layer2=32, 
+        output_dim=2,
+        bin_window=0.2, 
+        sampling_rate=0.004, 
+        drop_rate=0.5
+    ):
         super().__init__()
 
         self.input_dim = input_dim
@@ -27,16 +35,14 @@ class ANNModel(nn.Module):
 
         self.register_buffer("data_buffer", torch.zeros(1, input_dim).type(torch.float32), persistent=False)
 
-    def single_forward(self, x):
+    def forward(self, x):
+        self.data_buffer = torch.cat((self.data_buffer, x), dim=0)
+        self.data_buffer = self.data_buffer[1:, :]
+
         x = self.activation(self.fc1(x.view(self.batch_size, -1)))
         x = self.activation(self.dropout(self.fc2(x)))
         x = self.fc3(x)
 
-        return x.squeeze(dim=0)
-
-    def forward(self, x):
-        predictions = []
-        
-        pred = self.single_forward(x)
+        pred = x.squeeze(dim=0)
 
         return pred

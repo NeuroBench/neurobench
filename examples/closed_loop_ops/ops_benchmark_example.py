@@ -20,10 +20,9 @@ from neurobench.metrics.static import (
 )
 
 model_path = "examples/closed_loop_ops/OPS_model_state_dict.pth"
-# model_path = "OPS_model_state_dict.pth"
 
-# device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
-device = torch.device("cpu")
+device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+# device = torch.device("cpu")
 
 time_step = 0.01
 num_neurons=96

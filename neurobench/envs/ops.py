@@ -7,7 +7,6 @@ OPS_SEED = 1337
 SIMULATOR_SEED = 345783
 
 def normalize(vector):
-    # mag = np.linalg.norm(vector)
     mag = torch.linalg.norm(vector)
 
     if (mag == 0):
@@ -46,18 +45,13 @@ class SyntheticNeuron():
 
         self.device = device
         
-        # zero_choice = np.random.choice([0,1],p=[zero_prob,1-zero_prob])
         probs = torch.tensor([zero_prob, 1 - zero_prob])
         zero_choice = torch.multinomial(probs, 1, generator=self.rng_manager).cpu().item()
-        # self.lambda_min = np.random.uniform(0,upper_lmin)*zero_choice
         self.lambda_min = torch.empty(1).uniform_(0, upper_lmin, generator=self.rng_manager).cpu().item() * zero_choice
 
-        # self.lambda_max = np.random.uniform(max(self.lambda_min,lower_lmax),upper_lmax)
         self.lambda_max = torch.empty(1).uniform_(max(self.lambda_min, lower_lmax), upper_lmax, generator=self.rng_manager).cpu().item()
 
-        # self.theta_prefer = np.random.uniform(-np.pi,np.pi)
         self.theta_prefer = torch.empty(1).uniform_(-torch.pi, torch.pi, generator=self.rng_manager).cpu().item()
-        # self.c = np.asarray([np.cos(self.theta_prefer), np.sin(self.theta_prefer)])
         self.c = torch.tensor([np.cos(self.theta_prefer), np.sin(self.theta_prefer)], dtype=torch.float)
 
         self.removed = False
@@ -68,7 +62,6 @@ class SyntheticNeuron():
         self.lambda_max = lambda_max
 
     def get_spike(self,v_t):
-        # inner_prod = min(1,max(0,1.5*np.inner(self.c,v_t))/self.max_accel)
         inner_prod = torch.min(torch.ones(1), torch.max(torch.zeros(1), 1.5*torch.inner(self.c.cpu(), v_t.cpu())) / self.max_accel)
         
         lambda_t = (self.lambda_max-self.lambda_min)*inner_prod + self.lambda_min
@@ -150,7 +143,6 @@ class OPS():
         with open(filename,'r') as file:
             reader = csv.reader(file)
             for i, row in enumerate(reader):
-                # c = np.array([float(row[0]), float(row[1])])
                 c = torch.tensor([float(row[0]), float(row[1])])
                 lambda_min = float(row[2])
                 lambda_max = float(row[3])
@@ -209,14 +201,10 @@ class OPSEnv():
 
     def reset(self):
         target_mag = self.min_distance
-        # target_angle = np.random.uniform(-np.pi, np.pi)
         target_angle = torch.empty(1).uniform_(-torch.pi, torch.pi, generator=self.rng_manager).item()
 
-        # self.target = target_mag*np.asarray([np.cos(target_angle),np.sin(target_angle)])
         self.target = target_mag * torch.tensor([np.cos(target_angle), np.sin(target_angle)], dtype=torch.float, device=self.device)
-        # self.position = np.array([0.0,0.0])
         self.position = torch.tensor([0.0, 0.0], dtype=torch.float, device=self.device)
-        # self.velocity = np.array([0.0,0.0])
         self.velocity = torch.tensor([0.0, 0.0], dtype=torch.float, device=self.device)
         self.t = 0
         self.time_in_range = 0

@@ -33,11 +33,11 @@ class ANNModel(nn.Module):
         self.activation = nn.ReLU()
         self.batch_size = 1
 
-        self.register_buffer("data_buffer", torch.zeros(1, input_dim).type(torch.float32), persistent=False)
+        self.register_buffer("data_buffer", torch.zeros(1, 1, input_dim).type(torch.float32), persistent=False)
 
     def forward(self, x):
         self.data_buffer = torch.cat((self.data_buffer, x), dim=0)
-        self.data_buffer = self.data_buffer[1:, :]
+        self.data_buffer = self.data_buffer[1:, :, :]
 
         x = self.activation(self.fc1(x.view(self.batch_size, -1)))
         x = self.activation(self.dropout(self.fc2(x)))

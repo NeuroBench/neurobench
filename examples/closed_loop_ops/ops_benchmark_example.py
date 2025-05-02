@@ -3,7 +3,6 @@ import torch
 from torch.utils.data import DataLoader, Subset
 import sys
 
-sys.path.append("/home/vsun/closed_loop_test/")
 from neurobench.envs import OPS, OPSEnv
 from neurobench.models.torch_model import TorchModel
 from neurobench.benchmarks import BenchmarkClosedLoop

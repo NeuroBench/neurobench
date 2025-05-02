@@ -18,7 +18,9 @@ from neurobench.metrics.static import (
     ConnectionSparsity,
 )
 
-model_path = "examples/closed_loop_ops/OPS_model_state_dict.pth"
+file_path = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(file_path, "OPS_model_state_dict.pth")
+neuron_path = os.path.join(file_path, "neuron1.csv")
 
 device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 # device = torch.device("cpu")
@@ -39,7 +41,7 @@ ops = OPS(
     device=device
 )
 
-ops.assign_neurons("examples/closed_loop_ops/neuron1.csv")
+ops.assign_neurons(neuron_path)
 
 env = OPSEnv(
     ops=ops,
@@ -52,7 +54,7 @@ env = OPSEnv(
 )
 
 net = ANNModel(input_dim=num_neurons)
-net.load_state_dict(torch.load(model_path, map_location=device))
+net.load_state_dict(torch.load(model_path, map_location=device, weights_only=True))
 model = TorchModel(net)
 
 static_metrics = [Footprint, ConnectionSparsity]

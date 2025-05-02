@@ -143,19 +143,20 @@ class OPS():
             writer = csv.writer(file)
             for i in range(len(self.neurons)):
                 neuron = self.neurons[i]
-                writer.writerow([neuron.c[0],neuron.c[1],neuron.lambda_min,neuron.lambda_max])
+                writer.writerow([neuron.c[0].item(),neuron.c[1].item(),neuron.lambda_min,neuron.lambda_max])
 
     def assign_neurons(self, filename):
         self.neurons = []
         with open(filename,'r') as file:
             reader = csv.reader(file)
-            for row in reader:
-                c = np.array([float(row[0]), float(row[1])])
+            for i, row in enumerate(reader):
+                # c = np.array([float(row[0]), float(row[1])])
+                c = torch.tensor([float(row[0]), float(row[1])])
                 lambda_min = float(row[2])
                 lambda_max = float(row[3])
 
-                neuron = SyntheticNeuron(self.time_step,upper_lmin=5,lower_lmax=40,upper_lmax=100,max_accel=self.max_accel)
-                neuron.assign(c,lambda_min,lambda_max)
+                neuron = SyntheticNeuron(self.time_step,upper_lmin=5,lower_lmax=40,upper_lmax=100,max_accel=self.max_accel, seed=self.synth_seed_list[i],zero_prob=0.,device=self.device)
+                neuron.assign(c, lambda_min, lambda_max)
                 self.neurons.append(neuron)
 
         self.num_neurons = len(self.neurons)
@@ -173,7 +174,7 @@ class OPSEnv():
     ):
         """
         Args:
-            ops: A NeuroBenchAgent (SNNTorchAgent/TorchModel).
+            ops: The OPS object that governs how the state updates.
             max_duration: The maximum duration of the simulation (s).
             min_time_in_target: min time for the model output to stay in target area
             side_radius: radius of the OPS environment.
@@ -202,6 +203,9 @@ class OPSEnv():
         self.terminate = False
 
         self.device = device
+
+    def reward_fn(self):
+        return None
 
     def reset(self):
         target_mag = self.min_distance
@@ -235,23 +239,20 @@ class OPSEnv():
             self.terminate = False
         else:
             self.terminate = True
-        # print("sdafasdfsdf: ", self.t, self.time_in_range)
 
         return spikes, 1, self.terminate, None, None
 
     def get_velocity(self):
         vector = self.target - self.position
-        # print(vector)
+
         angle = normalize(vector)
         vel_mag = min(self.distance_const*np.sqrt(np.linalg.norm(vector.cpu())), self.max_vel)
         new_velocity = vel_mag*angle
         
         delta_velocity = (new_velocity - self.velocity)*self.accel_const
         #The acceleration constant prevents instantaneous jumps in velocity
-        # print('delta_velocity', delta_velocity, 'new_velocity', new_velocity, 'self.velocity', self.velocity)
 
         new_velocity =  self.velocity + delta_velocity
-        # print( 'new_velocity', new_velocity)
 
         return new_velocity, delta_velocity
     
@@ -260,7 +261,7 @@ class OPSEnv():
         self.velocity = new_vel
         self.t += 1
         target_dist = np.linalg.norm(self.position.cpu() - self.target.cpu())
-        # print(self.t, target_dist, self.target_size, self.position, self.target)
+
         if (target_dist < self.target_size):
             self.time_in_range += 1
         else:

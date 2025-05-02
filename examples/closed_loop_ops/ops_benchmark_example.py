@@ -41,6 +41,8 @@ ops = OPS(
     device=device
 )
 
+ops.assign_neurons("examples/closed_loop_ops/neuron1.csv")
+
 env = OPSEnv(
     ops=ops,
     max_duration=max_duration,

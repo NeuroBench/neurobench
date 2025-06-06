@@ -102,6 +102,7 @@ class BenchmarkClosedLoop:
             batch_num = 0
             successful_trials = 0
             rewards = []
+            time_taken = []
 
             with torch.no_grad():
                 for _ in tqdm(range(nr_interactions)):
@@ -144,7 +145,7 @@ class BenchmarkClosedLoop:
                         t_sim += 1
                         times.append(t_sim)
                     rewards.append(reward_tot)
-
+                    time_taken.append(t_sim*env.ops.time_step)
                     if env.time_in_range * env.ops.time_step >= env.min_time_in_target:
                         successful_trials += 1
 
@@ -176,6 +177,8 @@ class BenchmarkClosedLoop:
                 results.update(self.workload_metric_manager.results)
                 self.workload_metric_manager.clean_results()
                 self.results = dict(results)
+            average_time_taken = sum(time_taken) / len(time_taken)
             print(f"Successful trials: {successful_trials}/{nr_interactions}")
+            print(f"Average time taken: {average_time_taken:.2f} seconds")
 
-        return self.results
+        return self.results, average_time_taken

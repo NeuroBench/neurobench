@@ -68,7 +68,7 @@ class SyntheticNeuron():
 
         p = lambda_t * self.time_step
         if self.removed:
-            p = 0
+            p = 0.0
 
         probs = torch.tensor([1-p, p])
 

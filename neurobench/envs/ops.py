@@ -197,7 +197,7 @@ class OPSEnv():
         self.device = device
 
     def reward_fn(self):
-        return None
+        return 1
 
     def reset(self):
         target_mag = self.min_distance
@@ -228,7 +228,7 @@ class OPSEnv():
         else:
             self.terminate = True
 
-        return spikes, 1, self.terminate, None, None
+        return spikes, self.reward_fn(), self.terminate, None, None
 
     def get_velocity(self):
         vector = self.target - self.position

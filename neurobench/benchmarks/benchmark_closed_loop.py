@@ -16,6 +16,7 @@ from neurobench.metrics.abstract import StaticMetric, WorkloadMetric
 import json
 import csv
 import os
+import copy
 from typing import Literal, List, Type, Optional, Dict, Any, Callable, Tuple, Union
 import pathlib
 import snntorch
@@ -34,6 +35,7 @@ class BenchmarkClosedLoop:
         self,
         agent: Union[SNNTorchAgent, TorchModel],
         environment,
+        weight_update: bool,
         preprocessors: Optional[
             List[
                 NeuroBenchPreProcessor
@@ -56,6 +58,7 @@ class BenchmarkClosedLoop:
         """
         self.agent = agent
         self.env = environment  # env not dataset
+        self.weight_update = weight_update
         self.processor_manager = ProcessorManager(preprocessors, postprocessors)
         self.static_metric_manager = StaticMetricManager(metric_list[0])
         self.workload_metric_manager = WorkloadMetricManager(metric_list[1])
@@ -104,6 +107,10 @@ class BenchmarkClosedLoop:
             rewards = []
             time_taken = []
 
+            if self.weight_update:
+                num_of_weight_updated = 0
+                total_num_of_weight = 0
+
             with torch.no_grad():
                 for _ in tqdm(range(nr_interactions)):
                     env = self.env
@@ -127,6 +134,9 @@ class BenchmarkClosedLoop:
                         # Preprocessing data
                         # input, target = self.processor_manager.preprocess(state) # Check if this is needed
 
+                        if self.weight_update:
+                            agent_copy = copy.deepcopy(self.agent)
+
                         # get network outputs on given state
                         output = self.agent(state.unsqueeze(0).unsqueeze(0))
 
@@ -137,6 +147,11 @@ class BenchmarkClosedLoop:
                         obs, reward, terminal, _, _ = env.step(
                             output
                         )  # Do we need to include reward here, as this is used for benchmarking, not training?
+
+                        if self.weight_update:
+                            for param1, param2 in zip(self.agent.net.parameters(), agent_copy.net.parameters()):
+                                num_of_weight_updated += torch.sum(param1 != param2).item()
+                                total_num_of_weight += torch.numel(param1)
 
                         reward_tot += reward
                         if not terminal:
@@ -164,10 +179,10 @@ class BenchmarkClosedLoop:
                     )
                     self.workload_metric_manager.reset_hooks(self.agent)
 
-                    if verbose:
-                        results.update(batch_results)
-                        print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
-                        print(dict(results))
+                    # if verbose:
+                    #     results.update(batch_results)
+                    #     print(f"\nBatch num {batch_num + 1}/{len(dataloader)}")
+                    #     print(dict(results))
 
                     # delete hook contents
                     self.agent.reset_hooks()  # Is this still necessary with the line self.workload_metric_manager.reset_hooks(self.model)
@@ -180,5 +195,11 @@ class BenchmarkClosedLoop:
             average_time_taken = sum(time_taken) / len(time_taken)
             print(f"Successful trials: {successful_trials}/{nr_interactions}")
             print(f"Average time taken: {average_time_taken:.2f} seconds")
+            if self.weight_update:
+                average_weight_update = num_of_weight_updated / total_num_of_weight
+                print(f"Average number of weight updates: {average_weight_update:.4f}")
 
-        return self.results, average_time_taken
+        if self.weight_update:
+            return self.results, average_time_taken, average_weight_update
+        else:
+            return self.results, average_time_taken

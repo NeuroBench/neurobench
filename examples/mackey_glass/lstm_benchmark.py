@@ -164,10 +164,16 @@ for repeat_id in range(args.repeat):
         wandb.log({'fig_train': wandb.Image(fig)})
         plt.close()
 
+    # Initialize hidden states with the training data,
+    # now that weights are trained
+    lstm(train_data.to(device))
+
     # Testing
-    test_set_loader = DataLoader(train_set,
+    test_set_loader = DataLoader(test_set,
                                  batch_size=mg.testtime_pts,
                                  shuffle=False)
+
+
     lstm.mode = "autonomous"
     lstm.device = torch.device("cpu")
     lstm.to(torch.device("cpu"))
@@ -210,9 +216,8 @@ print(f"sMAPE score = {avg_sMAPE_score},\n"
       f"on tau {args.tau}")
 
 # With the default params, repeat 30, tau=17
-# sMAPE score = 15.156239883579927,
+# sMAPE score = 14.347067906362048,
 # connection_sparsity = 0.0,
-# activation_sparsity = 0.45951777777777786,
-# synop_macs = 14534.032622222225,
-# synop_dense = 14552.413333333332,
-# on time series id 0
+# activation_sparsity = 0.46036666666666665,
+# synop_macs = 14541.585333333329,
+# synop_dense = 14560.0,

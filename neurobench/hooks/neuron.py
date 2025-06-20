@@ -67,7 +67,15 @@ class NeuronHook(ABC):
 
         """
         if self.spiking:
-            self.activation_outputs.append(output[0])
+            if (
+                self.layer.init_hidden
+                and not self.layer.output
+                and not isinstance(output, tuple)
+            ):
+                self.activation_outputs.append(output)
+            else:
+                self.activation_outputs.append(output[0])
+
             if hasattr(layer, "mem"):
                 self.post_fire_mem_potential.append(layer.mem)
 

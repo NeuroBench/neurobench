@@ -164,6 +164,10 @@ for repeat_id in range(args.repeat):
         wandb.log({'fig_train': wandb.Image(fig)})
         plt.close()
 
+    # Initialize hidden states with the training data,
+    # now that weights are trained
+    lstm(train_data.to(device))
+
     # Testing
     test_set_loader = DataLoader(test_set,
                                  batch_size=mg.testtime_pts,
@@ -212,8 +216,8 @@ print(f"sMAPE score = {avg_sMAPE_score},\n"
       f"on tau {args.tau}")
 
 # With the default params, repeat 30, tau=17
-#sMAPE score = 14.331047058514564,
-#connection_sparsity = 0.0,
-#activation_sparsity = 0.4604411111111111,
-#synop_macs = 14541.582355555556,
-#synop_dense = 14560.0,
+# sMAPE score = 14.347067906362048,
+# connection_sparsity = 0.0,
+# activation_sparsity = 0.46036666666666665,
+# synop_macs = 14541.585333333329,
+# synop_dense = 14560.0,

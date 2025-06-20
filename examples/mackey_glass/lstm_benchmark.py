@@ -165,9 +165,11 @@ for repeat_id in range(args.repeat):
         plt.close()
 
     # Testing
-    test_set_loader = DataLoader(train_set,
+    test_set_loader = DataLoader(test_set,
                                  batch_size=mg.testtime_pts,
                                  shuffle=False)
+
+
     lstm.mode = "autonomous"
     lstm.device = torch.device("cpu")
     lstm.to(torch.device("cpu"))
@@ -210,9 +212,8 @@ print(f"sMAPE score = {avg_sMAPE_score},\n"
       f"on tau {args.tau}")
 
 # With the default params, repeat 30, tau=17
-# sMAPE score = 15.156239883579927,
-# connection_sparsity = 0.0,
-# activation_sparsity = 0.45951777777777786,
-# synop_macs = 14534.032622222225,
-# synop_dense = 14552.413333333332,
-# on time series id 0
+#sMAPE score = 14.331047058514564,
+#connection_sparsity = 0.0,
+#activation_sparsity = 0.4604411111111111,
+#synop_macs = 14541.582355555556,
+#synop_dense = 14560.0,

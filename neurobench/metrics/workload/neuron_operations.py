@@ -98,6 +98,6 @@ class NeuronOperations(AccumulatedMetric):
         dense = sum(self.dense.values())
 
         return {
-            "Neuron MACs": macs / self.total_samples,
+            "Effective Neuron MACs": macs / self.total_samples,
             "Neuron Dense": dense / self.total_samples,
         }

@@ -3,24 +3,56 @@ from neurobench.metrics.abstract.workload_metric import AccumulatedMetric
 from collections import defaultdict
 
 
-neuron_macs_reset_operations = {
+neuron_ops_reset_operations = {
     "Leaky": {
-        "subtract": 2,
-        "zero": 2,
+        "subtract": 4,
+        "zero": 4,
     },
     "Synaptic": {
-        "subtract": 3,
-        "zero": 2,
+        "subtract": 6,
+        "zero": 8,
     },
     "Lapicque": {
-        "subtract": 3,
-        "zero": 2,
+        "subtract": 11,
+        "zero": 11,
     },
     "Alpha": {
-        "subtract": 3,
-        "zero": 3,
+        "subtract": 18,
+        "zero": 24,
     },
 }
+"""
+The `neuron_ops_reset_operations` dictionary defines the computational cost associated
+with resetting the membrane potential of neurons for different neuron types. The reset
+mechanisms are categorized into two types:
+
+1. **Subtract**: Represents a reset mechanism where the membrane potential is reduced
+   by a certain value. The value associated with this mechanism indicates the computational
+   cost (in terms of basic operations) required to perform this type of reset.
+
+2. **Zero**: Represents a reset mechanism where the membrane potential is reset to zero.
+   The value associated with this mechanism indicates the computational cost (in terms of
+   basic operations) required to perform this type of reset.
+
+### Neuron Types and Their Computational Costs:
+- **Leaky**:
+  - Subtract mechanism: 4 operations
+  - Zero mechanism: 4 operations
+- **Synaptic**:
+  - Subtract mechanism: 6 operations
+  - Zero mechanism: 8 operations
+- **Lapicque**:
+  - Subtract mechanism: 11 operations
+  - Zero mechanism: 11 operations
+- **Alpha**:
+  - Subtract mechanism: 18 operations
+  - Zero mechanism: 24 operations
+
+### Purpose:
+The values in this dictionary represent the computational cost (measured in terms of
+basic operations like addition, subtraction, etc.) required for each neuron type to
+reset its membrane potential using a specific reset mechanism.
+"""
 
 
 class NeuronOperations(AccumulatedMetric):
@@ -29,6 +61,12 @@ class NeuronOperations(AccumulatedMetric):
 
     This metric computes the number of operations performed by neurons during the
     forward pass of the model. The operations are tracked per neuron, per layer.
+
+    The `NeuronOperations` metric is designed to measure the computational workload
+    associated with neuron activity in spiking neural networks. Specifically, it tracks
+    the number of operations required to update the membrane potential of neurons during
+    the forward pass. These operations include the reset mechanisms defined in the
+    `neuron_ops_reset_operations` dictionary, such as "subtract" and "zero".
 
     """
 
@@ -70,12 +108,12 @@ class NeuronOperations(AccumulatedMetric):
                 updates += hook.post_fire_mem_potential[0].numel()
 
             self.macs[layer_type] += (
-                updates * neuron_macs_reset_operations[layer_type][reset_mechanism]
+                updates * neuron_ops_reset_operations[layer_type][reset_mechanism]
             )
             self.dense[layer_type] += (
                 hook.post_fire_mem_potential[0].numel()
                 * len(hook.post_fire_mem_potential)
-                * neuron_macs_reset_operations[layer_type][reset_mechanism]
+                * neuron_ops_reset_operations[layer_type][reset_mechanism]
             )
 
         self.total_samples += data[0].size(0)
@@ -92,12 +130,12 @@ class NeuronOperations(AccumulatedMetric):
 
         """
         if self.total_samples == 0:
-            return {"Neuron MACs": 0, "Neuron Dense": 0}
+            return {"Effective Neuron Ops": 0, "Neuron Dense Ops": 0}
 
         macs = sum(self.macs.values())
         dense = sum(self.dense.values())
 
         return {
-            "Effective Neuron MACs": macs / self.total_samples,
-            "Neuron Dense": dense / self.total_samples,
+            "Effective Neuron Ops": macs / self.total_samples,
+            "Neuron Dense Ops": dense / self.total_samples,
         }

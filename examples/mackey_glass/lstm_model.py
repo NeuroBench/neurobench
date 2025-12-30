@@ -111,16 +111,22 @@ class LSTMModel(nn.Module):
             3D tesnor: output data of shape [num_steps, output_dim]
         """
 
-        # Reset register buffers
-        for i in range(self.n_layers):
-            getattr(self, f'h{i}')[:] = 0.
-        for i in range(self.n_layers):
-            getattr(self, f'c{i}')[:] = 0.
-        self.inp[:] = 0.
+        if self.mode != 'autonomous':
+            # Reset register buffers
+            for i in range(self.n_layers):
+                getattr(self, f'h{i}')[:] = 0.
+            for i in range(self.n_layers):
+                getattr(self, f'c{i}')[:] = 0.
 
-        self.h = [getattr(self, f'h{i}') for i in range(self.n_layers)]
-        self.c = [getattr(self, f'c{i}') for i in range(self.n_layers)]
-
+            self.h = [getattr(self, f'h{i}') for i in range(self.n_layers)]
+            self.c = [getattr(self, f'c{i}') for i in range(self.n_layers)]
+            self.inp[:] = 0.
+        else:
+            # The warmed-up LSTM states and the buffer at the end of training are used during
+            # autonomous replay (for an explanation, see section 3.1 in https://doi.org/10.1016/j.mlwa.2022.100300)
+            self.h = [self.h[i].to(batch.device) for i in range(self.n_layers)]
+            self.c = [self.c[i].to(batch.device) for i in range(self.n_layers)]
+     
         predictions = []
         for i, sample in enumerate(batch):
 

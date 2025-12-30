@@ -9,6 +9,7 @@ from neurobench.metrics.workload import (
     SynapticOperations,
     MembraneUpdates,
     ActivationSparsityByLayer,
+    NeuronOperations,
 )
 from neurobench.metrics.static import (
     Footprint,
@@ -106,6 +107,7 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.synaptic_operations = SynapticOperations()
         self.mem_updates = MembraneUpdates()
         self.activation_sparsity_by_layer = ActivationSparsityByLayer()
+        self.neuron_operations = NeuronOperations()
 
     def test_classification_accuracy(self):
         model = SNNTorchModel(self.dummy_net)
@@ -445,6 +447,36 @@ class TestWorkloadMetrics(unittest.TestCase):
         self.activation_sparsity_by_layer.reset()
 
         self.assertEqual(act_sparsity_by_layer["1"], 0.96)
+
+    def test_neuron_operations(self):
+        # simulate spiking input with only ones
+        inp = torch.ones(5, 10, 20)  # batch size, time steps, input size
+
+        model = SNNTorchModel(self.net_snn)
+
+        model.register_hooks()
+
+        out = model(inp)
+        neuron_ops = self.neuron_operations(model, out, (inp, 0))
+        self.neuron_operations.reset()
+
+        self.assertEqual(neuron_ops["Effective Neuron Ops"], 200)
+        self.assertEqual(neuron_ops["Neuron Dense Ops"], 200)
+
+    def test_neuron_operations_no_spikes(self):
+        # simulate spiking input with no spikes
+        inp = torch.zeros(5, 10, 20)  # batch size, time steps, input size
+
+        model = SNNTorchModel(self.net_snn)
+
+        model.register_hooks()
+
+        out = model(inp)
+        neuron_ops = self.neuron_operations(model, out, (inp, 0))
+        self.neuron_operations.reset()
+
+        self.assertEqual(neuron_ops["Effective Neuron Ops"], 20)
+        self.assertEqual(neuron_ops["Neuron Dense Ops"], 200)
 
 
 # TODO: refactor this metric if needed

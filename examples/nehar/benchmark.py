@@ -1,4 +1,11 @@
 import os
+import sys
+import os
+
+SCRIPT_DIR = os.path.dirname(os.path.abspath("./"))
+sys.path.append(os.path.dirname(SCRIPT_DIR))
+print("Adding path to sys.path:", os.path.dirname(SCRIPT_DIR))
+
 from neurobench.datasets import WISDM
 from training import SpikingNetwork
 from neurobench.processors.postprocessors import ChooseMaxCount
@@ -11,6 +18,7 @@ from neurobench.metrics.workload import (
     SynapticOperations,
     ClassificationAccuracy,
     ActivationSparsityByLayer,
+    NeuronOperations
 )
 from neurobench.metrics.static import (
     ParameterCount,
@@ -34,9 +42,7 @@ if __name__ == "__main__":
     num_outputs = data_module.num_outputs
     num_steps = data_module.num_steps
 
-    spiking_network = SpikingNetwork.load_from_checkpoint(
-        model_path, map_location="cpu"
-    )
+    spiking_network = SpikingNetwork(lr=1)
 
     model = SNNTorchModel(spiking_network.model, custom_forward=True)
     test_set_loader = data_module.test_dataloader()
@@ -48,7 +54,7 @@ if __name__ == "__main__":
 
     # #
     static_metrics = [ParameterCount, Footprint, ConnectionSparsity]
-    workload_metrics = [ActivationSparsity, ActivationSparsityByLayer,MembraneUpdates, SynapticOperations, ClassificationAccuracy]
+    workload_metrics = [ActivationSparsity, ActivationSparsityByLayer,MembraneUpdates, SynapticOperations, ClassificationAccuracy, NeuronOperations]
     # #
     benchmark = Benchmark(
         model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]

@@ -13,4 +13,5 @@ Workload Metrics
    smape
    r2
    mse
+   neuron_operations
    

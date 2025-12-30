@@ -7,6 +7,7 @@ from .mse import MSE
 from .smape import SMAPE
 from .r2 import R2
 from .coco_map import CocoMap
+from .neuron_operations import NeuronOperations
 
 __stateless__ = [
     "ClassificationAccuracy",
@@ -16,6 +17,12 @@ __stateless__ = [
     "ActivationSparsityByLayer",
 ]
 
-__stateful__ = ["MembraneUpdates", "SynapticOperations", "R2", "CocoMap"]
+__stateful__ = [
+    "MembraneUpdates",
+    "SynapticOperations",
+    "R2",
+    "CocoMap",
+    "NeuronOperations",
+]
 
 __all__ = __stateful__ + __stateless__

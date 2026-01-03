@@ -166,7 +166,7 @@ Citation
 --------
 
 If you use this framework in your research, please cite the following
-preprint article:
+article:
 
 ::
 

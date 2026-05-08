@@ -94,3 +94,23 @@ total sensors. The sensor data was collected at a rate of 20 Hz (i.e., every 50m
     :members:
     :undoc-members:
     :show-inheritance:
+
+
+EEG MI
+^^^^^^^
+Preprocessed EEG Motor Imagery (MI) dataset derived from the Lee2019 dataset
+(Lee et al., 2019, "EEG dataset and OpenBMI toolbox for three BCI paradigms:
+An investigation into BCI illiteracy"), adapted for the THOR challenge.
+Lee2019 consists of recorded EEG from 54 subjects performing left-hand and 
+right-hand motor imagery tasks using a 62-channel cap at 1000 Hz.
+The version of the dataset used in NeuroBench has been preprocessed to include 
+62 channels with a sampling rate of 100 Hz, and is organized into 2.5-second 
+trials for each subject. Both sessions of the original dataset are included, 
+with 100 trials per session, resulting in a total of 200 trials per subject.
+
+
+.. automodule:: neurobench.datasets.EEG
+    :special-members: __init__, __getitem__
+    :members:
+    :undoc-members:
+    :show-inheritance:

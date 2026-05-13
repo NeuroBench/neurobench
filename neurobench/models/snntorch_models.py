@@ -14,6 +14,9 @@ class SNNTorchModel(NeuroBenchModel):
 
         Args:
             net: A trained SNNTorch network.
+            custom_forward: If True, the model's forward method is used directly. If False,
+                the model is expected to take in data of shape (batch, timesteps, features*)
+                and output spikes of shape (batch, timesteps, features*). Default is False.
 
         """
         super().__init__()
@@ -38,7 +41,7 @@ class SNNTorchModel(NeuroBenchModel):
 
         """
         if self.custom_forward:
-            return self.net(data).transpose(0, 1)
+            return self.net(data)
 
         # utils.reset(self.net) does not seem to delete all traces for the synaptic neuron model
         if hasattr(self.net, "reset"):
@@ -51,7 +54,7 @@ class SNNTorchModel(NeuroBenchModel):
         for step in range(data.shape[1]):
             spk_out, _ = self.net(data[:, step, ...])
             spikes.append(spk_out)
-        spikes = torch.stack(spikes).transpose(0, 1)
+        spikes = torch.stack(spikes, dim=1)
         return spikes
 
     def __net__(self):

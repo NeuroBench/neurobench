@@ -61,7 +61,7 @@ jobs:
           python -m pip install --upgrade pip
           pip install --upgrade setuptools
           pip install poetry
-          
+
       - name: Delete Poetry virtualenv cache
         run: |
           poetry env remove --all || true
@@ -72,7 +72,7 @@ jobs:
 
       - name: Re-install CPU-only torch for CI
         run: |
-          poetry run pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          poetry run pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu --force-reinstall
 
       - name: Run tests
         run: |

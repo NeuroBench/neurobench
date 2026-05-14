@@ -31,6 +31,7 @@ sphinx = "^7.2.5"
 sphinx-rtd-theme = "^1.3.0"
 pre-commit = "*"
 soundfile = ">=0.12.1" # this is useful for testing the MFCC and S2S preprocessor, but is not a hard dependency of the library
+torchcodec = ">=0.11.1" # this is useful for testing the S2S preprocessor, but is not a hard dependency of the library
 
 [tool.poetry.group.code-quality]
 optional = true

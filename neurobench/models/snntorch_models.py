@@ -52,8 +52,8 @@ class SNNTorchModel(NeuroBenchModel):
 
         # Data is expected to be shape (batch, timestep, features*)
         for step in range(data.shape[1]):
-            spk_out, _ = self.net(data[:, step, ...])
-            spikes.append(spk_out)
+            out = self.net(data[:, step, ...])
+            spikes.append(out[0] if isinstance(out, tuple) else out)
         spikes = torch.stack(spikes, dim=1)
         return spikes
 

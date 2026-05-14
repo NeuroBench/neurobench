@@ -68,7 +68,7 @@ jobs:
 
       - name: Re-install CPU-only torch for CI
         run: |
-          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+          poetry run pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
 
       - name: Run tests
         run: |

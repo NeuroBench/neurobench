@@ -77,6 +77,7 @@ testpaths = [
     "tests/test_benchmarks.py",
     "tests/test_frameworks.py",
     "tests/test_metrics.py",
+    "tests/test_models.py",
 ]
 
 [tool.coverage.run]

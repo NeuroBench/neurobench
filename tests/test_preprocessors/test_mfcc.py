@@ -1,7 +1,8 @@
 from neurobench.processors.preprocessors.mfcc import MFCCPreProcessor
 from pathlib import Path
-import torchaudio
+import soundfile
 import unittest
+import torch
 
 
 class TestMFCCPreProcessor(unittest.TestCase):
@@ -11,7 +12,8 @@ class TestMFCCPreProcessor(unittest.TestCase):
         """Set up the test data."""
         sample_file = Path(__file__).parent.joinpath("test_data/sample_audio.wav")
 
-        self.sample_audio, self.sampling_rate = torchaudio.load(sample_file)
+        self.sample_audio, self.sampling_rate = soundfile.read(sample_file)
+        self.sample_audio = torch.from_numpy(self.sample_audio).float()
         self.init_args = {
             "sample_rate": self.sampling_rate,
             "n_mfcc": 20,
@@ -27,7 +29,7 @@ class TestMFCCPreProcessor(unittest.TestCase):
         }
 
         # Data is expected in (batch, timesteps, features) format
-        self.sample_audio = self.sample_audio.permute(0, 1)
+        self.sample_audio = self.sample_audio.reshape(1, -1, 1)
 
     def test_mfcc_non_tuple(self):
         """Test that the MFCCPreProcessor raises an error if the input is not a

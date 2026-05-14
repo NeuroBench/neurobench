@@ -1,8 +1,8 @@
 from neurobench.processors.preprocessors.speech2spikes import S2SPreProcessor
 from pathlib import Path
-import torchaudio
 import unittest
 import torch
+import soundfile
 
 
 class TestS2SPreProcessor(unittest.TestCase):
@@ -11,7 +11,9 @@ class TestS2SPreProcessor(unittest.TestCase):
     def setUp(self):
         """Set up the test data."""
         sample_file = Path(__file__).parent.joinpath("test_data/sample_audio.wav")
-        self.sample_audio, _ = torchaudio.load(sample_file)
+        self.sample_audio, _ = soundfile.read(sample_file)
+        self.sample_audio = torch.from_numpy(self.sample_audio).float()
+        self.sample_audio = self.sample_audio.reshape(1, -1, 1)
         self.s2s = S2SPreProcessor()
 
     def test_initialization(self):
@@ -32,8 +34,7 @@ class TestS2SPreProcessor(unittest.TestCase):
     def test_s2s_shape(self):
         """Test that the S2SPreProcessor returns the correct shape."""
         # Get sample into shape (batch, timestep, features*)
-        sample_audio = torch.unsqueeze(self.sample_audio.T, 0)
-        sample_audio = torch.tile(sample_audio, (100, 1, 1))
+        sample_audio = torch.tile(self.sample_audio, (100, 1, 1))
 
         tensors, targets = self.s2s((sample_audio, torch.Tensor([1] * 100)))
         self.assertEqual(tensors.shape, (100, 60, 20))
@@ -45,8 +46,7 @@ class TestS2SPreProcessor(unittest.TestCase):
 
         for batch_size in batch_sizes:
             with self.subTest(batch_size=batch_size):
-                sample_audio = torch.unsqueeze(self.sample_audio.T, 0)
-                sample_audio = torch.tile(sample_audio, (batch_size, 1, 1))
+                sample_audio = torch.tile(self.sample_audio, (batch_size, 1, 1))
 
                 tensors, targets = self.s2s(
                     (sample_audio, torch.Tensor([1] * batch_size))
@@ -56,8 +56,7 @@ class TestS2SPreProcessor(unittest.TestCase):
 
     def test_s2s_with_kwargs(self):
         """Test that the S2SPreProcessor handles kwargs correctly."""
-        sample_audio = torch.unsqueeze(self.sample_audio.T, 0)
-        sample_audio = torch.tile(sample_audio, (100, 1, 1))
+        sample_audio = torch.tile(self.sample_audio, (100, 1, 1))
 
         kwargs = {"extra_info": "test"}
         tensors, targets, returned_kwargs = self.s2s(

@@ -15,17 +15,15 @@ from neurobench.metrics.workload import (
     SynapticOperations,
 )
 
+from neurobench.processors.postprocessors import ChooseMaxCount
+
 from model import EEG_SNN
 from neurobench.datasets import ThorEEGMI
 
 DEVICE = "cpu"
 
 
-def postprocess(spikes):
-    return spikes.sum(dim=0).argmax(dim=1)
-
-
-val_set = ThorEEGMI(root="../../data", split="val", download=True)
+val_set = ThorEEGMI(root="../../data/eeg_mi", split="val", download=True)
 loader = DataLoader(val_set, batch_size=64, shuffle=False)
 
 # Load model
@@ -38,7 +36,7 @@ benchmark = Benchmark(
     model=nb_model,
     dataloader=loader,
     preprocessors=[],
-    postprocessors=[postprocess],
+    postprocessors=[ChooseMaxCount()],
     metric_list=[
         [Footprint, ParameterCount, ConnectionSparsity],
         [ClassificationAccuracy, ActivationSparsity, SynapticOperations],

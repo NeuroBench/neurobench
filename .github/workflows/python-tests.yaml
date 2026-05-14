@@ -68,6 +68,7 @@ jobs:
 
       - name: Install dependencies
         run: |
+          poetry config virtualenvs.create false  # use system Python, not a venv
           poetry install --with dev
 
       - name: Run tests

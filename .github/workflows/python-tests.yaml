@@ -62,6 +62,10 @@ jobs:
           pip install --upgrade setuptools
           pip install poetry
 
+      - name: Install CPU-only torch for CI
+        run: |
+          pip install torch torchaudio --index-url https://download.pytorch.org/whl/cpu
+
       - name: Install dependencies
         run: |
           poetry install --with dev

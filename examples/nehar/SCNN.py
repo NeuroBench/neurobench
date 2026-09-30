@@ -18,33 +18,20 @@ class SCNN(nn.Module):
         self.leaky2 = snn.Leaky(beta=0.3, init_hidden=True, threshold=0.001)
         self.flatten = nn.Flatten()
         self.linear = nn.Linear(512, 7)
-        self.leaky3 = snn.Leaky(beta=0.5, output=True, init_hidden=True, threshold=0.001)
-        self.num_steps = 40
-
-    def single_forward(self, input):
-        x = self.conv1(input.reshape(input.shape[0], input.shape[1], 1))
-        x = self.max1(x)
-        x = self.leaky1(x)
-        x = self.conv2(x)
-        x = self.max2(x)
-        x = self.leaky2(x)
-        x = self.flatten(x)
-        x = self.linear(x)
-        spk_out, mem_out = self.leaky3(x)
-        return spk_out, mem_out
+        self.leaky3 = snn.Leaky(beta=0.5, init_hidden=True, threshold=0.001)
 
     def forward(self, input):
-        # Initialize hidden states and outputs at t=0
-        mem_rec = []
+
         spk_rec = []
 
         self.leaky1.init_leaky()
         self.leaky2.init_leaky()
         self.leaky3.init_leaky()
         utils.reset(self)
-        for step in range(self.num_steps):
-            new_input = input[:, step, :]
-            x = self.conv1(new_input.reshape(new_input.shape[0], new_input.shape[1], 1))
+        
+        for step in range(input.shape[1]):
+            step_input = input[:, step, :].unsqueeze(2)
+            x = self.conv1(step_input)
             x = self.max1(x)
             x = self.leaky1(x)
             x = self.conv2(x)
@@ -52,9 +39,8 @@ class SCNN(nn.Module):
             x = self.leaky2(x)
             x = self.flatten(x)
             x = self.linear(x)
-            spk_out, mem_out = self.leaky3(x)
+            spk_out = self.leaky3(x)
 
             spk_rec.append(spk_out)
-            mem_rec.append(mem_out)
 
-        return torch.stack(spk_rec)
+        return torch.stack(spk_rec, dim=1)

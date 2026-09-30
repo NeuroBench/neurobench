@@ -1,24 +1,23 @@
 import os
 import sys
-import os
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath("./"))
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 sys.path.append(os.path.dirname(SCRIPT_DIR))
-print("Adding path to sys.path:", os.path.dirname(SCRIPT_DIR))
+
+import torch
+from torch.utils.data import DataLoader
 
 from neurobench.datasets import WISDM
-from training import SpikingNetwork
-from neurobench.processors.postprocessors import ChooseMaxCount
 from neurobench.benchmarks import Benchmark
 from neurobench.models import SNNTorchModel
-import torch
+from neurobench.processors.postprocessors import ChooseMaxCount
 from neurobench.metrics.workload import (
     ActivationSparsity,
+    ActivationSparsityByLayer,
     MembraneUpdates,
     SynapticOperations,
     ClassificationAccuracy,
-    ActivationSparsityByLayer,
-    NeuronOperations
+    NeuronOperations,
 )
 from neurobench.metrics.static import (
     ParameterCount,
@@ -26,49 +25,56 @@ from neurobench.metrics.static import (
     ConnectionSparsity,
 )
 
+from SCNN import SCNN
+
 
 if __name__ == "__main__":
-    batch_size = 256
-    lr = 1.0e-3
 
-    file_path = os.path.dirname(os.path.abspath(__file__))
-    model_path = os.path.join(file_path, "model_data/WISDM_snnTorch.ckpt")
-    dataset_path = os.path.join(file_path, "../../data/nehar/watch_subset2_40.npz") # data in repo root dir
+    BATCH_SIZE   = 256
+    DATASET_ROOT = os.path.join(SCRIPT_DIR, "../../data/nehar")
+    CKPT_PATH    = os.path.join(SCRIPT_DIR, "model_data/WISDM_snnTorch.pt")
+    RESULTS_PATH = os.path.join(SCRIPT_DIR, "results")
+    ONNX_PATH    = os.path.join(SCRIPT_DIR, "model_data/nehar_snnTorch.onnx")
 
-    data_module = WISDM(path=dataset_path, batch_size=batch_size)
-    data_module.setup("test")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
-    num_inputs = data_module.num_inputs
-    num_outputs = data_module.num_outputs
-    num_steps = data_module.num_steps
+    test_set = WISDM(root=DATASET_ROOT, split="test", download=True)
+    test_loader = DataLoader(
+        test_set,
+        batch_size=BATCH_SIZE,
+        shuffle=False,
+        num_workers=min(8, os.cpu_count() or 1),
+        drop_last=False,
+        persistent_workers=True,
+    )
 
-    spiking_network = SpikingNetwork(lr=1)
+    scnn = SCNN().to(device)
+    checkpoint = torch.load(CKPT_PATH, map_location=device)
+    scnn.load_state_dict(checkpoint["model_state_dict"])
+    scnn.eval()
+    print(f"Loaded checkpoint from epoch {checkpoint['epoch']} "
+          f"(val_acc={checkpoint['val_acc']:.4f})")
 
-    model = SNNTorchModel(spiking_network.model, custom_forward=True)
-    test_set_loader = data_module.test_dataloader()
+    model = SNNTorchModel(scnn, custom_forward=True)
 
-    dummy_input = torch.randn(1, num_steps, num_inputs)
+    dummy_input = torch.randn(1, test_set.n_timesteps, test_set.n_channels)
 
-    # # # postprocessors
-    postprocessors = [ChooseMaxCount()]
+    postprocessors  = [ChooseMaxCount()]
+    static_metrics  = [ParameterCount, Footprint, ConnectionSparsity]
+    workload_metrics = [
+        ActivationSparsity,
+        ActivationSparsityByLayer,
+        MembraneUpdates,
+        SynapticOperations,
+        ClassificationAccuracy,
+        NeuronOperations,
+    ]
 
-    # #
-    static_metrics = [ParameterCount, Footprint, ConnectionSparsity]
-    workload_metrics = [ActivationSparsity, ActivationSparsityByLayer,MembraneUpdates, SynapticOperations, ClassificationAccuracy, NeuronOperations]
-    # #
     benchmark = Benchmark(
-        model, test_set_loader, [], postprocessors, [static_metrics, workload_metrics]
+        model, test_loader, [], postprocessors, [static_metrics, workload_metrics]
     )
     results = benchmark.run(verbose=False)
     print(results)
 
-    results_path = os.path.join(file_path, "results")
-    benchmark.save_benchmark_results(results_path)
-
-    # nir_path = os.path.join(file_path, "model_data/nehar_snnTorch.nir")
-    # benchmark.to_nir(dummy_input, nir_path)
-
-    onnx_path = os.path.join(file_path, "model_data/nehar_snnTorch.onnx")
-    benchmark.to_onnx(dummy_input, onnx_path)
-
-
+    benchmark.save_benchmark_results(RESULTS_PATH)
+    benchmark.to_onnx(dummy_input, ONNX_PATH)

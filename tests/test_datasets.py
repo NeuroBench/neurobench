@@ -5,45 +5,76 @@ from neurobench.datasets import Gen4DetectionDataLoader
 from neurobench.datasets import PrimateReaching
 from neurobench.datasets import MackeyGlass
 from neurobench.datasets import WISDM
-from torch.utils.data import DataLoader
+from neurobench.datasets import ThorEEGMI
 
 import torch
 
 dataset_path = "data/"
 
 
+def test_eeg_mi():
+    path = os.path.join(dataset_path, "eeg_mi")
+
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Can't find {path}")
+
+    train_set = ThorEEGMI(root=path, split="train", download=False)
+    assert len(train_set) > 0
+    assert list(train_set.data.shape) == [7344, 250, 62]
+    assert list(train_set.targets.shape) == [7344]
+    assert train_set.n_timesteps == 250
+    assert train_set.n_channels == 62
+
+    val_set = ThorEEGMI(root=path, split="val", download=False)
+    assert len(val_set) > 0
+    assert list(val_set.data.shape) == [1728, 250, 62]
+    assert list(val_set.targets.shape) == [1728]
+
+    sample, label = train_set[0]
+    assert isinstance(sample, torch.Tensor)
+    assert isinstance(label, torch.Tensor)
+    assert list(sample.shape) == [250, 62]
+    assert label.ndim == 0
+
+    samples, labels = train_set[[0, 1, 2]]
+    assert list(samples.shape) == [3, 250, 62]
+    assert list(labels.shape) == [3]
+
+
 def test_nehar():
-    path = dataset_path + "nehar/"
-    try:
-        assert os.path.exists(path)
-    except AssertionError:
-        raise FileExistsError(f"Can't find {path}")
-    wisdm = WISDM(path)
-    assert len(wisdm) > 0
-    assert list(wisdm.train_dataset[0].shape) == [21720, 40, 6]
-    assert list(wisdm.val_dataset[0].shape) == [7240, 40, 6]
-    assert list(wisdm.test_dataset[0].shape) == [7241, 40, 6]
+    path = os.path.join(dataset_path, "nehar")
 
-    wisdm.setup("fit")
-    assert isinstance(wisdm.ds_train, torch.utils.data.TensorDataset)
-    assert isinstance(wisdm.ds_val, torch.utils.data.TensorDataset)
-    assert isinstance(wisdm.ds_test, torch.utils.data.TensorDataset)
-    assert isinstance(wisdm.train_dataloader(), torch.utils.data.DataLoader)
-    assert isinstance(wisdm.val_dataloader(), torch.utils.data.DataLoader)
-    assert isinstance(wisdm.test_dataloader(), torch.utils.data.DataLoader)
+    if not os.path.exists(path):
+        raise FileNotFoundError(f"Can't find {path}")
 
-    wisdm = WISDM(path)
+    train_set = WISDM(root=path, split="train", download=False)
+    assert len(train_set) > 0
+    assert list(train_set.data.shape) == [18907, 40, 6]
+    assert list(train_set.targets.shape) == [18907]
+    assert train_set.n_timesteps == 40
+    assert train_set.n_channels == 6
 
-    wisdm.setup("test")
-    assert isinstance(wisdm.ds_test, torch.utils.data.TensorDataset)
-    assert wisdm.ds_val is None
-    assert wisdm.ds_train is None
+    val_set = WISDM(root=path, split="val", download=False)
+    assert len(val_set) > 0
+    assert list(val_set.data.shape) == [6302, 40, 6]
+    assert list(val_set.targets.shape) == [6302]
 
-    wisdm = WISDM(path)
-    wisdm.setup("predict")
-    assert isinstance(wisdm.ds_test, torch.utils.data.TensorDataset)
-    assert wisdm.ds_val is None
-    assert wisdm.ds_train is None
+    test_set = WISDM(root=path, split="test", download=False)
+    assert len(test_set) > 0
+    assert list(test_set.data.shape) == [6303, 40, 6]
+    assert list(test_set.targets.shape) == [6303]
+
+    sample, label = train_set[0]
+    assert isinstance(sample, torch.Tensor)
+    assert isinstance(label, torch.Tensor)
+    assert list(sample.shape) == [40, 6]
+    assert label.ndim == 0
+
+    samples, labels = train_set[[0, 1, 2]]
+    assert list(samples.shape) == [3, 40, 6]
+    assert list(labels.shape) == [3]
+
+    assert train_set.n_classes == test_set.n_classes
 
 
 def test_speech_commands():

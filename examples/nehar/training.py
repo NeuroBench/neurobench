@@ -1,100 +1,116 @@
-from pytorch_lightning import LightningModule
-from pytorch_lightning import Trainer
+import os
+import torch
+import torch.nn as nn
+from torch.utils.data import DataLoader
+from torchmetrics.classification import MulticlassAccuracy
+
 from neurobench.datasets import WISDM
 from SCNN import SCNN
-import torch.nn as nn
-import torch
 
+def run_epoch(model, loader, loss_fn, accuracy_metric, optimizer, device, train: bool):
+    model.train(train)
+    accuracy_metric.reset()
+    total_loss    = 0.0
+    total_samples = 0
 
-class SpikingNetwork(LightningModule):
-    def __init__(self, lr):
-        super().__init__()
-        self.model = SCNN()
-        self.loss_fn = nn.CrossEntropyLoss()
-        self.running_length = 0
-        self.running_total = 0
-        self.lr = lr
-        self.save_hyperparameters()
+    ctx = torch.enable_grad() if train else torch.no_grad()
+    with ctx:
+        for data, labels in loader:
+            data, labels = data.to(device), labels.to(device)
 
-    def configure_optimizers(self):
-        optimizer = torch.optim.Adam(self.parameters(), lr=self.lr, betas=(0.9, 0.999))
-        return optimizer
+            spk_output = model.forward(data)
+            logits = spk_output.sum(1)
+            loss   = loss_fn(logits, labels)
 
-    def training_step(self, batch, batch_idx):
-        train_data, train_labels = batch
-        train_data = train_data
-        spk_output, _ = self.model.single_forward(train_data)
-        # measure accuracy
-        batch_accuracy = self.calc_accuracy(spk_output, train_labels)
-        self.log('train_accuracy', batch_accuracy / len(train_labels))
+            if train:
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
 
-        # measure loss
-        train_loss = self.loss_fn(spk_output.sum(0), train_labels)
-        self.log('train_loss', train_loss)
-        return train_loss
+            accuracy_metric.update(logits, labels)
+            total_loss    += loss.item() * len(labels)
+            total_samples += len(labels)
 
-    def validation_step(self, batch, batch_idx):
-        validation_data, validation_labels = batch
-        validation_data = validation_data
+    mean_loss = total_loss / total_samples
+    accuracy  = accuracy_metric.compute().item()
+    return mean_loss, accuracy
 
-        # Val set forward pass
-        spk_output, _ = self.model.single_forward(validation_data)
+if __name__ == "__main__":
+    
+    BATCH_SIZE   = 256
+    LR           = 1e-3
+    MAX_EPOCHS   = 100
+    DATASET_ROOT = "../../data/nehar"
+    CKPT_PATH    = "./model_data/WISDM_snnTorch.pt"
+    NUM_WORKERS  = min(8, os.cpu_count() or 1)
 
-        # measure accuracy
-        batch_accuracy = self.calc_accuracy(spk_output, validation_labels)
-        self.log('val_accuracy', batch_accuracy / len(validation_labels))
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    print(f"Using device: {device}")
 
-        # measure loss
-        val_loss = self.loss_fn(spk_output.sum(0), validation_labels)
-        self.log('val_loss', val_loss)
-        return val_loss
+    train_set = WISDM(root=DATASET_ROOT, split="train", download=True)
+    val_set   = WISDM(root=DATASET_ROOT, split="val",   download=True)
+    test_set  = WISDM(root=DATASET_ROOT, split="test",  download=True)
 
-    def test_step(self, batch, batch_idx):
-        test_data, test_labels = batch
-        test_data = test_data
+    train_loader = DataLoader(
+        train_set, batch_size=BATCH_SIZE, shuffle=True,
+        num_workers=NUM_WORKERS, drop_last=False, persistent_workers=True,
+    )
+    val_loader = DataLoader(
+        val_set, batch_size=BATCH_SIZE, shuffle=False,
+        num_workers=NUM_WORKERS, drop_last=False, persistent_workers=True,
+    )
+    test_loader = DataLoader(
+        test_set, batch_size=BATCH_SIZE, shuffle=False,
+        num_workers=NUM_WORKERS, drop_last=False, persistent_workers=True,
+    )
 
-        test_spk, _ = self.model.single_forward(test_data)
+    print(train_set)
+    print(val_set)
+    print(test_set)
 
-        # measure accuracy
-        batch_accuracy = self.calc_accuracy(test_spk, test_labels)
-        self.log('test_accuracy', batch_accuracy / len(test_labels))
+    model     = SCNN().to(device)
+    loss_fn   = nn.CrossEntropyLoss()
+    optimizer = torch.optim.Adam(model.parameters(), lr=LR, betas=(0.9, 0.999))
+    n_classes       = train_set.n_classes
+    accuracy_metric = MulticlassAccuracy(num_classes=n_classes, average="macro").to(device)
 
-        # measure loss
-        test_loss = self.loss_fn(test_spk.sum(0), test_labels)
-        self.log('test_loss', test_loss)
-        return test_loss
+    best_val_acc = 0.0
 
-    def predict_step(self, batch, batch_idx, dataloader_idx):
-        test_data, test_labels = batch
+    os.makedirs(os.path.dirname(CKPT_PATH) or ".", exist_ok=True)
 
-        test_spk, _ = self.model.single_forward(test_data)
+    for epoch in range(1, MAX_EPOCHS + 1):
+        train_loss, train_acc = run_epoch(
+            model, train_loader, loss_fn, accuracy_metric, optimizer, device, train=True
+        )
+        val_loss, val_acc = run_epoch(
+            model, val_loader, loss_fn, accuracy_metric, optimizer=None, device=device, train=False
+        )
 
-        _, pred = test_spk.sum(dim=0).max(1)
+        print(
+            f"Epoch {epoch:>3}/{MAX_EPOCHS} | "
+            f"train loss {train_loss:.4f}  acc {train_acc:.4f} | "
+            f"val loss {val_loss:.4f}  acc {val_acc:.4f}"
+        )
 
-        return pred.detach().cpu().numpy()
+        if val_acc > best_val_acc:
+            best_val_acc = val_acc
+            torch.save(
+                {
+                    "epoch": epoch,
+                    "model_state_dict": model.state_dict(),
+                    "optimizer_state_dict": optimizer.state_dict(),
+                    "val_acc": val_acc,
+                    "val_loss": val_loss,
+                },
+                CKPT_PATH,
+            )
 
-    @staticmethod
-    def calc_accuracy(output, labels):
-        _, idx = output.sum(dim=0).max(1)
-        batch_acc = (labels == idx).sum()  # .detach().cpu().numpy())
-        return batch_acc
+    checkpoint = torch.load(CKPT_PATH, map_location=device)
+    model.load_state_dict(checkpoint["model_state_dict"])
+    print(f"\nLoaded best checkpoint from epoch {checkpoint['epoch']} "
+          f"(val_acc={checkpoint['val_acc']:.4f})")
 
-
-if __name__ == '__main__':
-    batch_size = 256
-    lr = 1.e-3
-    dataset_path = "../../data/nehar/watch_subset2_40.npz"
-    data_module = WISDM(path=dataset_path, batch_size=batch_size)
-
-    num_inputs = data_module.num_inputs
-    num_outputs = data_module.num_outputs
-    num_steps = data_module.num_steps
-    #
-    spiking_network = SpikingNetwork(lr=lr)
-    trainer = Trainer(accelerator='auto', max_epochs=100, num_sanity_val_steps=0, enable_progress_bar=False,
-                      enable_checkpointing=True, enable_model_summary=True,
-                      )
-    trainer.fit(model=spiking_network, datamodule=data_module)
-    trainer.save_checkpoint('./model_data/WISDM_snnTorch.ckpt')
-    test_data = trainer.test(model=spiking_network, datamodule=data_module, verbose=False)[0]
-    print(test_data)
+    test_loss, test_acc = run_epoch(
+        model, test_loader, loss_fn, accuracy_metric, optimizer=None, device=device, train=False
+    )
+    print(f"\nTest results | loss {test_loss:.4f}  macro-accuracy {test_acc:.4f}")

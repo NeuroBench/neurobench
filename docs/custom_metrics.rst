@@ -29,23 +29,27 @@ Static Metric Abstract Base Class
 Workload Metric Abstract Base Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: neurobench.metrics.abstract.workload_metric
-    :members: WorkloadMetric
+.. autoclass:: neurobench.metrics.abstract.workload_metric.WorkloadMetric
+    :members:
+    :special-members: __call__, __init__
     :undoc-members:
     :exclude-members: requires_hooks
+    :show-inheritance:
 
 Accumulated Metric Abstract Base Class
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-.. automodule:: neurobench.metrics.abstract.workload_metric
-    :members: AccumulatedMetric
+.. autoclass:: neurobench.metrics.abstract.workload_metric.AccumulatedMetric
+    :members:
+    :special-members: __call__, __init__
     :undoc-members:
     :exclude-members: requires_hooks
+    :show-inheritance:
 
 Defining Custom Metrics
 -----------------------
 
-Here’s how you can define your own metrics for each type:
+Here's how you can define your own metrics for each type:
 
 Static Metrics
 ^^^^^^^^^^^^^^
@@ -68,7 +72,7 @@ Example:
 Workload Metrics
 ^^^^^^^^^^^^^^^^
 
-Workload metrics (which are not Accumulated) evaluate the model’s performance for each batch of input data, and the result is averaged across batches.
+Workload metrics (which are not Accumulated) evaluate the model's performance for each batch of input data, and the result is averaged across batches.
 
 Example:
     .. code-block:: python
@@ -120,12 +124,12 @@ Example:
                 self.num_batches = 0
 
 Plugging Metrics into the Benchmark
-^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The `Benchmark` class expects metrics to be passed as lists grouped by type.
 You also need to configure any `postprocessors` if required by your model.
 
-Here’s an example of integrating both built-in and custom metrics into the `Benchmark` class:
+Here's an example of integrating both built-in and custom metrics into the `Benchmark` class:
 
 Example:
     .. code-block:: python

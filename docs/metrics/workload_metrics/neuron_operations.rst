@@ -15,6 +15,7 @@ Each neuron type has specific reset mechanisms that determine how the membrane p
 2. **Zero**: The membrane potential is reset to zero after a spike.
 
 The computational cost of these mechanisms is defined in the `neuron_ops_reset_operations` dictionary. For example, the "Leaky" neuron type has the following costs:
+
 - Subtract mechanism: 4 operations
 - Zero mechanism: 4 operations
 
@@ -29,7 +30,7 @@ If the `reset_mechanism` is set to "subtract", the membrane potential :math:`U[t
 
     U[t+1] = \beta U[t] + I_{\rm in}[t+1] - R U_{\rm thr}
 
-Here’s the breakdown of the 4 operations:
+Here's the breakdown of the 4 operations:
 
 1. **Decay Term**: Multiply the previous membrane potential :math:`U[t]` by the decay factor :math:`\beta` (1 operation).
 2. **Input Current**: Add the input current :math:`I_{\rm in}[t+1]` to the decayed potential (1 operation).
@@ -43,7 +44,7 @@ If the `reset_mechanism` is set to "zero", the membrane potential :math:`U[t+1]`
 
     U[t+1] = \beta U[t] + I_{\rm syn}[t+1] - R(\beta U[t] + I_{\rm in}[t+1])
 
-Here’s the breakdown of the 4 operations:
+Here's the breakdown of the 4 operations:
 
 1. **Decay Term**: Multiply the previous membrane potential :math:`U[t]` by the decay factor :math:`\beta` (1 operation).
 2. **Input Current**: Add the synaptic input current :math:`I_{\rm syn}[t+1]` to the decayed potential (1 operation).
@@ -56,23 +57,27 @@ The value of 4 operations is an abstraction that simplifies the computational wo
 
 Example: Leaky Neuron with snnTorch
 -----------------------------------
-Let’s consider an example using the "Leaky" neuron type with `snntorch`. Assume we have a layer of "Leaky" neurons, and we want to compute the workload for the "subtract" and "zero" reset mechanisms.
+Let's consider an example using the "Leaky" neuron type with `snntorch`. Assume we have a layer of "Leaky" neurons, and we want to compute the workload for the "subtract" and "zero" reset mechanisms.
 
 1. **Subtract Mechanism**:
-   
-   - After a spike, the membrane potential is reduced by a fixed value.
-   - If there are 100 neurons in the layer and each neuron spikes once, the total computational cost is:
-    .. math::
-        \text{Total Cost} = \text{Number of Neurons} \times \text{Cost per Subtract}
-        = 100 \times 4 = 400 \text{ operations.}
+
+   After a spike, the membrane potential is reduced by a fixed value.
+   If there are 100 neurons in the layer and each neuron spikes once, the total computational cost is:
+
+   .. math::
+
+       \text{Total Cost} = \text{Number of Neurons} \times \text{Cost per Subtract}
+       = 100 \times 4 = 400 \text{ operations.}
 
 2. **Zero Mechanism**:
-   
-   - After a spike, the membrane potential is reset to zero.
-   - If the same 100 neurons spike once, the total computational cost is:
-    .. math::
-        \text{Total Cost} = \text{Number of Neurons} \times \text{Cost per Zero}
-        = 100 \times 4 = 400 \text{ operations.}
+
+   After a spike, the membrane potential is reset to zero.
+   If the same 100 neurons spike once, the total computational cost is:
+
+   .. math::
+
+       \text{Total Cost} = \text{Number of Neurons} \times \text{Cost per Zero}
+       = 100 \times 4 = 400 \text{ operations.}
 
 Outputs
 -------

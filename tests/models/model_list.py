@@ -1,6 +1,6 @@
 import torch.nn as nn
 import snntorch as snn
-from torch import manual_seed
+from torch import manual_seed, stack
 import snntorch.surrogate as surrogate
 
 beta = 0.9
@@ -111,6 +111,37 @@ class simple_LSTM(nn.Module):
         x, _ = self.lstm(x, states)
         # x = self.rel(x)
         return x
+
+
+class SimpleCustomSNN(nn.Module):
+    """Simple SNN with custom forward for testing."""
+
+    def __init__(self):
+        super(SimpleCustomSNN, self).__init__()
+        self.conv = nn.Conv1d(5, 1, 5, bias=False)
+        self.spk = snn.Leaky(beta=0.9, init_hidden=True)
+
+    def forward(self, inp):
+        self.spk.reset_mem()
+        spk_out = []
+        for t in range(inp.shape[1]):
+            x_t = inp[:, t, ...]
+            conv_out = self.conv(x_t)
+            spk_out.append(self.spk(conv_out))
+        return stack(spk_out, dim=1)
+
+
+class SimpleStepSNN(nn.Module):
+    """Simple SNN with step-by-step forward (non-custom) for testing."""
+
+    def __init__(self):
+        super(SimpleStepSNN, self).__init__()
+        self.fc = nn.Linear(10, 5, bias=False)
+        self.spk = snn.Leaky(beta=0.9, init_hidden=True)
+
+    def forward(self, x):
+        """Expects (batch, features) per timestep, returns (spikes, mem)."""
+        return self.spk(self.fc(x))
 
 
 class simple_RNN(nn.Module):

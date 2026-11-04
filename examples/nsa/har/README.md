@@ -19,6 +19,34 @@ The data loader downloads NSA's preprocessed split (four `.npy` files) from
 into `data/nsa/har/` at the repo root. Using NSA's own split keeps accuracy comparable
 with the NSA paper.
 
+## How this differs from `examples/nehar`
+
+Both this example and [`examples/nehar`](../../nehar/) use WISDM smartwatch data, but they
+are different tasks built from it, so their accuracies should not be compared directly.
+
+| | NSA HAR (this folder) | NeHAR (`examples/nehar`) |
+| --- | --- | --- |
+| Paper | Ma et al., IJCAI 2025 | Fra et al., Neuromorph. Comput. Eng. 2022 |
+| Sensors | watch gyroscope only | watch accelerometer and gyroscope |
+| Input channels | 3 | 6 |
+| Activities | all 18 WISDM activities | 7 hand-oriented activities (dribbling, catch, typing, writing, clapping, brushing teeth, folding clothes) |
+| Window | 200 steps (10 s at 20 Hz), step 100, so 50% overlap | 40 steps (2 s at 20 Hz), no overlap |
+| Split | random 80/20 train/test over windows (`random_state=42`), no validation set | train, validation and test sets shipped in `watch_subset2_40.npz` |
+| Model | Linear to LIF MLP from `neuroseqbench` (3 hidden layers) | Conv1d SCNN with snnTorch `Leaky` neurons |
+| Readout | output logits averaged over time | spike count, `ChooseMaxCount` |
+| Data source | NSA's Hugging Face repo | NeHAR's Google Drive folder, loaded by `neurobench.datasets.WISDM` |
+
+In short, NeHAR is a shorter, easier 7-class problem on both sensors, while NSA's version
+is an 18-class problem on the gyroscope alone with much longer windows. The longer
+windows are the point of NSA's design, since the benchmark is meant to test how well a
+network holds information over many time steps.
+
+One thing to keep in mind when reading NSA's HAR numbers: the split is random at the
+window level and the windows overlap by half, so the same subject (and neighbouring
+stretches of the same recording) can appear in both train and test. NeuroBench results
+here follow NSA's split exactly, so they match the paper, but they measure
+within-subject generalisation rather than generalisation to new people.
+
 ## Model
 
 `model.py` builds the same network as NSA's `FFSNN` with `--neuron lif`: three

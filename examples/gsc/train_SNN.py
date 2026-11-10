@@ -8,8 +8,8 @@ from tqdm import tqdm
 from torch.utils.data import DataLoader
 
 from neurobench.datasets import SpeechCommands
-from neurobench.preprocessing import S2SPreProcessor
-from neurobench.postprocessing import choose_max_count
+from neurobench.processors.preprocessors import S2SPreProcessor
+from neurobench.processors.postprocessors import choose_max_count
 
 from SNN import net
 
